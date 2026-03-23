@@ -11,10 +11,8 @@ import {
     FileText,
     ClipboardList,
     BarChart3,
-    MessageSquare,
     GraduationCap,
     TrendingUp,
-    Settings,
     X,
 } from 'lucide-react';
 import type { UserRole } from '../../types';

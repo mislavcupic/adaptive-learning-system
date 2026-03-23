@@ -1,7 +1,7 @@
 const ACCESS_TOKEN_KEY = 'accessToken';
 const REFRESH_TOKEN_KEY = 'refreshToken';
 
-// ============ COOKIES (za refresh token - httpOnly u produkciji) ============
+// COOKIES (za refresh token - httpOnly u produkciji)
 const setCookie = (name: string, value: string, days: number = 7) => {
     const expires = new Date();
     expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);

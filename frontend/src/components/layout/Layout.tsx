@@ -1,7 +1,3 @@
-// ============================================
-// LAYOUT - Glavni layout wrapper
-// ============================================
-
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Navbar } from './Navbar';
