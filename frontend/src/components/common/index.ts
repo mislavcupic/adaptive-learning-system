@@ -6,3 +6,4 @@ export { Modal } from './Modal';
 export { Badge } from './Badge';
 export { Alert } from './Alert';
 export { EmptyState } from './EmptyState';
+export { FontSelector } from './FontSelector';
