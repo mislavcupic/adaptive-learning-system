@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: adaptive-learning-backend
+  
+  datasource:
+    url: jdbc:postgresql://localhost:5432/adaptive_learning
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # i18n
+  messages:
+    basename: messages
+    encoding: UTF-8
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+# JWT Configuration
+jwt:
+  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+  access-token-expiration: 86400000     # 24 sata (milisekunde)
+  refresh-token-expiration: 604800000   # 7 dana (milisekunde)
+
+# Logging
+logging:
+  level:
+    hr.algebra.backend: DEBUG
+    org.springframework.security: DEBUG
