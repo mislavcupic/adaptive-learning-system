@@ -15,7 +15,6 @@ import hr.algebra.adaptive.learning.backend.repository.RefreshTokenRepository;
 import hr.algebra.adaptive.learning.backend.repository.TokenBlacklistRepository;
 import hr.algebra.adaptive.learning.backend.repository.UserRepository;
 import hr.algebra.adaptive.learning.backend.security.JwtService;
-import hr.algebra.adaptive.learning.backend.service.AuthService;
 import hr.algebra.adaptive.learning.backend.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,0 +1,6 @@
+# ==================== API ====================
+VITE_API_URL=http://localhost:8080/api
+
+# ==================== APP ====================
+VITE_APP_NAME=Adaptive Learning System
+VITE_DEFAULT_LOCALE=hr

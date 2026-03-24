@@ -1,4 +1,4 @@
-package hr.algebra.backend.dto.request;
+package hr.algebra.adaptive.learning.backend.dto.request;
 
 import lombok.Data;
 

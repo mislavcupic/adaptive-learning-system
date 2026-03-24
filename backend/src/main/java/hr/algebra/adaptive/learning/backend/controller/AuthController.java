@@ -1,4 +1,4 @@
-package hr.algebra.backend.controller;
+package hr.algebra.adaptive.learning.backend.controller;
 
 import hr.algebra.backend.domain.entity.User;
 import hr.algebra.backend.dto.request.LoginRequest;

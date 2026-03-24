@@ -1,4 +1,4 @@
-package hr.algebra.backend.service;
+package hr.algebra.adaptive.learning.backend.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.MessageSource;
