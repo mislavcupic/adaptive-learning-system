@@ -2,7 +2,7 @@
 // USER SERVICE - CRUD korisnika, CSV import
 // ============================================
 
-import { api, ENDPOINTS } from '../api';
+import { apiClient, ENDPOINTS } from '../api';
 import type { User, Student, Teacher, CsvImportResult, PaginatedResponse } from '../types';
 
 export const userService = {
@@ -22,39 +22,39 @@ export const userService = {
         if (params?.pageSize) queryParams.append('pageSize', params.pageSize.toString());
 
         const endpoint = `${ENDPOINTS.USERS.STUDENTS}?${queryParams}`;
-        const response = await api.get<PaginatedResponse<Student>>(endpoint);
-        return response.data;
+        const response = await apiClient.get<PaginatedResponse<Student>>(endpoint);
+        return response;
     },
 
     /**
      * Dohvati studenta po ID-u
      */
     getStudentById: async (id: string): Promise<Student> => {
-        const response = await api.get<Student>(ENDPOINTS.USERS.BY_ID(id));
-        return response.data;
+        const response = await apiClient.get<Student>(ENDPOINTS.USERS.BY_ID(id));
+        return response;
     },
 
     /**
      * Dohvati sve nastavnike
      */
     getTeachers: async (): Promise<Teacher[]> => {
-        const response = await api.get<Teacher[]>(ENDPOINTS.USERS.TEACHERS);
-        return response.data;
+        const response = await apiClient.get<Teacher[]>(ENDPOINTS.USERS.TEACHERS);
+        return response;
     },
 
     /**
      * Ažuriraj korisnika
      */
     updateUser: async (id: string, data: Partial<User>): Promise<User> => {
-        const response = await api.put<User>(ENDPOINTS.USERS.BY_ID(id), data);
-        return response.data;
+        const response = await apiClient.post<User>(ENDPOINTS.USERS.BY_ID(id), data);
+        return response;
     },
 
     /**
      * Obriši korisnika
      */
     deleteUser: async (id: string): Promise<void> => {
-        await api.delete(ENDPOINTS.USERS.BY_ID(id));
+        await apiClient.delete(ENDPOINTS.USERS.BY_ID(id));
     },
 
     /**
@@ -68,10 +68,10 @@ export const userService = {
         formData.append('file', file);
         formData.append('classId', classId);
 
-        const response = await api.upload<CsvImportResult>(
+        const response = await apiClient.put<CsvImportResult>(
             ENDPOINTS.USERS.IMPORT_CSV,
             formData
         );
-        return response.data;
+        return response;
     },
 };

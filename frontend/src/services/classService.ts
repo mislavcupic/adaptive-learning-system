@@ -1,81 +1,38 @@
-// CLASS SERVICE - Razredi, random grupe
-
-
-import { api, ENDPOINTS } from '../api';
+import { apiClient, ENDPOINTS } from '../api';
 import type { SchoolClass, Student, ClassStatistics } from '../types';
 
 export const classService = {
-    /**
-     * Dohvati sve razrede
-     */
     getAll: async (): Promise<SchoolClass[]> => {
-        const response = await api.get<SchoolClass[]>(ENDPOINTS.CLASSES.BASE);
-        return response.data;
+        return await apiClient.get<SchoolClass[]>(ENDPOINTS.CLASSES.BASE);
     },
 
-    /**
-     * Dohvati razred po ID-u
-     */
     getById: async (id: string): Promise<SchoolClass> => {
-        const response = await api.get<SchoolClass>(ENDPOINTS.CLASSES.BY_ID(id));
-        return response.data;
+        return await apiClient.get<SchoolClass>(ENDPOINTS.CLASSES.BY_ID(id));
     },
 
-    /**
-     * Kreiraj novi razred
-     */
-    create: async (data: {
-        name: string;
-        schoolYear: string;
-    }): Promise<SchoolClass> => {
-        const response = await api.post<SchoolClass>(ENDPOINTS.CLASSES.BASE, data);
-        return response.data;
+    create: async (data: Partial<SchoolClass>): Promise<SchoolClass> => {
+        return await apiClient.post<SchoolClass>(ENDPOINTS.CLASSES.BASE, data);
     },
 
-    /**
-     * Ažuriraj razred
-     */
     update: async (id: string, data: Partial<SchoolClass>): Promise<SchoolClass> => {
-        const response = await api.put<SchoolClass>(ENDPOINTS.CLASSES.BY_ID(id), data);
-        return response.data;
+        return await apiClient.put<SchoolClass>(ENDPOINTS.CLASSES.BY_ID(id), data);
     },
 
-    /**
-     * Obriši razred
-     */
     delete: async (id: string): Promise<void> => {
-        await api.delete(ENDPOINTS.CLASSES.BY_ID(id));
+        await apiClient.delete(ENDPOINTS.CLASSES.BY_ID(id));
     },
 
-    /**
-     * Dohvati studente razreda
-     */
     getStudents: async (classId: string): Promise<Student[]> => {
-        const response = await api.get<Student[]>(ENDPOINTS.CLASSES.STUDENTS(classId));
-        return response.data;
+        return await apiClient.get<Student[]>(`${ENDPOINTS.CLASSES.BY_ID(classId)}/students`);
     },
 
-    /**
-     * RANDOM rasporedi studente u EXPERIMENTAL/CONTROL grupe
-     */
-    randomizeGroups: async (classId: string): Promise<{
-        experimentalCount: number;
-        controlCount: number;
-    }> => {
-        const response = await api.post<{
-            experimentalCount: number;
-            controlCount: number;
-        }>(ENDPOINTS.CLASSES.RANDOMIZE_GROUPS(classId));
-        return response.data;
-    },
-
-    /**
-     * Dohvati statistike razreda
-     */
-    getStatistics: async (classId: string): Promise<ClassStatistics> => {
-        const response = await api.get<ClassStatistics>(
-            ENDPOINTS.CLASSES.STATISTICS(classId)
+    getGroupCounts: async (classId: string): Promise<{ experimentalCount: number; controlCount: number }> => {
+        return await apiClient.get<{ experimentalCount: number; controlCount: number }>(
+            `${ENDPOINTS.CLASSES.BY_ID(classId)}/group-counts`
         );
-        return response.data;
+    },
+
+    getStatistics: async (classId: string): Promise<ClassStatistics> => {
+        return await apiClient.get<ClassStatistics>(`${ENDPOINTS.CLASSES.BY_ID(classId)}/statistics`);
     },
 };

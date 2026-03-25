@@ -1,96 +1,43 @@
-// SUBMISSION SERVICE - Predaje koda, feedback
-
-
-import { api, ENDPOINTS } from '../api';
+import { apiClient, ENDPOINTS } from '../api';
 import type { Submission, PaginatedResponse } from '../types';
 
 export const submissionService = {
-    /**
-     *
-     */
-    submit: async (data: {
-        taskId: string;
-        code: string;
-    }): Promise<Submission> => {
-        const response = await api.post<Submission>(ENDPOINTS.SUBMISSIONS.SUBMIT, data);
-        return response.data;
+    submit: async (taskId: string, code: string): Promise<Submission> => {
+        return await apiClient.post<Submission>(ENDPOINTS.SUBMISSIONS.BASE, { taskId, code });
     },
 
-    /**
-     * get predaju po ID-u
-     */
     getById: async (id: string): Promise<Submission> => {
-        const response = await api.get<Submission>(ENDPOINTS.SUBMISSIONS.BY_ID(id));
-        return response.data;
+        return await apiClient.get<Submission>(ENDPOINTS.SUBMISSIONS.BY_ID(id));
     },
 
-    /**
-     * get predaje
-     */
-    getByStudent: async (
-        studentId: string,
-        params?: {
-            taskId?: string;
-            page?: number;
-            pageSize?: number;
-        }
-    ): Promise<PaginatedResponse<Submission>> => {
+    getByTask: async (taskId: string, params?: {
+        page?: number;
+        pageSize?: number;
+    }): Promise<PaginatedResponse<Submission>> => {
         const queryParams = new URLSearchParams();
-        if (params?.taskId) queryParams.append('taskId', params.taskId);
         if (params?.page) queryParams.append('page', params.page.toString());
         if (params?.pageSize) queryParams.append('pageSize', params.pageSize.toString());
 
-        const endpoint = queryParams.toString()
-            ? `${ENDPOINTS.SUBMISSIONS.BY_STUDENT(studentId)}?${queryParams}`
-            : ENDPOINTS.SUBMISSIONS.BY_STUDENT(studentId);
-
-        const response = await api.get<PaginatedResponse<Submission>>(endpoint);
-        return response.data;
+        const url = `${ENDPOINTS.SUBMISSIONS.BY_TASK(taskId)}?${queryParams}`;
+        return await apiClient.get<PaginatedResponse<Submission>>(url);
     },
 
-    /**
-     * get predaje za zadatak (Teacher view)
-     */
-    getByTask: async (
-        taskId: string,
-        params?: {
-            classId?: string;
-            groupType?: 'EXPERIMENTAL' | 'CONTROL';
-            page?: number;
-            pageSize?: number;
-        }
-    ): Promise<PaginatedResponse<Submission>> => {
+    getByStudent: async (studentId: string, params?: {
+        page?: number;
+        pageSize?: number;
+    }): Promise<PaginatedResponse<Submission>> => {
         const queryParams = new URLSearchParams();
-        if (params?.classId) queryParams.append('classId', params.classId);
-        if (params?.groupType) queryParams.append('groupType', params.groupType);
         if (params?.page) queryParams.append('page', params.page.toString());
         if (params?.pageSize) queryParams.append('pageSize', params.pageSize.toString());
 
-        const endpoint = queryParams.toString()
-            ? `${ENDPOINTS.SUBMISSIONS.BY_TASK(taskId)}?${queryParams}`
-            : ENDPOINTS.SUBMISSIONS.BY_TASK(taskId);
-
-        const response = await api.get<PaginatedResponse<Submission>>(endpoint);
-        return response.data;
+        const url = `${ENDPOINTS.SUBMISSIONS.BASE}/student/${studentId}?${queryParams}`;
+        return await apiClient.get<PaginatedResponse<Submission>>(url);
     },
 
-    /**
-     * Teacher dodaje ručni feedback (za CONTROL grupu)
-     */
-    addTeacherFeedback: async (
-        submissionId: string,
-        data: {
-            feedback: string;
-            score: number;
-        }
-    ): Promise<Submission> => {
-        const response = await api.patch<Submission>(
-            ENDPOINTS.SUBMISSIONS.BY_ID(submissionId),
-            {
-                teacherFeedback: data.feedback,
-                teacherScore: data.score,
-            }
-        );
-        return response.data;
+    addTeacherFeedback: async (id: string, feedback: string, score?: number): Promise<Submission> => {
+        return await apiClient.patch<Submission>(ENDPOINTS.SUBMISSIONS.BY_ID(id), {
+            teacherFeedback: feedback,
+            teacherScore: score,
+        });
     },
 };

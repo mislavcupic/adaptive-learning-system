@@ -27,9 +27,9 @@ public class SecurityConfig {
 
     // Javne rute - bez autentikacije
     private static final String[] PUBLIC_URLS = {
-            "/auth/login",
-            "/auth/register",
-            "/auth/refresh-token"
+            "/api/auth/login",
+            "/api/auth/register",
+            "/api/auth/refresh-token"
     };
 
     // Swagger/OpenAPI (ako budeš koristio)

@@ -15,6 +15,7 @@ import hr.algebra.adaptive.learning.backend.repository.RefreshTokenRepository;
 import hr.algebra.adaptive.learning.backend.repository.TokenBlacklistRepository;
 import hr.algebra.adaptive.learning.backend.repository.UserRepository;
 import hr.algebra.adaptive.learning.backend.security.JwtService;
+import hr.algebra.adaptive.learning.backend.service.AuthService;
 import hr.algebra.adaptive.learning.backend.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -80,7 +81,7 @@ public class AuthServiceImpl implements AuthService {
                             request.getPassword()
                     )
             );
-        } catch (BadCredentialsException _) {
+        } catch (BadCredentialsException e) {
             log.warn("Failed login attempt for user: {}", request.getEmail());
             throw new UnauthorizedException(messageService.invalidCredentials());
         }

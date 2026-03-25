@@ -1,92 +1,31 @@
-// ============================================
-// NOTE SERVICE - Bilješke (AI, teacher, CSV)
-// ============================================
-
-import { api, ENDPOINTS } from '../api';
-import type { AnalyticNote, TeacherNote, CsvImportResult } from '../types';
+import { apiClient, uploadFile} from '../api'
+import type { TeacherNote, AnalyticNote } from '../types';
 
 export const noteService = {
-    // ============ TEACHER NOTES ============
-
-    /**
-     *
-     */
-    getTeacherNotes: async (studentId: string): Promise<TeacherNote[]> => {
-        const response = await api.get<TeacherNote[]>(
-            ENDPOINTS.NOTES.TEACHER_BY_STUDENT(studentId)
-        );
-        return response.data;
+    getByStudent: async (studentId: string): Promise<TeacherNote[]> => {
+        return await apiClient.get<TeacherNote[]>(`/notes/student/${studentId}`);
     },
 
-    /**
-     *
-     */
-    createTeacherNote: async (data: {
-        studentId: string;
-        note: string;
-    }): Promise<TeacherNote> => {
-        const response = await api.post<TeacherNote>(ENDPOINTS.NOTES.TEACHER, data);
-        return response.data;
+    create: async (data: { studentId: string; note: string }): Promise<TeacherNote> => {
+        return await apiClient.post<TeacherNote>('/notes', data);
     },
 
-    /**
-     *
-     */
-    updateTeacherNote: async (
-        noteId: string,
-        note: string
-    ): Promise<TeacherNote> => {
-        const response = await api.put<TeacherNote>(
-            `${ENDPOINTS.NOTES.TEACHER}/${noteId}`,
-            { note }
-        );
-        return response.data;
+    update: async (id: string, note: string): Promise<TeacherNote> => {
+        return await apiClient.put<TeacherNote>(`/notes/${id}`, { note });
     },
 
-    /**
-     * Obriši bilješku nastavnika
-     */
-    deleteTeacherNote: async (noteId: string): Promise<void> => {
-        await api.delete(`${ENDPOINTS.NOTES.TEACHER}/${noteId}`);
+    delete: async (id: string): Promise<void> => {
+        await apiClient.delete(`/notes/${id}`);
     },
 
-    /**
-     * Import bilješki iz CSV-a (e-Dnevnik export)
-     */
-    importNotesFromCsv: async (
-        classId: string,
-        file: File
-    ): Promise<CsvImportResult> => {
+    importFromCsv: async (studentId: string, file: File): Promise<TeacherNote[]> => {
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('classId', classId);
-
-        const response = await api.upload<CsvImportResult>(
-            ENDPOINTS.NOTES.IMPORT_CSV,
-            formData
-        );
-        return response.data;
+        formData.append('studentId', studentId);
+        return await uploadFile<TeacherNote[]>('/notes/import', formData);
     },
 
-    /**
-     * get AI generirane bilješke za studenta
-     */
-    getAnalyticNotes: async (
-        studentId: string,
-        params?: {
-            skillTag?: string;
-            limit?: number;
-        }
-    ): Promise<AnalyticNote[]> => {
-        const queryParams = new URLSearchParams();
-        if (params?.skillTag) queryParams.append('skillTag', params.skillTag);
-        if (params?.limit) queryParams.append('limit', params.limit.toString());
-
-        const endpoint = queryParams.toString()
-            ? `${ENDPOINTS.NOTES.ANALYTIC(studentId)}?${queryParams}`
-            : ENDPOINTS.NOTES.ANALYTIC(studentId);
-
-        const response = await api.get<AnalyticNote[]>(endpoint);
-        return response.data;
+    getAnalyticNotes: async (studentId: string): Promise<AnalyticNote[]> => {
+        return await apiClient.get<AnalyticNote[]>(`/notes/analytic/${studentId}`);
     },
 };

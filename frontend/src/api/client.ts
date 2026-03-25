@@ -45,7 +45,7 @@ async function request<T>(
     });
 
     // Ako je 401 Unauthorized, očisti tokene i preusmjeri na login
-    if (response.status === 401) {
+    if (response.status === 401 && !skipAuth) {
         clearTokens();
         window.location.href = '/login';
         throw new ApiError('Unauthorized', 401);
@@ -74,7 +74,7 @@ async function request<T>(
     return response.json();
 }
 
-// API Client objekt s metodama za svaki HTTP verb
+// API Client s autentikacijom (za zaštićene rute)
 export const apiClient = {
     get: <T>(url: string, options?: RequestOptions) =>
         request<T>(url, { ...options, method: 'GET' }),
@@ -104,5 +104,43 @@ export const apiClient = {
         request<T>(url, { ...options, method: 'DELETE' }),
 };
 
+// Public API bez autentikacije (za login, register)
+export const publicApi = {
+    get: <T>(url: string) =>
+        request<T>(url, { method: 'GET', skipAuth: true }),
+
+    post: <T>(url: string, data?: unknown) =>
+        request<T>(url, {
+            method: 'POST',
+            body: data ? JSON.stringify(data) : undefined,
+            skipAuth: true,
+        }),
+};
+
+export const uploadFile = async <T>(
+    url: string,
+    formData: FormData
+): Promise<T> => {
+    const token = getAccessToken();
+
+    const response = await fetch(`${BASE_URL}${url}`, {
+        method: 'POST',
+        headers: {
+            ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: formData,
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new ApiError(
+            errorData?.message || `HTTP error: ${response.status}`,
+            response.status,
+            errorData
+        );
+    }
+
+    return response.json();
+};
 export { ApiError };
 export default apiClient;

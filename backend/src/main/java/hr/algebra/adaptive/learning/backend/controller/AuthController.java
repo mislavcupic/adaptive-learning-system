@@ -1,15 +1,15 @@
 package hr.algebra.adaptive.learning.backend.controller;
 
-import hr.algebra.backend.domain.entity.User;
-import hr.algebra.backend.dto.request.LoginRequest;
-import hr.algebra.backend.dto.request.LogoutRequest;
-import hr.algebra.backend.dto.request.RefreshTokenRequest;
-import hr.algebra.backend.dto.request.RegisterRequest;
-import hr.algebra.backend.dto.response.ApiResponse;
-import hr.algebra.backend.dto.response.AuthResponse;
-import hr.algebra.backend.dto.response.UserResponse;
-import hr.algebra.backend.service.AuthService;
-import hr.algebra.backend.service.MessageService;
+import hr.algebra.adaptive.learning.backend.domain.entity.User;
+import hr.algebra.adaptive.learning.backend.dto.request.LoginRequest;
+import hr.algebra.adaptive.learning.backend.dto.request.LogoutRequest;
+import hr.algebra.adaptive.learning.backend.dto.request.RefreshTokenRequest;
+import hr.algebra.adaptive.learning.backend.dto.request.RegisterRequest;
+import hr.algebra.adaptive.learning.backend.dto.response.ApiResponse;
+import hr.algebra.adaptive.learning.backend.dto.response.AuthResponse;
+import hr.algebra.adaptive.learning.backend.dto.response.UserResponse;
+import hr.algebra.adaptive.learning.backend.service.AuthService;
+import hr.algebra.adaptive.learning.backend.service.MessageService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
 

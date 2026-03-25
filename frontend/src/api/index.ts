@@ -1,3 +1,2 @@
-export { api, publicApi } from './client';
-export type { ApiError, ApiResponse } from './client';
+export { apiClient, apiClient as api, ApiError, uploadFile } from './client';
 export { ENDPOINTS } from './endpoints';
