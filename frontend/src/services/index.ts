@@ -8,3 +8,4 @@ export { analyticsService } from './analyticsService';
 export { noteService } from './noteService';
 export { surveyService } from './surveyService';
 export { reminderService } from './reminderService';
+export { dashboardService } from './dashboardService';

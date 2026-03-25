@@ -1,21 +1,31 @@
 import { apiClient, ENDPOINTS } from '../api';
 import type { Course, LearningOutcome } from '../types';
 
+interface ApiResponse<T> {
+    success: boolean;
+    message: string | null;
+    data: T;
+}
+
 export const courseService = {
     getAll: async (): Promise<Course[]> => {
-        return await apiClient.get<Course[]>(ENDPOINTS.COURSES.BASE);
+        const response = await apiClient.get<ApiResponse<Course[]>>(ENDPOINTS.COURSES.BASE);
+        return response.data;
     },
 
     getById: async (id: string): Promise<Course> => {
-        return await apiClient.get<Course>(ENDPOINTS.COURSES.BY_ID(id));
+        const response = await apiClient.get<ApiResponse<Course>>(ENDPOINTS.COURSES.BY_ID(id));
+        return response.data;
     },
 
     create: async (data: Partial<Course>): Promise<Course> => {
-        return await apiClient.post<Course>(ENDPOINTS.COURSES.BASE, data);
+        const response = await apiClient.post<ApiResponse<Course>>(ENDPOINTS.COURSES.BASE, data);
+        return response.data;
     },
 
     update: async (id: string, data: Partial<Course>): Promise<Course> => {
-        return await apiClient.put<Course>(ENDPOINTS.COURSES.BY_ID(id), data);
+        const response = await apiClient.put<ApiResponse<Course>>(ENDPOINTS.COURSES.BY_ID(id), data);
+        return response.data;
     },
 
     delete: async (id: string): Promise<void> => {
@@ -23,18 +33,26 @@ export const courseService = {
     },
 
     getOutcomes: async (courseId: string): Promise<LearningOutcome[]> => {
-        return await apiClient.get<LearningOutcome[]>(`${ENDPOINTS.COURSES.BY_ID(courseId)}/outcomes`);
+        const response = await apiClient.get<ApiResponse<LearningOutcome[]>>(
+            `${ENDPOINTS.COURSES.BY_ID(courseId)}/outcomes`
+        );
+        return response.data;
     },
 
     createOutcome: async (courseId: string, data: Partial<LearningOutcome>): Promise<LearningOutcome> => {
-        return await apiClient.post<LearningOutcome>(`${ENDPOINTS.COURSES.BY_ID(courseId)}/outcomes`, data);
+        const response = await apiClient.post<ApiResponse<LearningOutcome>>(
+            `${ENDPOINTS.COURSES.BY_ID(courseId)}/outcomes`, 
+            data
+        );
+        return response.data;
     },
 
     updateOutcome: async (courseId: string, outcomeId: string, data: Partial<LearningOutcome>): Promise<LearningOutcome> => {
-        return await apiClient.put<LearningOutcome>(
+        const response = await apiClient.put<ApiResponse<LearningOutcome>>(
             `${ENDPOINTS.COURSES.BY_ID(courseId)}/outcomes/${outcomeId}`,
             data
         );
+        return response.data;
     },
 
     deleteOutcome: async (courseId: string, outcomeId: string): Promise<void> => {

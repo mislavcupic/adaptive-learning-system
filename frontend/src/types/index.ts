@@ -1,325 +1,363 @@
+// ==================== ENUMS ====================
+
 export type UserRole = 'ADMIN' | 'TEACHER' | 'STUDENT';
-export type GroupType = 'EXPERIMENTAL' | 'CONTROL';
+export type GroupType = 'CONTROL' | 'EXPERIMENTAL';
 export type LanguageType = 'C' | 'CSHARP';
-export type TaskType = 'PRACTICE' | 'HOMEWORK' | 'EXAM';
-export type NoteSource = 'AI_GENERATED' | 'TEACHER_MANUAL' | 'CSV_IMPORT';
-export type TrendType = 'IMPROVING' | 'STABLE' | 'DECLINING';
-export type QuestionType = 'LIKERT_5' | 'LIKERT_7' | 'TEXT' | 'MULTIPLE_CHOICE';
-export type SurveyTargetRole = 'STUDENT' | 'TEACHER' | 'ALL';
+export type SubmissionStatus = 
+    | 'PENDING' 
+    | 'COMPILING' 
+    | 'RUNNING' 
+    | 'COMPLETED' 
+    | 'COMPILE_ERROR' 
+    | 'RUNTIME_ERROR' 
+    | 'TIMEOUT' 
+    | 'FAILED';
 
-// ============ KORISNICI ============
-export interface User {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    role: UserRole;
-    createdAt: string;
-}
+// ==================== API RESPONSE ====================
 
-export interface Student extends User {
-    role: 'STUDENT';
-    classId: string;
-    className?: string;
-    groupType: GroupType;
-    enrolledCourseIds: string[];
-}
-
-export interface Teacher extends User {
-    role: 'TEACHER';
-    courseIds: string[];
-}
-
-export interface Admin extends User {
-    role: 'ADMIN';
-}
-
-export interface SchoolClass {
-    id: string;
-    name: string;
-    schoolYear: string;
-    teacherId: string;
-    studentCount: number;
-    experimentalCount: number;
-    controlCount: number;
-    createdAt: string;
-}
-
-
-export interface Course {
-    id: string;
-    name: string;
-    code: string;
-    description: string;
-    languageType: LanguageType;
-    teacherId: string;
-    classIds: string[];
-    createdAt: string;
-}
-
-export interface LearningOutcome {
-    id: string;
-    courseId: string;
-    code: string;
-    description: string;
-    skills: string[];
-    orderIndex: number;
-}
-
-export interface GradingCriteria {
-    id: string;
-    taskId: string;
-    criterion: string;
-    maxPoints: number;
-    weight: number;
-}
-
-
-export interface TestCase {
-    id: string;
-    input: string;
-    expectedOutput: string;
-    isHidden: boolean;
-    points: number;
-}
-
-export interface Task {
-    id: string;
-    outcomeId: string;
-    title: string;
-    description: string;
-    taskType: TaskType;
-    difficulty: 1 | 2 | 3 | 4 | 5;
-    starterCode?: string;
-    expectedSolution?: string;
-    testCases: TestCase[];
-    gradingCriteria: GradingCriteria[];
-    timeLimitMinutes?: number;
-    availableFrom?: string;
-    availableTo?: string;
-    createdAt: string;
-}
-
-export interface Exam {
-    id: string;
-    courseId: string;
-    title: string;
-    description: string;
-    taskIds: string[];
-    totalPoints: number;
-    durationMinutes: number;
-    availableFrom: string;
-    availableTo: string;
-    classIds: string[];
-    createdAt: string;
-}
-
-
-export interface TestResult {
-    testCaseId: string;
-    passed: boolean;
-    actualOutput: string;
-    executionTimeMs: number;
-    memoryUsedKb?: number;
-}
-
-export interface ValgrindReport {
-    hasMemoryLeaks: boolean;
-    leakSummary?: string;
-    errors: string[];
-}
-
-export interface AIAnalysis {
-    codeQuality: number;
-    correctness: number;
-    efficiency: number;
-    style: number;
-    identifiedIssues: string[];
-    suggestions: string[];
-}
-
-export interface Submission {
-    id: string;
-    studentId: string;
-    taskId: string;
-    submittedCode: string;
-    compileSuccess: boolean;
-    compileErrors?: string;
-    testResults: TestResult[];
-    valgrindReport?: ValgrindReport;
-    aiAnalysis?: AIAnalysis;
-    aiFeedback?: string;
-    aiScore?: number;
-    teacherFeedback?: string;
-    teacherScore?: number;
-    createdAt: string;
-}
-
-
-export interface SkillMastery {
-    id: string;
-    studentId: string;
-    skillName: string;
-    masteryLevel: number;
-    pTransit: number;
-    pGuess: number;
-    pSlip: number;
-    totalAttempts: number;
-    correctAttempts: number;
-    lastPracticed: string;
-    trend: TrendType;
-}
-
-
-export interface AnalyticNote {
-    id: string;
-    studentId: string;
-    skillTag: string;
-    insight: string;
-    source: NoteSource;
-    createdAt: string;
-}
-
-export interface TeacherNote {
-    id: string;
-    teacherId: string;
-    studentId: string;
-    note: string;
-    isFromCsv: boolean;
-    createdAt: string;
-}
-
-
-export interface SurveyQuestion {
-    id: string;
-    surveyId: string;
-    questionText: string;
-    questionType: QuestionType;
-    options?: string[];
-    orderIndex: number;
-}
-
-export interface Survey {
-    id: string;
-    title: string;
-    description: string;
-    targetRole: SurveyTargetRole;
-    questions: SurveyQuestion[];
-    isActive: boolean;
-    createdBy: string;
-    availableFrom: string;
-    availableTo: string;
-    createdAt: string;
-}
-
-export interface SurveyAnswer {
-    questionId: string;
-    value: string | number;
-}
-
-export interface SurveyResponse {
-    id: string;
-    surveyId: string;
-    userId: string;
-    userRole: UserRole;
-    groupType?: GroupType;
-    answers: SurveyAnswer[];
-    submittedAt: string;
-}
-
-
-export interface CommonIssue {
-    skillName: string;
-    occurrenceCount: number;
-    affectedStudentCount: number;
-    percentage: number;
-    exampleErrors: string[];
-}
-
-export interface WeeklyProgress {
-    weekStart: string;
-    avgMastery: number;
-    submissionCount: number;
-    experimentalAvg: number;
-    controlAvg: number;
-}
-
-export interface ClassStatistics {
-    classId: string;
-    className: string;
-    totalStudents: number;
-    experimentalCount: number;
-    controlCount: number;
-    averageMastery: number;
-    commonIssues: CommonIssue[];
-    experimentalAvgMastery: number;
-    controlAvgMastery: number;
-    weeklyProgress: WeeklyProgress[];
-}
-
-export interface StudentDetailedProgress {
-    student: Student;
-    skills: SkillMastery[];
-    recentSubmissions: Submission[];
-    strengths: string[];
-    weaknesses: string[];
-    recommendations: string[];
-    progressTrend: TrendType;
-}
-
-
-export interface StudentReminder {
-    id: string;
-    studentId: string;
-    message: string;
-    skillsToFocus: string[];
-    suggestedTaskIds: string[];
-    lastLoginAt: string;
-    daysSinceLastPractice: number;
-}
-
-
-export interface CsvImportError {
-    row: number;
-    field: string;
-    message: string;
-}
-
-export interface CsvImportResult {
+export interface ApiResponse<T> {
     success: boolean;
-    totalRows: number;
-    importedRows: number;
-    errors: CsvImportError[];
+    message: string | null;
+    data: T;
 }
 
+export interface PaginatedResponse<T> {
+    content: T[];
+    page: number;
+    size: number;
+    totalElements: number;
+    totalPages: number;
+    first: boolean;
+    last: boolean;
+}
+
+// ==================== AUTH ====================
 
 export interface LoginCredentials {
     email: string;
     password: string;
 }
 
+export interface RegisterRequest {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    role?: UserRole;
+    groupType?: GroupType;
+}
+
 export interface AuthResponse {
-    user: User;
     accessToken: string;
     refreshToken: string;
+    user: User;
 }
 
-export interface AuthState {
-    user: User | null;
-    isAuthenticated: boolean;
-    isLoading: boolean;
+// ==================== USER ====================
+
+export interface User {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: UserRole;
+    groupType: GroupType | null;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
 }
 
-
-export interface PaginatedResponse<T> {
-    data: T[];
-    total: number;
-    page: number;
-    pageSize: number;
-    totalPages: number;
+export interface Student extends User {
+    role: 'STUDENT';
+    classId?: string;
+    className?: string;
+    averageMastery?: number;
+    totalSubmissions?: number;
 }
 
-export interface ApiErrorResponse {
-    message: string;
-    errors?: Record<string, string[]>;
+export interface Teacher extends User {
+    role: 'TEACHER';
+}
+
+export interface CsvImportResult {
+    imported: number;
+    skipped: number;
+    errors: string[];
+}
+
+// ==================== SCHOOL CLASS ====================
+
+export interface SchoolClass {
+    id: string;
+    name: string;
+    description: string | null;
+    academicYear: string;
+    teacherId: string;
+    teacherName: string;
+    studentCount: number;
+    courseCount: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface ClassStatistics {
+    totalStudents: number;
+    experimentalCount: number;
+    controlCount: number;
+    averageMastery: number;
+    averageScore: number;
+    totalSubmissions: number;
+    completionRate: number;
+}
+
+// ==================== COURSE ====================
+
+export interface Course {
+    id: string;
+    name: string;
+    description: string | null;
+    languageType: LanguageType;
+    isActive: boolean;
+    createdById: string;
+    createdByName: string;
+    outcomeCount: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+// ==================== LEARNING OUTCOME ====================
+
+export interface LearningOutcome {
+    id: string;
+    name: string;
+    description: string | null;
+    orderIndex: number;
+    courseId: string;
+    courseName: string;
+    taskCount: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+// ==================== TASK ====================
+
+export interface Task {
+    id: string;
+    title: string;
+    description: string | null;
+    instructions: string;
+    starterCode: string | null;
+    solutionCode: string | null;
+    testCases: string | null;
+    gradingCriteria: string | null;
+    maxScore: number;
+    timeLimitSeconds: number;
+    memoryLimitMb: number;
+    outcomeId: string;
+    outcomeName: string;
+    courseId: string;
+    courseName: string;
+    languageType: LanguageType;
+    createdById: string;
+    createdByName: string;
+    submissionCount: number;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface Exam {
+    id: string;
+    title: string;
+    description: string | null;
+    courseId: string;
+    courseName: string;
+    taskIds: string[];
+    duration: number;
+    startTime: string;
+    endTime: string;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
+// ==================== SUBMISSION ====================
+
+export interface Submission {
+    id: string;
+    code: string;
+    status: SubmissionStatus;
+    score: number | null;
+    compilerOutput: string | null;
+    executionOutput: string | null;
+    executionTimeMs: number | null;
+    memoryUsedKb: number | null;
+    testCasesPassed: number;
+    testCasesTotal: number;
+    aiFeedback: string | null;
+    teacherFeedback: string | null;
+    studentId: string;
+    studentName: string;
+    taskId: string;
+    taskTitle: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+// ==================== SKILL MASTERY ====================
+
+export interface SkillMastery {
+    id: string;
+    skillName: string;
+    masteryLevel: number;
+    totalAttempts: number;
+    successfulAttempts: number;
+    pTransit: number;
+    pGuess: number;
+    pSlip: number;
+    studentId: string;
+    studentName: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+// ==================== NOTES ====================
+
+export interface TeacherNote {
+    id: string;
+    studentId: string;
+    teacherId: string;
+    teacherName: string;
+    note: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface AnalyticNote {
+    id: string;
+    insight: string;
+    context: string | null;
+    studentId: string;
+    studentName: string;
+    submissionId: string | null;
+    createdAt: string;
+}
+
+// ==================== SURVEY ====================
+
+export interface Survey {
+    id: string;
+    title: string;
+    description: string | null;
+    questions: SurveyQuestion[];
+    isActive: boolean;
+    createdById: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface SurveyQuestion {
+    id: string;
+    text: string;
+    type: 'TEXT' | 'RATING' | 'MULTIPLE_CHOICE' | 'CHECKBOX';
+    options?: string[];
+    required: boolean;
+}
+
+export interface SurveyResponse {
+    id: string;
+    surveyId: string;
+    userId: string;
+    answers: Record<string, unknown>;
+    createdAt: string;
+}
+
+// ==================== REMINDERS ====================
+
+export interface StudentReminder {
+    pendingTasks: number;
+    upcomingDeadlines: number;
+    unreadFeedback: number;
+    tasks: Task[];
+}
+
+// ==================== ANALYTICS ====================
+
+export interface StudentDetailedProgress {
+    studentId: string;
+    studentName: string;
+    averageMastery: number;
+    totalSubmissions: number;
+    completedTasks: number;
+    pendingTasks: number;
+    skillMasteries: SkillMastery[];
+    recentSubmissions: Submission[];
+}
+
+export interface CommonIssue {
+    id: string;
+    description: string;
+    frequency: number;
+    affectedStudents: number;
+    skillName: string;
+}
+
+export interface WeeklyProgress {
+    week: string;
+    submissions: number;
+    averageScore: number;
+    averageMastery: number;
+}
+
+// ==================== DASHBOARD ====================
+
+export interface StudentDashboardData {
+    student: User;
+    totalSubmissions: number;
+    completedTasks: number;
+    pendingTasks: number;
+    averageMastery: number;
+    recentSubmissions: Submission[];
+    skillMasteries: SkillMastery[];
+    enrolledCourses: Course[];
+}
+
+export interface TeacherDashboardData {
+    teacher: User;
+    totalStudents: number;
+    totalCourses: number;
+    totalTasks: number;
+    totalSubmissions: number;
+    pendingReviews: number;
+    recentSubmissions: Submission[];
+    studentProgress: StudentProgressSummary[];
+    courses: Course[];
+}
+
+export interface StudentProgressSummary {
+    studentId: string;
+    studentName: string;
+    averageMastery: number;
+    totalSubmissions: number;
+    lastActivity: string;
+}
+
+export interface AdminDashboardData {
+    totalUsers: number;
+    totalStudents: number;
+    totalTeachers: number;
+    totalAdmins: number;
+    activeUsers: number;
+    totalCourses: number;
+    activeCourses: number;
+    totalClasses: number;
+    totalTasks: number;
+    totalSubmissions: number;
+    systemHealth: SystemHealth;
+}
+
+export interface SystemHealth {
+    databaseStatus: 'UP' | 'DOWN';
+    mlServiceStatus: 'UP' | 'DOWN';
+    codeExecutorStatus: 'UP' | 'DOWN';
 }

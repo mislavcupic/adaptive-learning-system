@@ -1,25 +1,48 @@
 import { apiClient } from '../api';
 import type { Survey, SurveyResponse } from '../types';
 
+interface ApiResponse<T> {
+    success: boolean;
+    message: string | null;
+    data: T;
+}
+
+interface SurveyStatistics {
+    totalResponses: number;
+    responsesByRole: Record<string, number>;
+    responsesByGroup: Record<string, number>;
+    questionStats: Array<{
+        questionId: string;
+        questionText: string;
+        averageScore?: number;
+        distribution: Record<string, number>;
+    }>;
+}
+
 export const surveyService = {
     getAll: async (): Promise<Survey[]> => {
-        return await apiClient.get<Survey[]>('/surveys');
+        const response = await apiClient.get<ApiResponse<Survey[]>>('/surveys');
+        return response.data;
     },
 
     getActive: async (): Promise<Survey[]> => {
-        return await apiClient.get<Survey[]>('/surveys/active');
+        const response = await apiClient.get<ApiResponse<Survey[]>>('/surveys/active');
+        return response.data;
     },
 
     getById: async (id: string): Promise<Survey> => {
-        return await apiClient.get<Survey>(`/surveys/${id}`);
+        const response = await apiClient.get<ApiResponse<Survey>>(`/surveys/${id}`);
+        return response.data;
     },
 
     create: async (data: Partial<Survey>): Promise<Survey> => {
-        return await apiClient.post<Survey>('/surveys', data);
+        const response = await apiClient.post<ApiResponse<Survey>>('/surveys', data);
+        return response.data;
     },
 
     update: async (id: string, data: Partial<Survey>): Promise<Survey> => {
-        return await apiClient.put<Survey>(`/surveys/${id}`, data);
+        const response = await apiClient.put<ApiResponse<Survey>>(`/surveys/${id}`, data);
+        return response.data;
     },
 
     delete: async (id: string): Promise<void> => {
@@ -27,28 +50,29 @@ export const surveyService = {
     },
 
     activate: async (id: string): Promise<Survey> => {
-        return await apiClient.post<Survey>(`/surveys/${id}/activate`);
+        const response = await apiClient.post<ApiResponse<Survey>>(`/surveys/${id}/activate`);
+        return response.data;
     },
 
     submitResponse: async (surveyId: string, answers: Record<string, unknown>): Promise<SurveyResponse> => {
-        return await apiClient.post<SurveyResponse>(`/surveys/${surveyId}/responses`, { answers });
+        const response = await apiClient.post<ApiResponse<SurveyResponse>>(
+            `/surveys/${surveyId}/responses`, 
+            { answers }
+        );
+        return response.data;
     },
 
     getResponses: async (surveyId: string): Promise<SurveyResponse[]> => {
-        return await apiClient.get<SurveyResponse[]>(`/surveys/${surveyId}/responses`);
+        const response = await apiClient.get<ApiResponse<SurveyResponse[]>>(
+            `/surveys/${surveyId}/responses`
+        );
+        return response.data;
     },
 
-    getStatistics: async (surveyId: string): Promise<{
-        totalResponses: number;
-        responsesByRole: Record<string, number>;
-        responsesByGroup: Record<string, number>;
-        questionStats: Array<{
-            questionId: string;
-            questionText: string;
-            averageScore?: number;
-            distribution: Record<string, number>;
-        }>;
-    }> => {
-        return await apiClient.get(`/surveys/${surveyId}/statistics`);
+    getStatistics: async (surveyId: string): Promise<SurveyStatistics> => {
+        const response = await apiClient.get<ApiResponse<SurveyStatistics>>(
+            `/surveys/${surveyId}/statistics`
+        );
+        return response.data;
     },
 };

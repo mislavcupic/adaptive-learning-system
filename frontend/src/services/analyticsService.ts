@@ -1,13 +1,31 @@
 import { apiClient, ENDPOINTS } from '../api';
 import type { ClassStatistics, StudentDetailedProgress, CommonIssue, WeeklyProgress, SkillMastery } from '../types';
 
+interface ApiResponse<T> {
+    success: boolean;
+    message: string | null;
+    data: T;
+}
+
+interface GroupComparison {
+    experimental: { avgMastery: number; avgScore: number; submissionCount: number; completionRate: number };
+    control: { avgMastery: number; avgScore: number; submissionCount: number; completionRate: number };
+    difference: { mastery: number; score: number; completion: number };
+}
+
 export const analyticsService = {
     getClassStatistics: async (classId: string): Promise<ClassStatistics> => {
-        return await apiClient.get<ClassStatistics>(`${ENDPOINTS.CLASSES.BY_ID(classId)}/statistics`);
+        const response = await apiClient.get<ApiResponse<ClassStatistics>>(
+            `${ENDPOINTS.CLASSES.BY_ID(classId)}/statistics`
+        );
+        return response.data;
     },
 
     getStudentProgress: async (studentId: string): Promise<StudentDetailedProgress> => {
-        return await apiClient.get<StudentDetailedProgress>(`/analytics/students/${studentId}/progress`);
+        const response = await apiClient.get<ApiResponse<StudentDetailedProgress>>(
+            `/analytics/students/${studentId}/progress`
+        );
+        return response.data;
     },
 
     getCommonIssues: async (params?: {
@@ -20,7 +38,10 @@ export const analyticsService = {
         if (params?.courseId) queryParams.append('courseId', params.courseId);
         if (params?.limit) queryParams.append('limit', params.limit.toString());
 
-        return await apiClient.get<CommonIssue[]>(`/analytics/common-issues?${queryParams}`);
+        const response = await apiClient.get<ApiResponse<CommonIssue[]>>(
+            `/analytics/common-issues?${queryParams}`
+        );
+        return response.data;
     },
 
     getWeeklyProgress: async (params?: {
@@ -33,18 +54,23 @@ export const analyticsService = {
         if (params?.studentId) queryParams.append('studentId', params.studentId);
         if (params?.weeks) queryParams.append('weeks', params.weeks.toString());
 
-        return await apiClient.get<WeeklyProgress[]>(`/analytics/weekly-progress?${queryParams}`);
+        const response = await apiClient.get<ApiResponse<WeeklyProgress[]>>(
+            `/analytics/weekly-progress?${queryParams}`
+        );
+        return response.data;
     },
 
-    getGroupComparison: async (classId: string): Promise<{
-        experimental: { avgMastery: number; avgScore: number; submissionCount: number; completionRate: number };
-        control: { avgMastery: number; avgScore: number; submissionCount: number; completionRate: number };
-        difference: { mastery: number; score: number; completion: number };
-    }> => {
-        return await apiClient.get(`/analytics/classes/${classId}/group-comparison`);
+    getGroupComparison: async (classId: string): Promise<GroupComparison> => {
+        const response = await apiClient.get<ApiResponse<GroupComparison>>(
+            `/analytics/classes/${classId}/group-comparison`
+        );
+        return response.data;
     },
 
     getSkillMastery: async (studentId: string): Promise<SkillMastery[]> => {
-        return await apiClient.get<SkillMastery[]>(`/analytics/students/${studentId}/skills`);
+        const response = await apiClient.get<ApiResponse<SkillMastery[]>>(
+            `/analytics/students/${studentId}/skills`
+        );
+        return response.data;
     },
 };
