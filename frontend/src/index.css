@@ -1,6 +1,9 @@
 /* css-enforce-generic-font-family: disable */
 @import "tailwindcss";
-
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@custom-variant dark (&:where(.dark, .dark *));
 @theme {
     /* Fontovi - rješava "Cannot resolve --font-sans" */
     --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;

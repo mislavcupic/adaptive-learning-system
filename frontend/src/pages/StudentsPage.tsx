@@ -64,7 +64,7 @@ export function StudentsPage() {
                 />
             </div>
 
-            {/* Students Table */}
+
             {filteredStudents.length === 0 ? (
                 <EmptyState
                     title={t('students.noStudents')}

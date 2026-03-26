@@ -1,5 +1,6 @@
 package hr.algebra.adaptive.learning.backend.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import hr.algebra.adaptive.learning.backend.domain.entity.User;
 import hr.algebra.adaptive.learning.backend.domain.enums.GroupType;
 import lombok.Builder;
@@ -16,6 +17,7 @@ public class StudentResponse {
     private String lastName;
     private String fullName;
     private GroupType groupType;
+    @JsonProperty("isActive")
     private boolean isActive;
     private Double averageMastery;
     private Long submissionsCount;
