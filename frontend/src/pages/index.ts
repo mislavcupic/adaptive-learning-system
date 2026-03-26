@@ -1,25 +1,13 @@
-// Admin
-export { AdminDashboard } from './admin/AdminDashboard';
-
-// Teacher
-export { TeacherDashboard } from './teacher/TeacherDashboard';
-
-// Student
-export { StudentDashboard } from './student/StudentDashboard';
-
-// Courses
-export { CoursesPage } from './courses/CoursesPage';
-export { CourseDetailPage } from './courses/CourseDetailPage';
-
-// Tasks
-export { TasksPage } from './tasks/TasksPage';
-export { TaskSolvePage } from './tasks/TaskSolvePage';
-
-// Students
-export { StudentsPage } from './students/StudentsPage';
-
-// Submissions
-export { SubmissionsPage } from './submissions/SubmissionsPage';
-
-// Classes
-export { ClassesPage } from './classes/ClassesPage';
+export { LoginPage } from './LoginPage';
+export { RegisterPage } from './RegisterPage';
+export { DashboardPage } from './DashboardPage';
+export { StudentDashboard } from './StudentDashboard';
+export { TeacherDashboard } from './TeacherDashboard';
+export { AdminDashboard } from './AdminDashboard';
+export { SettingsPage } from './SettingsPage';
+export { CoursesPage } from './CoursesPage';
+export { TasksPage } from './TasksPage';
+export { TaskSolvePage } from './TaskSolvePage';
+export { SubmissionsPage } from './SubmissionsPage';
+export { StudentsPage } from './StudentsPage';
+export { ClassesPage } from './ClassesPage';

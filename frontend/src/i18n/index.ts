@@ -2,26 +2,25 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
-import hr from "./locales/hr.ts";
-import en from "./locales/en.ts";
+import hr from './locales/hr.json';
+import en from './locales/en.json';
 
 i18n
-    .use(LanguageDetector) // Automatski detektira jezik browsera
+    .use(LanguageDetector)
     .use(initReactI18next)
     .init({
         resources: {
             hr: { translation: hr },
             en: { translation: en },
         },
-        fallbackLng: 'hr', // Default jezik
-        supportedLngs: ['hr', 'en'],
-
+        fallbackLng: 'hr',
         interpolation: {
-            escapeValue: false, // React već escapa
+            escapeValue: false,
         },
-
         detection: {
             order: ['localStorage', 'navigator'],
             caches: ['localStorage'],
         },
     });
+
+export default i18n;

@@ -1,2 +1,2 @@
-export { apiClient, apiClient as api, ApiError, uploadFile } from './client';
-export { ENDPOINTS } from './endpoints';
+export { apiClient } from './client';
+export { ENDPOINTS, API_BASE_URL } from './endpoints';

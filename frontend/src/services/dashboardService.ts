@@ -1,29 +1,30 @@
-import { apiClient } from '../api';
+import { apiClient, ENDPOINTS } from '../api';
 import type { 
+    ApiResponse, 
     StudentDashboardData, 
     TeacherDashboardData, 
     AdminDashboardData 
 } from '../types';
 
-interface ApiResponse<T> {
-    success: boolean;
-    message: string | null;
-    data: T;
-}
-
 export const dashboardService = {
     getStudentDashboard: async (): Promise<StudentDashboardData> => {
-        const response = await apiClient.get<ApiResponse<StudentDashboardData>>('/dashboard/student');
+        const response = await apiClient.get<ApiResponse<StudentDashboardData>>(
+            ENDPOINTS.DASHBOARD.STUDENT
+        );
         return response.data;
     },
 
     getTeacherDashboard: async (): Promise<TeacherDashboardData> => {
-        const response = await apiClient.get<ApiResponse<TeacherDashboardData>>('/dashboard/teacher');
+        const response = await apiClient.get<ApiResponse<TeacherDashboardData>>(
+            ENDPOINTS.DASHBOARD.TEACHER
+        );
         return response.data;
     },
 
     getAdminDashboard: async (): Promise<AdminDashboardData> => {
-        const response = await apiClient.get<ApiResponse<AdminDashboardData>>('/dashboard/admin');
+        const response = await apiClient.get<ApiResponse<AdminDashboardData>>(
+            ENDPOINTS.DASHBOARD.ADMIN
+        );
         return response.data;
     },
 };

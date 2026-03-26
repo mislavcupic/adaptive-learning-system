@@ -1,42 +1,17 @@
-import { apiClient, uploadFile, ENDPOINTS } from '../api';
-import type { User, Student, Teacher, CsvImportResult, PaginatedResponse } from '../types';
-
-interface ApiResponse<T> {
-    success: boolean;
-    message: string | null;
-    data: T;
-}
+import { apiClient, ENDPOINTS } from '../api';
+import type { ApiResponse, User, PaginatedResponse } from '../types';
 
 export const userService = {
-    getStudents: async (params?: {
-        classId?: string;
-        groupType?: 'EXPERIMENTAL' | 'CONTROL';
-        page?: number;
-        size?: number;
-    }): Promise<PaginatedResponse<Student>> => {
-        const queryParams = new URLSearchParams();
-        if (params?.classId) queryParams.append('classId', params.classId);
-        if (params?.groupType) queryParams.append('groupType', params.groupType);
-        if (params?.page !== undefined) queryParams.append('page', params.page.toString());
-        if (params?.size) queryParams.append('size', params.size.toString());
-
-        const endpoint = `${ENDPOINTS.USERS.STUDENTS}?${queryParams}`;
-        const response = await apiClient.get<ApiResponse<PaginatedResponse<Student>>>(endpoint);
+    getAll: async (): Promise<User[]> => {
+        const response = await apiClient.get<ApiResponse<User[]>>(ENDPOINTS.USERS.BASE);
         return response.data;
     },
 
-    getAllStudents: async (): Promise<Student[]> => {
-        const response = await apiClient.get<ApiResponse<Student[]>>(ENDPOINTS.USERS.STUDENTS);
-        return response.data;
-    },
-
-    getStudentById: async (id: string): Promise<Student> => {
-        const response = await apiClient.get<ApiResponse<Student>>(ENDPOINTS.USERS.BY_ID(id));
-        return response.data;
-    },
-
-    getTeachers: async (): Promise<Teacher[]> => {
-        const response = await apiClient.get<ApiResponse<Teacher[]>>(ENDPOINTS.USERS.TEACHERS);
+    getPaginated: async (page = 0, size = 10): Promise<PaginatedResponse<User>> => {
+        const response = await apiClient.get<ApiResponse<PaginatedResponse<User>>>(
+            ENDPOINTS.USERS.BASE,
+            { params: { page: page.toString(), size: size.toString() } }
+        );
         return response.data;
     },
 
@@ -45,48 +20,30 @@ export const userService = {
         return response.data;
     },
 
-    updateUser: async (id: string, data: Partial<User>): Promise<User> => {
-        const response = await apiClient.patch<ApiResponse<User>>(ENDPOINTS.USERS.BY_ID(id), data);
+    getStudents: async (): Promise<User[]> => {
+        const response = await apiClient.get<ApiResponse<User[]>>(ENDPOINTS.USERS.STUDENTS);
         return response.data;
     },
 
-    updateRole: async (id: string, role: string): Promise<User> => {
-        const response = await apiClient.patch<ApiResponse<User>>(
-            `${ENDPOINTS.USERS.BY_ID(id)}/role`, 
-            { role }
-        );
+    getTeachers: async (): Promise<User[]> => {
+        const response = await apiClient.get<ApiResponse<User[]>>(ENDPOINTS.USERS.TEACHERS);
         return response.data;
     },
 
-    updateGroup: async (id: string, groupType: string): Promise<User> => {
-        const response = await apiClient.patch<ApiResponse<User>>(
-            `${ENDPOINTS.USERS.BY_ID(id)}/group`, 
-            { groupType }
-        );
+    update: async (id: string, data: Partial<User>): Promise<User> => {
+        const response = await apiClient.put<ApiResponse<User>>(ENDPOINTS.USERS.BY_ID(id), data);
         return response.data;
     },
 
     activate: async (id: string): Promise<void> => {
-        await apiClient.patch(`${ENDPOINTS.USERS.BY_ID(id)}/activate`);
+        await apiClient.patch<ApiResponse<void>>(ENDPOINTS.USERS.ACTIVATE(id));
     },
 
     deactivate: async (id: string): Promise<void> => {
-        await apiClient.patch(`${ENDPOINTS.USERS.BY_ID(id)}/deactivate`);
+        await apiClient.patch<ApiResponse<void>>(ENDPOINTS.USERS.DEACTIVATE(id));
     },
 
-    deleteUser: async (id: string): Promise<void> => {
-        await apiClient.delete(ENDPOINTS.USERS.BY_ID(id));
-    },
-
-    importStudentsFromCsv: async (classId: string, file: File): Promise<CsvImportResult> => {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('classId', classId);
-        
-        const response = await uploadFile<ApiResponse<CsvImportResult>>(
-            ENDPOINTS.USERS.IMPORT_CSV, 
-            formData
-        );
-        return response.data;
+    delete: async (id: string): Promise<void> => {
+        await apiClient.delete<ApiResponse<void>>(ENDPOINTS.USERS.BY_ID(id));
     },
 };

@@ -1,124 +1,64 @@
-// ============================================
-// AUTH CONTEXT - Globalni auth state
-// ============================================
-
-import {
-    createContext,
-    useContext,
-    useState,
-    useEffect,
-    useCallback,
-    type ReactNode,
-} from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authService } from '../services';
-import { getAccessToken, clearTokens } from '../utils/storage';
-import type { User, LoginCredentials, AuthState } from '../types';
+import type { User, LoginCredentials, RegisterRequest } from '../types';
 
-// ============ CONTEXT TIPOVI ============
-interface AuthContextType extends AuthState {
+interface AuthContextType {
+    user: User | null;
+    isAuthenticated: boolean;
+    isLoading: boolean;
     login: (credentials: LoginCredentials) => Promise<void>;
+    register: (data: RegisterRequest) => Promise<void>;
     logout: () => Promise<void>;
-    refreshUser: () => Promise<void>;
 }
 
-// ============ CONTEXT ============
-const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// ============ PROVIDER ============
-interface AuthProviderProps {
-    children: ReactNode;
-}
-
-export const AuthProvider = ({ children }: AuthProviderProps) => {
+export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    const isAuthenticated = !!user;
-
-    /**
-     * Provjeri token i dohvati korisnika pri učitavanju
-     */
-    const initializeAuth = useCallback(async () => {
-        const token = getAccessToken();
-
-        if (!token) {
-            setIsLoading(false);
-            return;
+    useEffect(() => {
+        const storedUser = authService.getStoredUser();
+        if (storedUser && authService.isAuthenticated()) {
+            setUser(storedUser);
         }
-
-        try {
-            const currentUser = await authService.getCurrentUser();
-            setUser(currentUser);
-        } catch (error) {
-            clearTokens();
-            setUser(null);
-        } finally {
-            setIsLoading(false);
-        }
+        setIsLoading(false);
     }, []);
 
-    useEffect(() => {
-        initializeAuth();
-    }, [initializeAuth]);
-
-    /**
-     * Login korisnika
-     */
     const login = async (credentials: LoginCredentials) => {
-        setIsLoading(true);
-        try {
-            const loggedInUser = await authService.login(credentials);
-            setUser(loggedInUser);
-        } finally {
-            setIsLoading(false);
-        }
+        const response = await authService.login(credentials);
+        setUser(response.user);
     };
 
-    /**
-     * Logout korisnika
-     */
+    const register = async (data: RegisterRequest) => {
+        await authService.register(data);
+    };
+
     const logout = async () => {
-        setIsLoading(true);
-        try {
-            await authService.logout();
-        } finally {
-            setUser(null);
-            setIsLoading(false);
-        }
+        await authService.logout();
+        setUser(null);
     };
 
-    /**
-     * refresh podataka o korisniku
-     */
-    const refreshUser = async () => {
-        try {
-            const currentUser = await authService.getCurrentUser();
-            setUser(currentUser);
-        } catch (error) {
-            clearTokens();
-            setUser(null);
-        }
-    };
+    return (
+        <AuthContext.Provider
+            value={{
+                user,
+                isAuthenticated: !!user,
+                isLoading,
+                login,
+                register,
+                logout,
+            }}
+        >
+            {children}
+        </AuthContext.Provider>
+    );
+}
 
-    const value: AuthContextType = {
-        user,
-        isAuthenticated,
-        isLoading,
-        login,
-        logout,
-        refreshUser,
-    };
-
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-
-export const useAuth = (): AuthContextType => {
+export function useAuth() {
     const context = useContext(AuthContext);
-
-    if (!context) {
+    if (context === undefined) {
         throw new Error('useAuth must be used within an AuthProvider');
     }
-
     return context;
-};
+}

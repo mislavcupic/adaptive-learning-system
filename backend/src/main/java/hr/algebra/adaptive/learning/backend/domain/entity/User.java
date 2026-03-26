@@ -34,8 +34,9 @@ public class User extends BaseEntity implements UserDetails {
     private String lastName;
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     @Column(nullable = false)
-    private UserRole role;
+    private UserRole role = UserRole.GUEST;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "group_type")

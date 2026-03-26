@@ -14,4 +14,5 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
     List<Task> findByIsActiveTrue();
     List<Task> findByDueDateAfterAndIsActiveTrue(LocalDateTime now);
     List<Task> findByCreatedById(UUID userId);
+    long countByIsActiveTrue();
 }

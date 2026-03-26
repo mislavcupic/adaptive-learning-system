@@ -25,6 +25,6 @@ public class RegisterRequest {
     @NotBlank(message = "Prezime je obavezno")
     private String lastName;
 
-    @NotNull(message = "Uloga je obavezna")
+    //@NotNull(message = "Uloga je obavezna")
     private UserRole role;
 }

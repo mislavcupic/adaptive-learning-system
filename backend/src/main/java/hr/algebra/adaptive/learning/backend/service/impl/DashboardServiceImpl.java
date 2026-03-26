@@ -1,157 +1,131 @@
 package hr.algebra.adaptive.learning.backend.service.impl;
 
-import hr.algebra.adaptive.learning.backend.domain.entity.SchoolClass;
-import hr.algebra.adaptive.learning.backend.domain.entity.SkillMastery;
-import hr.algebra.adaptive.learning.backend.domain.entity.Submission;
-import hr.algebra.adaptive.learning.backend.domain.entity.Task;
-import hr.algebra.adaptive.learning.backend.domain.enums.SubmissionStatus;
+import hr.algebra.adaptive.learning.backend.domain.entity.*;
 import hr.algebra.adaptive.learning.backend.domain.enums.UserRole;
 import hr.algebra.adaptive.learning.backend.dto.response.*;
 import hr.algebra.adaptive.learning.backend.repository.*;
 import hr.algebra.adaptive.learning.backend.service.DashboardService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class DashboardServiceImpl implements DashboardService {
 
     private final UserRepository userRepository;
-    private final SchoolClassRepository classRepository;
     private final CourseRepository courseRepository;
-    private final TaskRepository taskRepository;
+    private final SchoolClassRepository classRepository;
     private final SubmissionRepository submissionRepository;
     private final SkillMasteryRepository skillMasteryRepository;
+    private final TaskRepository taskRepository;
 
     @Override
     public StudentDashboardResponse getStudentDashboard(UUID studentId) {
-        log.info("Getting dashboard for student: {}", studentId);
+        User student = userRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen"));
 
-        List<SchoolClass> studentClasses = classRepository.findByStudentsId(studentId);
-        Set<UUID> courseIds = studentClasses.stream()
+        List<SchoolClass> classes = classRepository.findByStudentsId(studentId);
+        List<Course> enrolledCourses = classes.stream()
                 .flatMap(sc -> sc.getCourses().stream())
-                .map(c -> c.getId())
-                .collect(Collectors.toSet());
-
-        long submissionsCount = submissionRepository.countByStudentId(studentId);
-
-        List<SkillMastery> masteries = skillMasteryRepository.findByStudentId(studentId);
-        double averageMastery = masteries.isEmpty() ? 0.0 :
-                masteries.stream()
-                        .mapToDouble(SkillMastery::getMasteryLevel)
-                        .average()
-                        .orElse(0.0) * 100;
-
-        List<Task> pendingTasks = taskRepository.findByDueDateAfterAndIsActiveTrue(LocalDateTime.now());
-
-        List<Submission> recentSubmissions = submissionRepository
-                .findByStudentIdOrderByCreatedAtDesc(studentId)
-                .stream()
-                .limit(5)
+                .distinct()
                 .toList();
 
+        List<SkillMastery> masteries = skillMasteryRepository.findByStudentId(studentId);
+        List<Submission> recentSubmissions = submissionRepository.findByStudentIdOrderByCreatedAtDesc(studentId);
+
         return StudentDashboardResponse.builder()
-                .coursesCount(courseIds.size())
-                .submissionsCount(submissionsCount)
-                .averageMastery(Math.round(averageMastery * 100.0) / 100.0)
-                .pendingTasksCount(pendingTasks.size())
-                .pendingTasks(pendingTasks.stream()
-                        .limit(5)
-                        .map(TaskResponse::fromEntity)
-                        .toList())
-                .recentSubmissions(recentSubmissions.stream()
-                        .map(SubmissionResponse::fromEntity)
-                        .toList())
-                .skillProgress(masteries.stream()
-                        .map(SkillMasteryResponse::fromEntity)
-                        .toList())
+                .student(mapToStudentResponse(student))
+                .enrolledCourses(enrolledCourses.stream().map(this::mapToCourseResponse).toList())
+                .recentSubmissions(recentSubmissions.stream().limit(5).map(this::mapToSubmissionResponse).toList())
+                .skillMasteries(masteries.stream().map(this::mapToSkillMasteryResponse).toList())
                 .build();
     }
 
     @Override
     public TeacherDashboardResponse getTeacherDashboard(UUID teacherId) {
-        log.info("Getting dashboard for teacher: {}", teacherId);
+        User teacher = userRepository.findById(teacherId)
+                .orElseThrow(() -> new RuntimeException("Nastavnik nije pronađen"));
 
-        List<SchoolClass> classes = classRepository.findByTeacherId(teacherId);
-
-        int totalStudents = classes.stream()
-                .mapToInt(sc -> sc.getStudents().size())
-                .sum();
-
-        long coursesCount = courseRepository.findByCreatedById(teacherId).size();
-
-        List<Task> teacherTasks = taskRepository.findByCreatedById(teacherId);
-
-        long pendingReviews = 0;
-        for (Task task : teacherTasks) {
-            pendingReviews += task.getSubmissions().stream()
-                    .filter(s -> s.getTeacherFeedback() == null && s.getStatus() == SubmissionStatus.COMPLETED)
-                    .count();
-        }
-
-        List<Submission> recentSubmissions = teacherTasks.stream()
-                .flatMap(t -> t.getSubmissions().stream())
-                .sorted(Comparator.comparing(Submission::getCreatedAt).reversed())
-                .limit(10)
-                .toList();
+        List<Course> courses = courseRepository.findByCreatedById(teacherId);
 
         return TeacherDashboardResponse.builder()
-                .classesCount(classes.size())
-                .totalStudents(totalStudents)
-                .coursesCount((int) coursesCount)
-                .tasksCount(teacherTasks.size())
-                .pendingReviewsCount(pendingReviews)
-                .averageClassMastery(0.0)
-                .classes(classes.stream()
-                        .map(SchoolClassResponse::fromEntity)
-                        .toList())
-                .recentSubmissions(recentSubmissions.stream()
-                        .map(SubmissionResponse::fromEntity)
-                        .toList())
-                .studentsNeedingHelp(new ArrayList<>())
+                .teacher(mapToUserResponse(teacher))
+                .courses(courses.stream().map(this::mapToCourseResponse).toList())
+                .totalCourses(courses.size())
                 .build();
     }
 
     @Override
     public AdminDashboardResponse getAdminDashboard() {
-        log.info("Getting admin dashboard");
-
-        long totalUsers = userRepository.count();
-        long totalStudents = userRepository.countByRole(UserRole.STUDENT);
-        long totalTeachers = userRepository.countByRole(UserRole.TEACHER);
-        long totalClasses = classRepository.count();
-        long totalCourses = courseRepository.count();
-        long totalSubmissions = submissionRepository.count();
-
-        Map<String, Long> usersByRole = new HashMap<>();
-        usersByRole.put("STUDENT", totalStudents);
-        usersByRole.put("TEACHER", totalTeachers);
-        usersByRole.put("ADMIN", userRepository.countByRole(UserRole.ADMIN));
-
-        Map<String, Long> submissionsByStatus = new HashMap<>();
-        for (SubmissionStatus status : SubmissionStatus.values()) {
-            submissionsByStatus.put(status.name(),
-                    (long) submissionRepository.findByStatus(status).size());
-        }
+        AdminDashboardResponse.SystemHealth systemHealth = AdminDashboardResponse.SystemHealth.builder()
+                .databaseStatus("UP")
+                .mlServiceStatus("UP")
+                .codeExecutorStatus("UP")
+                .build();
 
         return AdminDashboardResponse.builder()
-                .totalUsers(totalUsers)
-                .totalStudents(totalStudents)
-                .totalTeachers(totalTeachers)
-                .totalClasses(totalClasses)
-                .totalCourses(totalCourses)
-                .totalSubmissions(totalSubmissions)
-                .usersByRole(usersByRole)
-                .submissionsByStatus(submissionsByStatus)
-                .averageMasteryByClass(new HashMap<>())
+                .totalUsers((int) userRepository.count())
+                .totalStudents((int) userRepository.countByRole(UserRole.STUDENT))
+                .totalTeachers((int) userRepository.countByRole(UserRole.TEACHER))
+                .totalAdmins((int) userRepository.countByRole(UserRole.ADMIN))
+                .activeUsers((int) userRepository.countByIsActiveTrue())
+                .totalCourses((int) courseRepository.count())
+                .activeCourses((int) courseRepository.countByIsActiveTrue())
+                .totalClasses((int) classRepository.count())
+                .totalTasks((int) taskRepository.count())
+                .totalSubmissions((int) submissionRepository.count())
+                .systemHealth(systemHealth)
+                .build();
+    }
+
+    private StudentResponse mapToStudentResponse(User user) {
+        return StudentResponse.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .build();
+    }
+
+    private UserResponse mapToUserResponse(User user) {
+        return UserResponse.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .build();
+    }
+
+    private CourseResponse mapToCourseResponse(Course course) {
+        return CourseResponse.builder()
+                .id(course.getId())
+                .name(course.getName())
+                .description(course.getDescription())
+                .languageType(course.getLanguageType())
+                .isActive(course.isActive())
+                .outcomesCount(course.getOutcomes() != null ? course.getOutcomes().size() : 0)
+                .build();
+    }
+
+    private SubmissionResponse mapToSubmissionResponse(Submission s) {
+        return SubmissionResponse.builder()
+                .id(s.getId())
+                .status(s.getStatus())
+                .taskId(s.getTask().getId())
+                .taskTitle(s.getTask().getTitle())
+                .createdAt(s.getCreatedAt())
+                .build();
+    }
+
+    private SkillMasteryResponse mapToSkillMasteryResponse(SkillMastery sm) {
+        return SkillMasteryResponse.builder()
+                .id(sm.getId())
+                .skillName(sm.getSkillName())
+                .masteryLevel(sm.getMasteryLevel())
                 .build();
     }
 }

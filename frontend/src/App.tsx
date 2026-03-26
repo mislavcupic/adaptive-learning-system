@@ -1,32 +1,106 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import { FontProvider } from './context/FontContext';
-import { Layout } from './components';
-import { Login } from './pages/auth';
-import { StudentDashboard } from './pages/student';
-import { TeacherDashboard } from './pages/teacher';
-import { AdminDashboard } from './pages/admin';
-import { ROUTES } from './constants';
+import { AuthProvider, ThemeProvider, AccessibilityProvider } from './context';
+import { MainLayout } from './components/layout';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import {
+    LoginPage,
+    RegisterPage,
+    DashboardPage,
+    SettingsPage,
+    CoursesPage,
+    TasksPage,
+    TaskSolvePage,
+    SubmissionsPage,
+    StudentsPage,
+    ClassesPage,
+} from './pages';
+
+// Lazy load less common pages
+// const CourseDetailPage = lazy(() => import('./pages/CourseDetailPage'));
 
 function App() {
     return (
         <BrowserRouter>
-            <FontProvider>
-                <AuthProvider>
-                    <Routes>
-                        <Route path={ROUTES.LOGIN} element={<Login />} />
+            <ThemeProvider>
+                <AccessibilityProvider>
+                    <AuthProvider>
+                        <Routes>
+                            {/* Public routes */}
+                            <Route path="/login" element={<LoginPage />} />
+                            <Route path="/register" element={<RegisterPage />} />
 
-                        <Route element={<Layout />}>
-                            <Route path={ROUTES.STUDENT_DASHBOARD} element={<StudentDashboard />} />
-                            <Route path={ROUTES.TEACHER_DASHBOARD} element={<TeacherDashboard />} />
-                            <Route path={ROUTES.ADMIN_DASHBOARD} element={<AdminDashboard />} />
-                        </Route>
+                            {/* Protected routes */}
+                            <Route
+                                path="/"
+                                element={
+                                    <ProtectedRoute>
+                                        <MainLayout />
+                                    </ProtectedRoute>
+                                }
+                            >
+                                <Route index element={<Navigate to="/dashboard" replace />} />
+                                <Route path="dashboard" element={<DashboardPage />} />
+                                <Route path="settings" element={<SettingsPage />} />
 
-                        <Route path="/" element={<Navigate to={ROUTES.LOGIN} replace />} />
-                        <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />
-                    </Routes>
-                </AuthProvider>
-            </FontProvider>
+                                {/* Courses */}
+                                <Route path="courses" element={
+                                    <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
+                                        <CoursesPage />
+                                    </ProtectedRoute>
+                                } />
+                                <Route path="courses/:id" element={
+                                    <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
+                                        <CoursesPage />
+                                    </ProtectedRoute>
+                                } />
+
+                                {/* Tasks */}
+                                <Route path="tasks" element={<TasksPage />} />
+                                <Route path="tasks/:id" element={<TasksPage />} />
+                                <Route path="tasks/:id/solve" element={<TaskSolvePage />} />
+
+                                {/* Submissions */}
+                                <Route path="submissions" element={<SubmissionsPage />} />
+                                <Route path="submissions/:id" element={<SubmissionsPage />} />
+
+                                {/* Students */}
+                                <Route path="students" element={
+                                    <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
+                                        <StudentsPage />
+                                    </ProtectedRoute>
+                                } />
+                                <Route path="students/:id" element={
+                                    <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
+                                        <StudentsPage />
+                                    </ProtectedRoute>
+                                } />
+
+                                {/* Classes */}
+                                <Route path="classes" element={
+                                    <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
+                                        <ClassesPage />
+                                    </ProtectedRoute>
+                                } />
+                                <Route path="classes/:id" element={
+                                    <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
+                                        <ClassesPage />
+                                    </ProtectedRoute>
+                                } />
+
+                                {/* Users - Admin only */}
+                                <Route path="users" element={
+                                    <ProtectedRoute roles={['ADMIN']}>
+                                        <StudentsPage />
+                                    </ProtectedRoute>
+                                } />
+                            </Route>
+
+                            {/* 404 */}
+                            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                        </Routes>
+                    </AuthProvider>
+                </AccessibilityProvider>
+            </ThemeProvider>
         </BrowserRouter>
     );
 }

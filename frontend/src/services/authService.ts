@@ -1,49 +1,55 @@
 import { apiClient, ENDPOINTS } from '../api';
-import { setTokens, clearTokens } from '../utils/storage';
-import type { LoginCredentials, AuthResponse, User } from '../types';
-
-interface ApiResponse<T> {
-    success: boolean;
-    message: string;
-    data: T;
-}
+import type { ApiResponse, AuthResponse, LoginCredentials, RegisterRequest, User } from '../types';
 
 export const authService = {
-    login: async (credentials: LoginCredentials): Promise<User> => {
+    login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
         const response = await apiClient.post<ApiResponse<AuthResponse>>(
-            ENDPOINTS.AUTH.LOGIN,
-            credentials,
-            { skipAuth: true }
+            ENDPOINTS.AUTH.LOGIN, 
+            credentials
         );
-        const { user, accessToken, refreshToken } = response.data;
-        setTokens(accessToken, refreshToken);
-        return user;
+        
+        if (response.data) {
+            localStorage.setItem('accessToken', response.data.accessToken);
+            localStorage.setItem('refreshToken', response.data.refreshToken);
+            localStorage.setItem('user', JSON.stringify(response.data.user));
+        }
+        
+        return response.data;
+    },
+
+    register: async (data: RegisterRequest): Promise<AuthResponse> => {
+        const response = await apiClient.post<ApiResponse<AuthResponse>>(
+            ENDPOINTS.AUTH.REGISTER, 
+            data
+        );
+        return response.data;
     },
 
     logout: async (): Promise<void> => {
         try {
             await apiClient.post(ENDPOINTS.AUTH.LOGOUT);
         } finally {
-            clearTokens();
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('user');
         }
-    },
-
-    refreshToken: async (refreshToken: string): Promise<AuthResponse> => {
-        const response = await apiClient.post<ApiResponse<AuthResponse>>(
-            ENDPOINTS.AUTH.REFRESH,
-            { refreshToken },
-            { skipAuth: true }
-        );
-        return response.data;
-    },
-
-    me: async (): Promise<User> => {
-        const response = await apiClient.get<ApiResponse<User>>(ENDPOINTS.AUTH.ME);
-        return response.data;
     },
 
     getCurrentUser: async (): Promise<User> => {
         const response = await apiClient.get<ApiResponse<User>>(ENDPOINTS.AUTH.ME);
         return response.data;
+    },
+
+    getStoredUser: (): User | null => {
+        const userStr = localStorage.getItem('user');
+        return userStr ? JSON.parse(userStr) : null;
+    },
+
+    isAuthenticated: (): boolean => {
+        return !!localStorage.getItem('accessToken');
+    },
+
+    getAccessToken: (): string | null => {
+        return localStorage.getItem('accessToken');
     },
 };

@@ -5,9 +5,13 @@ import hr.algebra.adaptive.learning.backend.domain.enums.SubmissionStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -20,4 +24,10 @@ public interface SubmissionRepository extends JpaRepository<Submission, UUID> {
     long countByTaskId(UUID taskId);
     List<Submission> findByStudentIdAndTaskId(UUID studentId, UUID taskId);
     List<Submission> findByStatus(SubmissionStatus status);
+
+    // Metode potrebne za Dashboard
+    long countDistinctCompletedTasksByStudentId(UUID id);
+
+    @Query("SELECT MAX(s.createdAt) FROM Submission s WHERE s.student.id = :studentId")
+    Optional<LocalDateTime> findLastSubmissionDateByStudentId(@Param("studentId") UUID studentId);
 }

@@ -4,6 +4,7 @@ package hr.algebra.adaptive.learning.backend.service.impl;
 import hr.algebra.adaptive.learning.backend.domain.entity.RefreshToken;
 import hr.algebra.adaptive.learning.backend.domain.entity.TokenBlacklist;
 import hr.algebra.adaptive.learning.backend.domain.entity.User;
+import hr.algebra.adaptive.learning.backend.domain.enums.UserRole;
 import hr.algebra.adaptive.learning.backend.dto.request.LoginRequest;
 import hr.algebra.adaptive.learning.backend.dto.request.RefreshTokenRequest;
 import hr.algebra.adaptive.learning.backend.dto.request.RegisterRequest;
@@ -46,26 +47,25 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse register(RegisterRequest request) {
         log.info("Registering new user: {}", request.getEmail());
 
-        // Provjeri postoji li korisnik
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException(messageService.emailExists());
         }
 
-        // Kreiraj korisnika
         User user = User.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
-                .role(request.getRole())
-                .isActive(true)
+                .role(UserRole.GUEST)      // Eksplicitno null, ti ćeš dodijeliti ulogu
+                .isActive(false)  // Korisnik je u "čekaonici"
                 .build();
 
         User savedUser = userRepository.save(user);
-        log.info("User registered successfully: {}", savedUser.getEmail());
 
-        // Generiraj tokene
-        return generateAuthResponse(savedUser);
+        // Vrati samo podatke o korisniku, bez tokena (jer se još ne može logirati)
+        return AuthResponse.builder()
+                .user(UserResponse.fromEntity(savedUser))
+                .build();
     }
 
     @Override

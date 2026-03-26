@@ -13,4 +13,5 @@ public interface CourseRepository extends JpaRepository<Course, UUID> {
     List<Course> findByIsActiveTrue();
     List<Course> findByLanguageType(LanguageType languageType);
     List<Course> findByCreatedById(UUID userId);
+    long countByIsActiveTrue();
 }

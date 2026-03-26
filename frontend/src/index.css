@@ -1,47 +1,89 @@
+/* css-enforce-generic-font-family: disable */
 @import "tailwindcss";
 
-/* Font classes */
-.font-mode-default {
-    font-family: 'Inter', system-ui, sans-serif;
+@theme {
+    /* Fontovi - rješava "Cannot resolve --font-sans" */
+    --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+    --font-dyslexic: "OpenDyslexic", "Comic Sans MS", sans-serif;
+    --font-mono: "JetBrains Mono", "Fira Code", monospace;
+    --font-serif: "Georgia", "Cambria", serif;
+
+    /* Boje - rješava "Cannot resolve --color-zinc-300/600" */
+    --color-zinc-50: #fafafa;
+    --color-zinc-100: #f4f4f5;
+    --color-zinc-200: #e4e4e7;
+    --color-zinc-300: #d4d4d8;
+    --color-zinc-400: #a1a1aa;
+    --color-zinc-500: #71717a;
+    --color-zinc-600: #52525b;
+    --color-zinc-700: #3f3f46;
+    --color-zinc-800: #27272a;
+    --color-zinc-900: #18181b;
+    --color-zinc-950: #09090b;
+
+    /* Animacije prebačene iz tvog starog configa */
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slide-up { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes slide-down { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    --animate-fade-in: fade-in 0.2s ease-out;
+    --animate-slide-up: slide-up 0.2s ease-out;
+    --animate-slide-down: slide-down 0.2s ease-out;
 }
 
-.font-mode-typewriter {
-    font-family: 'Courier Prime', 'Courier New', monospace;
-    letter-spacing: 0.02em;
+/* Local Font Fallbacks */
+@font-face {
+    font-family: 'OpenDyslexic';
+    src: url('https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/woff/OpenDyslexic-Regular.woff') format('woff');
+    font-weight: 400; font-style: normal; font-display: swap;
 }
 
-.font-mode-dyslexic {
-    font-family: 'OpenDyslexic', 'Comic Sans MS', sans-serif;
-    letter-spacing: 0.05em;
-    word-spacing: 0.1em;
-    line-height: 1.8;
+@layer base {
+    body {
+        @apply bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100;
+        font-family: var(--font-sans);
+    }
+
+    /* Tvoje klase za fontove */
+    .font-dyslexic, .font-dyslexic * { font-family: var(--font-dyslexic) !important; }
+    .font-mono, .font-mono * { font-family: var(--font-mono) !important; }
+    .font-serif, .font-serif * { font-family: var(--font-serif) !important; }
+
+    /* Accessibility sizes */
+    html.text-sm { font-size: 14px; }
+    html.text-base { font-size: 16px; }
+    html.text-lg { font-size: 18px; }
+    html.text-xl { font-size: 20px; }
+
+    /* High contrast mode */
+    .high-contrast .dark { @apply bg-black text-white; }
+    .high-contrast:not(.dark) { @apply bg-white text-black; }
+    .high-contrast .border-zinc-200, .high-contrast .dark .border-zinc-800 { @apply border-current; }
+
+    /* Reduced motion */
+    .reduced-motion, .reduced-motion * {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    *:focus-visible { @apply outline-none ring-2 ring-zinc-400 ring-offset-2 dark:ring-offset-zinc-900; }
+    ::selection { @apply bg-zinc-200 dark:bg-zinc-700; }
 }
 
-.font-mode-lexend {
-    font-family: 'Lexend', sans-serif;
-    letter-spacing: 0.01em;
+@layer utilities {
+    .scrollbar-thin {
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-zinc-300) transparent;
+    }
+    .dark .scrollbar-thin {
+        scrollbar-color: var(--color-zinc-600) transparent;
+    }
+    .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+        background-color: var(--color-zinc-300);
+        border-radius: 9999px;
+    }
+    .dark .scrollbar-thin::-webkit-scrollbar-thumb { background-color: var(--color-zinc-600); }
 }
 
-/* Smooth transitions */
-* {
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: #1e293b;
-}
-
-::-webkit-scrollbar-thumb {
-    background: #4f46e5;
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #6366f1;
-}
+.monaco-editor { font-family: var(--font-mono) !important; }
