@@ -9,14 +9,12 @@ import {
     SettingsPage,
     CoursesPage,
     TasksPage,
+    UsersPage,
     TaskSolvePage,
     SubmissionsPage,
     StudentsPage,
     ClassesPage,
 } from './pages';
-
-// Lazy load less common pages
-// const CourseDetailPage = lazy(() => import('./pages/CourseDetailPage'));
 
 function App() {
     return (
@@ -63,7 +61,7 @@ function App() {
                                 <Route path="submissions" element={<SubmissionsPage />} />
                                 <Route path="submissions/:id" element={<SubmissionsPage />} />
 
-                                {/* Students */}
+                                {/* Students - Teacher/Admin pregled studenata */}
                                 <Route path="students" element={
                                     <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
                                         <StudentsPage />
@@ -87,10 +85,10 @@ function App() {
                                     </ProtectedRoute>
                                 } />
 
-                                {/* Users - Admin only */}
+                                {/* Users - Admin upravljanje svim korisnicima */}
                                 <Route path="users" element={
                                     <ProtectedRoute roles={['ADMIN']}>
-                                        <StudentsPage />
+                                        <UsersPage />
                                     </ProtectedRoute>
                                 } />
                             </Route>

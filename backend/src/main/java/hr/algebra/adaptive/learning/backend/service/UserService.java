@@ -33,4 +33,5 @@ public interface UserService {
     void deactivate(UUID id);
 
     void delete(UUID id);
+    UserResponse updateStatus(UUID id, boolean isActive);
 }

@@ -3,6 +3,7 @@ package hr.algebra.adaptive.learning.backend.controller;
 import hr.algebra.adaptive.learning.backend.domain.entity.User;
 import hr.algebra.adaptive.learning.backend.domain.enums.GroupType;
 import hr.algebra.adaptive.learning.backend.domain.enums.UserRole;
+import hr.algebra.adaptive.learning.backend.dto.request.UpdateStatusRequest;
 import hr.algebra.adaptive.learning.backend.dto.response.ApiResponse;
 import hr.algebra.adaptive.learning.backend.dto.response.StudentResponse;
 import hr.algebra.adaptive.learning.backend.dto.response.UserResponse;
@@ -122,6 +123,15 @@ public class UserController {
         log.info("Deleting user: {}", id);
         userService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<ApiResponse<UserResponse>> updateStatus(
+            @PathVariable UUID id,
+            @RequestBody UpdateStatusRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(userService.updateStatus(id, request.getIsActive())));
     }
 
     public record UpdateUserRequest(String firstName, String lastName) {}
