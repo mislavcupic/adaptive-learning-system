@@ -18,7 +18,6 @@ export function RegisterPage() {
     const { register } = useAuth();
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState(false);
 
     const form = useForm<RegisterFormData>({
         initialValues: {
@@ -30,10 +29,10 @@ export function RegisterPage() {
         },
         validators: {
             email: compose(required(t('validation.required')), isEmail) as any,
-            password: compose(required(t('validation.required')), isPassword)as any,
-            confirmPassword: required(t('validation.required'))as any,
-            firstName: compose(required(t('validation.required')), minLength(2))as any,
-            lastName: compose(required(t('validation.required')), minLength(2))as any,
+            password: compose(required(t('validation.required')), isPassword) as any,
+            confirmPassword: required(t('validation.required')) as any,
+            firstName: compose(required(t('validation.required')), minLength(2)) as any,
+            lastName: compose(required(t('validation.required')), minLength(2)) as any,
         },
         onSubmit: async (values) => {
             if (values.password !== values.confirmPassword) {
@@ -45,35 +44,12 @@ export function RegisterPage() {
             try {
                 const { confirmPassword: _, ...registerData } = values;
                 await register(registerData);
-                setSuccess(true);
-                setTimeout(() => navigate('/login'), 2000);
+                navigate('/registration-pending');
             } catch (err) {
                 setError(err instanceof Error ? err.message : t('errors.generic'));
             }
         },
     });
-
-    if (success) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-4">
-                <Card className="w-full max-w-sm">
-                    <CardContent className="pt-6 text-center">
-                        <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto mb-4">
-                            <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                        </div>
-                        <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">
-                            {t('common.success')}
-                        </h2>
-                        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
-                            Preusmjeravanje na prijavu...
-                        </p>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-4 py-8">

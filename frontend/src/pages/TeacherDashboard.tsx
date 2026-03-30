@@ -4,10 +4,10 @@ import { Users, BookOpen, ClipboardList, FileText, Clock, TrendingUp } from 'luc
 import { useAuth } from '../context';
 import { useFetch } from '../hooks';
 import { dashboardService } from '../services';
-import { 
-    Card, 
-    CardHeader, 
-    CardTitle, 
+import {
+    Card,
+    CardHeader,
+    CardTitle,
     CardContent,
     LoadingScreen,
     ErrorState,
@@ -23,7 +23,7 @@ import type { TeacherDashboardData } from '../types';
 export function TeacherDashboard() {
     const { t } = useTranslation();
     const { user } = useAuth();
-    
+
     const { data, loading, error, refetch } = useFetch<TeacherDashboardData>(
         () => dashboardService.getTeacherDashboard(),
         []
@@ -32,6 +32,15 @@ export function TeacherDashboard() {
     if (loading) return <LoadingScreen />;
     if (error) return <ErrorState description={error} onRetry={refetch} />;
     if (!data) return null;
+
+    // Normalize null to empty arrays
+    const studentProgress = data.studentProgress ?? [];
+    const recentSubmissions = data.recentSubmissions ?? [];
+    const courses = data.courses ?? [];
+
+    const averageMastery = studentProgress.length > 0
+        ? studentProgress.reduce((acc, s) => acc + s.averageMastery, 0) / studentProgress.length
+        : 0;
 
     return (
         <div className="space-y-6 animate-fade-in">
@@ -55,37 +64,33 @@ export function TeacherDashboard() {
                 <StatCard
                     icon={<Users className="w-5 h-5" />}
                     label={t('dashboard.totalStudents')}
-                    value={data.totalStudents}
+                    value={data.totalStudents ?? 0}
                 />
                 <StatCard
                     icon={<BookOpen className="w-5 h-5" />}
                     label={t('dashboard.totalCourses')}
-                    value={data.totalCourses}
+                    value={data.totalCourses ?? 0}
                 />
                 <StatCard
                     icon={<ClipboardList className="w-5 h-5" />}
                     label={t('dashboard.totalTasks')}
-                    value={data.totalTasks}
+                    value={data.totalTasks ?? 0}
                 />
                 <StatCard
                     icon={<FileText className="w-5 h-5" />}
                     label={t('dashboard.totalSubmissions')}
-                    value={data.totalSubmissions}
+                    value={data.totalSubmissions ?? 0}
                 />
                 <StatCard
                     icon={<Clock className="w-5 h-5" />}
                     label={t('dashboard.pendingReviews')}
-                    value={data.pendingReviews}
-                    highlight={data.pendingReviews > 0}
+                    value={data.pendingReviews ?? 0}
+                    highlight={(data.pendingReviews ?? 0) > 0}
                 />
                 <StatCard
                     icon={<TrendingUp className="w-5 h-5" />}
                     label={t('dashboard.averageMastery')}
-                    value={formatPercent(
-                        data.studentProgress.length > 0
-                            ? data.studentProgress.reduce((acc, s) => acc + s.averageMastery, 0) / data.studentProgress.length
-                            : 0
-                    )}
+                    value={formatPercent(averageMastery)}
                 />
             </div>
 
@@ -99,14 +104,14 @@ export function TeacherDashboard() {
                         </Link>
                     </CardHeader>
                     <CardContent>
-                        {data.studentProgress.length === 0 ? (
+                        {studentProgress.length === 0 ? (
                             <EmptyState
                                 title={t('students.noStudents')}
                                 description={t('students.noStudentsDesc')}
                             />
                         ) : (
                             <div className="space-y-4">
-                                {data.studentProgress.slice(0, 5).map((student) => (
+                                {studentProgress.slice(0, 5).map((student) => (
                                     <div
                                         key={student.studentId}
                                         className="flex items-center gap-4"
@@ -125,12 +130,12 @@ export function TeacherDashboard() {
                                                     {formatPercent(student.averageMastery)}
                                                 </span>
                                             </div>
-                                            <Progress 
-                                                value={student.averageMastery * 100} 
+                                            <Progress
+                                                value={student.averageMastery * 100}
                                                 size="sm"
                                                 variant={
                                                     student.averageMastery >= 0.7 ? 'success' :
-                                                    student.averageMastery >= 0.4 ? 'warning' : 'danger'
+                                                        student.averageMastery >= 0.4 ? 'warning' : 'danger'
                                                 }
                                             />
                                             <p className="text-xs text-zinc-400 mt-1">
@@ -153,14 +158,14 @@ export function TeacherDashboard() {
                         </Link>
                     </CardHeader>
                     <CardContent>
-                        {data.recentSubmissions.length === 0 ? (
+                        {recentSubmissions.length === 0 ? (
                             <EmptyState
                                 title={t('submissions.noSubmissions')}
                                 description={t('submissions.noSubmissionsDesc')}
                             />
                         ) : (
                             <div className="space-y-3">
-                                {data.recentSubmissions.slice(0, 5).map((submission) => {
+                                {recentSubmissions.slice(0, 5).map((submission) => {
                                     const status = formatSubmissionStatus(submission.status);
                                     return (
                                         <Link
@@ -179,8 +184,8 @@ export function TeacherDashboard() {
                                             <Badge
                                                 variant={
                                                     status.color === 'green' ? 'success' :
-                                                    status.color === 'red' ? 'danger' :
-                                                    status.color === 'amber' ? 'warning' : 'default'
+                                                        status.color === 'red' ? 'danger' :
+                                                            status.color === 'amber' ? 'warning' : 'default'
                                                 }
                                             >
                                                 {status.label}
@@ -203,7 +208,7 @@ export function TeacherDashboard() {
                     </Link>
                 </CardHeader>
                 <CardContent>
-                    {data.courses.length === 0 ? (
+                    {courses.length === 0 ? (
                         <EmptyState
                             title={t('courses.noCourses')}
                             description={t('courses.noCoursesDesc')}
@@ -215,7 +220,7 @@ export function TeacherDashboard() {
                         />
                     ) : (
                         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {data.courses.map((course) => (
+                            {courses.map((course) => (
                                 <Link
                                     key={course.id}
                                     to={`/courses/${course.id}`}
@@ -244,14 +249,14 @@ export function TeacherDashboard() {
     );
 }
 
-function StatCard({ 
-    icon, 
-    label, 
-    value,
-    highlight = false
-}: { 
-    icon: React.ReactNode; 
-    label: string; 
+function StatCard({
+                      icon,
+                      label,
+                      value,
+                      highlight = false
+                  }: {
+    icon: React.ReactNode;
+    label: string;
     value: string | number;
     highlight?: boolean;
 }) {
@@ -260,7 +265,7 @@ function StatCard({
             <CardContent className="pt-4">
                 <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-lg ${
-                        highlight 
+                        highlight
                             ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'
                             : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
                     }`}>
@@ -268,7 +273,7 @@ function StatCard({
                     </div>
                     <div>
                         <p className={`text-2xl font-semibold ${
-                            highlight 
+                            highlight
                                 ? 'text-amber-600 dark:text-amber-400'
                                 : 'text-zinc-900 dark:text-white'
                         }`}>

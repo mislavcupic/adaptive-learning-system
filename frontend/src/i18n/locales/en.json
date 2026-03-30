@@ -234,5 +234,20 @@
         "unauthorized": "You don't have access to this page",
         "serverError": "Server error. Please try again later.",
         "networkError": "Network error. Please check your connection."
+    },
+
+
+  "registration": {
+    "pending": {
+      "title": "Registration received!",
+      "subtitle": "Your application has been successfully submitted to AdaptiveLearn.",
+      "whatNext": "What's next?",
+      "step1": "Your teacher will be notified of your application",
+      "step2": "After review, your teacher will assign you to a class",
+      "step3": "You will receive a notification when your account is activated",
+      "checkEmail": "Check your email for registration confirmation",
+      "backToLogin": "Back to login"
     }
+  }
 }
+

@@ -66,6 +66,8 @@ export interface User {
     isActive: boolean;
     createdAt: string;
     updatedAt?: string;
+    schoolClassName?: string;
+    researchGroup?: 'NOT_ASSIGNED' | 'EXPERIMENTAL' | 'CONTROL';
 }
 
 // ============================================================================

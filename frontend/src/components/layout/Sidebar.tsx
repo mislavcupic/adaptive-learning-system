@@ -1,73 +1,94 @@
 import { NavLink } from 'react-router-dom';
-import { 
-    LayoutDashboard, 
-    BookOpen, 
-    Users, 
-    ClipboardList, 
+import {
+    LayoutDashboard,
+    BookOpen,
+    Users,
+    ClipboardList,
     FileText,
     Settings,
     GraduationCap,
-    FolderKanban
+    FolderKanban,
+    UserPlus
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useAuth } from '../../context';
+import { useFetch } from '../../hooks';
+import { apiClient } from '../../api/client';
 
 interface NavItem {
     label: string;
     href: string;
     icon: React.ReactNode;
     roles?: string[];
+    badge?: number;
 }
-
-const navItems: NavItem[] = [
-    { 
-        label: 'Dashboard', 
-        href: '/dashboard', 
-        icon: <LayoutDashboard className="w-5 h-5" /> 
-    },
-    { 
-        label: 'Kolegiji', 
-        href: '/courses', 
-        icon: <BookOpen className="w-5 h-5" />,
-        roles: ['TEACHER', 'ADMIN']
-    },
-    { 
-        label: 'Zadaci', 
-        href: '/tasks', 
-        icon: <ClipboardList className="w-5 h-5" /> 
-    },
-    { 
-        label: 'Predaje', 
-        href: '/submissions', 
-        icon: <FileText className="w-5 h-5" /> 
-    },
-    { 
-        label: 'Studenti', 
-        href: '/students', 
-        icon: <GraduationCap className="w-5 h-5" />,
-        roles: ['TEACHER', 'ADMIN']
-    },
-    { 
-        label: 'Razredi', 
-        href: '/classes', 
-        icon: <FolderKanban className="w-5 h-5" />,
-        roles: ['TEACHER', 'ADMIN']
-    },
-    { 
-        label: 'Korisnici', 
-        href: '/users', 
-        icon: <Users className="w-5 h-5" />,
-        roles: ['ADMIN']
-    },
-    { 
-        label: 'Postavke', 
-        href: '/settings', 
-        icon: <Settings className="w-5 h-5" /> 
-    },
-];
 
 export function Sidebar() {
     const { user } = useAuth();
+
+    // Dohvati broj pending registracija (samo za TEACHER/ADMIN)
+    const { data: pendingCount } = useFetch<number>(
+        async () => {
+            if (!user || !['TEACHER', 'ADMIN'].includes(user.role)) return 0;
+            const res = await apiClient.get('/teacher/pending-registrations/count');
+            return (res as { data: number }).data;
+        },
+        [user?.role]
+    );
+
+    const navItems: NavItem[] = [
+        {
+            label: 'Dashboard',
+            href: '/dashboard',
+            icon: <LayoutDashboard className="w-5 h-5" />
+        },
+        {
+            label: 'Kolegiji',
+            href: '/courses',
+            icon: <BookOpen className="w-5 h-5" />,
+            roles: ['TEACHER', 'ADMIN']
+        },
+        {
+            label: 'Zadaci',
+            href: '/tasks',
+            icon: <ClipboardList className="w-5 h-5" />
+        },
+        {
+            label: 'Predaje',
+            href: '/submissions',
+            icon: <FileText className="w-5 h-5" />
+        },
+        {
+            label: 'Studenti',
+            href: '/students',
+            icon: <GraduationCap className="w-5 h-5" />,
+            roles: ['TEACHER', 'ADMIN']
+        },
+        {
+            label: 'Razredi',
+            href: '/classes',
+            icon: <FolderKanban className="w-5 h-5" />,
+            roles: ['TEACHER', 'ADMIN']
+        },
+        {
+            label: 'Prijave',
+            href: '/pending-registrations',
+            icon: <UserPlus className="w-5 h-5" />,
+            roles: ['TEACHER', 'ADMIN'],
+            badge: pendingCount || 0
+        },
+        {
+            label: 'Korisnici',
+            href: '/users',
+            icon: <Users className="w-5 h-5" />,
+            roles: ['ADMIN']
+        },
+        {
+            label: 'Postavke',
+            href: '/settings',
+            icon: <Settings className="w-5 h-5" />
+        },
+    ];
 
     const filteredItems = navItems.filter(item => {
         if (!item.roles) return true;
@@ -100,7 +121,12 @@ export function Sidebar() {
                             }
                         >
                             {item.icon}
-                            {item.label}
+                            <span className="flex-1">{item.label}</span>
+                            {item.badge !== undefined && item.badge > 0 && (
+                                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full min-w-[20px] text-center">
+                                    {item.badge}
+                                </span>
+                            )}
                         </NavLink>
                     ))}
                 </nav>

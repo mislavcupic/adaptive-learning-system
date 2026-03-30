@@ -4,6 +4,7 @@ import hr.algebra.adaptive.learning.backend.domain.enums.GroupType;
 import hr.algebra.adaptive.learning.backend.domain.enums.UserRole;
 import hr.algebra.adaptive.learning.backend.dto.response.StudentResponse;
 import hr.algebra.adaptive.learning.backend.dto.response.UserResponse;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -34,4 +35,9 @@ public interface UserService {
 
     void delete(UUID id);
     UserResponse updateStatus(UUID id, boolean isActive);
+    List<UserResponse> getPendingRegistrations();
+    long getPendingRegistrationsCount();
+    @Transactional
+    UserResponse approveUser(UUID id, UUID schoolClassId, boolean includeInResearch);
+    void rejectPendingUser(UUID id);
 }

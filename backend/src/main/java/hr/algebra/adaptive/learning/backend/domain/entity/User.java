@@ -1,7 +1,9 @@
 package hr.algebra.adaptive.learning.backend.domain.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import hr.algebra.adaptive.learning.backend.domain.enums.GroupType;
+import hr.algebra.adaptive.learning.backend.domain.enums.ResearchGroup;
 import hr.algebra.adaptive.learning.backend.domain.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
@@ -36,6 +38,7 @@ public class User extends BaseEntity implements UserDetails {
     @Enumerated(EnumType.STRING)
     @Builder.Default
     @Column(nullable = false)
+    @JsonProperty("role")
     private UserRole role = UserRole.GUEST;
 
     @Enumerated(EnumType.STRING)
@@ -46,7 +49,14 @@ public class User extends BaseEntity implements UserDetails {
     @Builder.Default
     private boolean isActive = true;
 
-    // ==================== UserDetails Implementation ====================
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "school_class_id")
+    private SchoolClass schoolClass;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "research_group")
+    private ResearchGroup researchGroup = ResearchGroup.NOT_ASSIGNED;
+    // userdetails impl
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

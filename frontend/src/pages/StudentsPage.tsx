@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Search, Eye } from 'lucide-react';
 import { useFetch } from '../hooks';
 import { userService } from '../services';
-import { 
+import {
     Card,
     Button,
     Input,
@@ -43,7 +43,6 @@ export function StudentsPage() {
 
     return (
         <div className="space-y-6 animate-fade-in">
-            {/* Header */}
             <div>
                 <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">
                     {t('students.title')}
@@ -53,7 +52,6 @@ export function StudentsPage() {
                 </p>
             </div>
 
-            {/* Search */}
             <div className="relative max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                 <Input
@@ -63,7 +61,6 @@ export function StudentsPage() {
                     className="pl-10"
                 />
             </div>
-
 
             {filteredStudents.length === 0 ? (
                 <EmptyState
@@ -77,7 +74,8 @@ export function StudentsPage() {
                             <TableRow>
                                 <TableHead>Student</TableHead>
                                 <TableHead>Email</TableHead>
-                                <TableHead>{t('students.groupType')}</TableHead>
+                                <TableHead>Razred</TableHead>
+                                <TableHead>Istraživačka grupa</TableHead>
                                 <TableHead>{t('common.status')}</TableHead>
                                 <TableHead>Registriran</TableHead>
                                 <TableHead></TableHead>
@@ -93,23 +91,26 @@ export function StudentsPage() {
                                                 lastName={student.lastName}
                                                 size="sm"
                                             />
-                                            <div>
-                                                <p className="font-medium text-zinc-900 dark:text-white">
-                                                    {student.firstName} {student.lastName}
-                                                </p>
-                                            </div>
+                                            <p className="font-medium text-zinc-900 dark:text-white">
+                                                {student.firstName} {student.lastName}
+                                            </p>
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-zinc-500">
                                         {student.email}
                                     </TableCell>
+                                    <TableCell className="text-zinc-500">
+                                        {student.schoolClassName || '—'}
+                                    </TableCell>
                                     <TableCell>
-                                        {student.groupType && (
-                                            <Badge variant={student.groupType === 'EXPERIMENTAL' ? 'info' : 'default'}>
-                                                {student.groupType === 'EXPERIMENTAL' 
-                                                    ? t('students.experimental') 
+                                        {student.researchGroup && student.researchGroup !== 'NOT_ASSIGNED' ? (
+                                            <Badge variant={student.researchGroup === 'EXPERIMENTAL' ? 'info' : 'default'}>
+                                                {student.researchGroup === 'EXPERIMENTAL'
+                                                    ? t('students.experimental')
                                                     : t('students.control')}
                                             </Badge>
+                                        ) : (
+                                            <span className="text-zinc-400 text-sm">—</span>
                                         )}
                                     </TableCell>
                                     <TableCell>

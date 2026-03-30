@@ -46,7 +46,7 @@ public class SchoolClassController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
     public ResponseEntity<ApiResponse<List<SchoolClassResponse>>> getAll() {
         log.info("Getting all classes");
         List<SchoolClassResponse> response = classService.getAll();

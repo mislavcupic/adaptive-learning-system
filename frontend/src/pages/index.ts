@@ -11,4 +11,6 @@ export { TaskSolvePage } from './TaskSolvePage';
 export { SubmissionsPage } from './SubmissionsPage';
 export { StudentsPage } from './StudentsPage';
 export { ClassesPage } from './ClassesPage';
-export {UsersPage} from './UsersPage'
+export {UsersPage} from './UsersPage';
+export {RegistrationPendingPage} from './RegistrationPendingPage';
+export { ApprovalQueuePage } from './ApprovalQueuePage';

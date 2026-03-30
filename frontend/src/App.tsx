@@ -5,6 +5,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import {
     LoginPage,
     RegisterPage,
+    RegistrationPendingPage,
     DashboardPage,
     SettingsPage,
     CoursesPage,
@@ -14,6 +15,7 @@ import {
     SubmissionsPage,
     StudentsPage,
     ClassesPage,
+    ApprovalQueuePage
 } from './pages';
 
 function App() {
@@ -26,6 +28,7 @@ function App() {
                             {/* Public routes */}
                             <Route path="/login" element={<LoginPage />} />
                             <Route path="/register" element={<RegisterPage />} />
+                            <Route path="/registration-pending" element={<RegistrationPendingPage />} />
 
                             {/* Protected routes */}
                             <Route
@@ -61,7 +64,7 @@ function App() {
                                 <Route path="submissions" element={<SubmissionsPage />} />
                                 <Route path="submissions/:id" element={<SubmissionsPage />} />
 
-                                {/* Students - Teacher/Admin pregled studenata */}
+                                {/* Students */}
                                 <Route path="students" element={
                                     <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
                                         <StudentsPage />
@@ -85,7 +88,14 @@ function App() {
                                     </ProtectedRoute>
                                 } />
 
-                                {/* Users - Admin upravljanje svim korisnicima */}
+                                {/* Approval Queue - Teacher/Admin vide listu GUEST korisnika */}
+                                <Route path="pending-registrations" element={
+                                    <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
+                                        <ApprovalQueuePage />
+                                    </ProtectedRoute>
+                                } />
+
+                                {/* Users - Admin */}
                                 <Route path="users" element={
                                     <ProtectedRoute roles={['ADMIN']}>
                                         <UsersPage />

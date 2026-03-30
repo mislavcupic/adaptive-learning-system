@@ -51,11 +51,41 @@ public class DashboardServiceImpl implements DashboardService {
                 .orElseThrow(() -> new RuntimeException("Nastavnik nije pronađen"));
 
         List<Course> courses = courseRepository.findByCreatedById(teacherId);
+        List<User> students = userRepository.findByRoleAndIsActiveTrue(UserRole.STUDENT);
+        List<Submission> recentSubmissions = submissionRepository.findAllOrderByCreatedAtDesc()
+                .stream().limit(10).toList();
+        long totalTasks = taskRepository.count();
+        long totalSubmissions = submissionRepository.count();
+
+        List<TeacherDashboardResponse.StudentProgressSummary> studentProgress = students.stream()
+                .map(s -> {
+                    List<SkillMastery> masteries = skillMasteryRepository.findByStudentId(s.getId());
+                    double avgMastery = masteries.stream()
+                            .mapToDouble(SkillMastery::getMasteryLevel)
+                            .average()
+                            .orElse(0.0);
+                    long subCount = submissionRepository.countByStudentId(s.getId());
+
+                    return TeacherDashboardResponse.StudentProgressSummary.builder()
+                            .studentId(s.getId().toString())
+                            .studentName(s.getFirstName() + " " + s.getLastName())
+                            .averageMastery(avgMastery)
+                            .totalSubmissions((int) subCount)
+                            .lastActivity(s.getUpdatedAt())
+                            .build();
+                })
+                .toList();
 
         return TeacherDashboardResponse.builder()
                 .teacher(mapToUserResponse(teacher))
                 .courses(courses.stream().map(this::mapToCourseResponse).toList())
                 .totalCourses(courses.size())
+                .totalStudents(students.size())
+                .totalTasks((int) totalTasks)
+                .totalSubmissions((int) totalSubmissions)
+                .pendingReviews(0)
+                .recentSubmissions(recentSubmissions.stream().map(this::mapToSubmissionResponse).toList())
+                .studentProgress(studentProgress)
                 .build();
     }
 
@@ -88,6 +118,8 @@ public class DashboardServiceImpl implements DashboardService {
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
+                .schoolClassName(user.getSchoolClass() != null ? user.getSchoolClass().getName() : null)
+                .researchGroup(user.getResearchGroup())
                 .build();
     }
 
@@ -97,6 +129,11 @@ public class DashboardServiceImpl implements DashboardService {
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
+                .role(user.getRole())
+                .groupType(user.getGroupType())
+                .isActive(user.isActive())
+                .createdAt(user.getCreatedAt())
+                .researchGroup(user.getResearchGroup())
                 .build();
     }
 

@@ -67,8 +67,11 @@ public class SchoolClassServiceImpl implements SchoolClassService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<SchoolClassResponse> getAll() {
-        return classRepository.findByIsActiveTrue().stream()
+        List<SchoolClass> classes = classRepository.findByIsActiveTrue();
+        classes.forEach(sc -> sc.getStudents().size());  // DODAJ SAMO OVO
+        return classes.stream()
                 .map(SchoolClassResponse::fromEntity)
                 .toList();
     }
@@ -108,6 +111,12 @@ public class SchoolClassServiceImpl implements SchoolClassService {
         log.info("Deleting class: {}", id);
 
         SchoolClass schoolClass = findClassOrThrow(id);
+
+        // Provjeri ima li studenata
+        if (schoolClass.getStudents() != null && !schoolClass.getStudents().isEmpty()) {
+            throw new BadRequestException("Nije moguće obrisati razred koji ima studente. Prvo premjestite studente u drugi razred.");
+        }
+
         classRepository.delete(schoolClass);
     }
 

@@ -65,6 +65,7 @@ public class AuthServiceImpl implements AuthService {
         // Vrati samo podatke o korisniku, bez tokena (jer se još ne može logirati)
         return AuthResponse.builder()
                 .user(UserResponse.fromEntity(savedUser))
+                .message("Registracija uspješna. Čekate odobrenje nastavnika.")
                 .build();
     }
 

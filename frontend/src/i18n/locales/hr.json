@@ -234,5 +234,19 @@
         "unauthorized": "Nemate pristup ovoj stranici",
         "serverError": "Greška na serveru. Pokušajte kasnije.",
         "networkError": "Greška u mreži. Provjerite internetsku vezu."
+    },
+
+  "registration": {
+    "pending": {
+      "title": "Registracija zaprimljena!",
+      "subtitle": "Vaša prijava je uspješno zaprimljena u sustav AdaptiveLearn.",
+      "whatNext": "Što slijedi?",
+      "step1": "Vaš nastavnik će biti obaviješten o novoj prijavi",
+      "step2": "Nakon pregleda, nastavnik će vas dodijeliti u razred",
+      "step3": "Primit ćete obavijest kada vaš račun bude aktiviran",
+      "checkEmail": "Provjerite email za potvrdu registracije",
+      "backToLogin": "Povratak na prijavu"
     }
+  }
 }
+

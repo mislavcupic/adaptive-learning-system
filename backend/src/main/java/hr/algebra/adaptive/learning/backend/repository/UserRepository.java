@@ -1,8 +1,11 @@
 package hr.algebra.adaptive.learning.backend.repository;
 
 import hr.algebra.adaptive.learning.backend.domain.entity.User;
+import hr.algebra.adaptive.learning.backend.domain.enums.ResearchGroup;
 import hr.algebra.adaptive.learning.backend.domain.enums.UserRole;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -22,4 +25,12 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     long countByRole(UserRole role);
     long countByRoleAndIsActiveTrue(UserRole role);
     long countByIsActiveTrue();
-}
+
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.schoolClass.id = :classId")
+    long countStudentsByClassId(@Param("classId") UUID classId);
+
+    List<User> findByRoleAndIsActiveFalse(UserRole role);
+    long countByRoleAndIsActiveFalse(UserRole role);
+
+    long countBySchoolClassIdAndResearchGroup(UUID schoolClassId, ResearchGroup researchGroup);}

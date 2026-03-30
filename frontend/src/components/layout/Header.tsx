@@ -12,7 +12,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
     const handleLogout = async () => {
         await logout();
-        window.location.href = '/login';
+        globalThis.location.href = '/login';
     };
 
     return (

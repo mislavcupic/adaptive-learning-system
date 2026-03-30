@@ -30,4 +30,8 @@ public interface SubmissionRepository extends JpaRepository<Submission, UUID> {
 
     @Query("SELECT MAX(s.createdAt) FROM Submission s WHERE s.student.id = :studentId")
     Optional<LocalDateTime> findLastSubmissionDateByStudentId(@Param("studentId") UUID studentId);
+
+    @Query("SELECT s FROM Submission s ORDER BY s.createdAt DESC")
+    List<Submission> findAllOrderByCreatedAtDesc();
 }
+

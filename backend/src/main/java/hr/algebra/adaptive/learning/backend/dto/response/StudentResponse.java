@@ -1,8 +1,11 @@
 package hr.algebra.adaptive.learning.backend.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import hr.algebra.adaptive.learning.backend.domain.entity.SchoolClass;
 import hr.algebra.adaptive.learning.backend.domain.entity.User;
 import hr.algebra.adaptive.learning.backend.domain.enums.GroupType;
+import hr.algebra.adaptive.learning.backend.domain.enums.ResearchGroup;
+import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
 
@@ -21,6 +24,8 @@ public class StudentResponse {
     private boolean isActive;
     private Double averageMastery;
     private Long submissionsCount;
+    private String schoolClassName;
+    private ResearchGroup researchGroup;
 
     public static StudentResponse fromEntity(User user) {
         return StudentResponse.builder()
@@ -31,6 +36,8 @@ public class StudentResponse {
                 .fullName(user.getFirstName() + " " + user.getLastName())
                 .groupType(user.getGroupType())
                 .isActive(user.isActive())
+                .schoolClassName(user.getSchoolClass() != null ? user.getSchoolClass().getName() : null)
+                .researchGroup(user.getResearchGroup())
                 .build();
     }
 
@@ -45,6 +52,8 @@ public class StudentResponse {
                 .isActive(user.isActive())
                 .averageMastery(avgMastery)
                 .submissionsCount(submissions)
+                .schoolClassName(user.getSchoolClass() != null ? user.getSchoolClass().getName() : null)
+                .researchGroup(user.getResearchGroup())
                 .build();
     }
 }

@@ -12,4 +12,5 @@ public interface SchoolClassRepository extends JpaRepository<SchoolClass, UUID> 
     List<SchoolClass> findByTeacherId(UUID teacherId);
     List<SchoolClass> findByIsActiveTrue();
     List<SchoolClass> findByStudentsId(UUID studentId);
+
 }

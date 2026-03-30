@@ -8,7 +8,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "school_classes")
+@Table(name = "school_classes", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"name", "academic_year"})
+})
 @Getter
 @Setter
 @SuperBuilder
@@ -22,22 +24,19 @@ public class SchoolClass extends BaseEntity {
     @Column(length = 500)
     private String description;
 
-    @Column(name = "academic_year")
+    @Column(name = "academic_year", nullable = false)
     private String academicYear;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_id")
     private User teacher;
 
-    @ManyToMany
-    @JoinTable(
-            name = "class_students",
-            joinColumns = @JoinColumn(name = "class_id"),
-            inverseJoinColumns = @JoinColumn(name = "student_id")
-    )
+    // Studenti u razredu (1 student = 1 razred)
+    @OneToMany(mappedBy = "schoolClass", fetch = FetchType.LAZY)
     @Builder.Default
     private Set<User> students = new HashSet<>();
 
+    // Kolegiji dodijeljeni razredu
     @ManyToMany
     @JoinTable(
             name = "class_courses",

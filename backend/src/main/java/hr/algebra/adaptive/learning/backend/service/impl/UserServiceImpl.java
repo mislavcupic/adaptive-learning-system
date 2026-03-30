@@ -1,12 +1,17 @@
 package hr.algebra.adaptive.learning.backend.service.impl;
 
+import hr.algebra.adaptive.learning.backend.domain.entity.SchoolClass;
 import hr.algebra.adaptive.learning.backend.domain.entity.User;
 import hr.algebra.adaptive.learning.backend.domain.enums.GroupType;
+import hr.algebra.adaptive.learning.backend.domain.enums.ResearchGroup;
 import hr.algebra.adaptive.learning.backend.domain.enums.UserRole;
 import hr.algebra.adaptive.learning.backend.dto.response.StudentResponse;
 import hr.algebra.adaptive.learning.backend.dto.response.UserResponse;
+import hr.algebra.adaptive.learning.backend.exception.BadRequestException;
 import hr.algebra.adaptive.learning.backend.exception.ResourceNotFoundException;
+import hr.algebra.adaptive.learning.backend.repository.SchoolClassRepository;
 import hr.algebra.adaptive.learning.backend.repository.UserRepository;
+import hr.algebra.adaptive.learning.backend.service.ResearchGroupService;
 import hr.algebra.adaptive.learning.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +28,8 @@ import java.util.UUID;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final SchoolClassRepository schoolClassRepository;
+    private final ResearchGroupService researchGroupService;
 
     @Override
     public UserResponse getById(UUID id) {
@@ -142,6 +149,59 @@ public class UserServiceImpl implements UserService {
     public void delete(UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+        userRepository.delete(user);
+    }
+    @Override
+    public List<UserResponse> getPendingRegistrations() {
+        return userRepository.findByRoleAndIsActiveFalse(UserRole.GUEST).stream()
+                .map(UserResponse::fromEntity)
+                .toList();
+    }
+
+    @Override
+    public long getPendingRegistrationsCount() {
+        return userRepository.countByRoleAndIsActiveFalse(UserRole.GUEST);
+    }
+
+    @Transactional
+    @Override
+    public UserResponse approveUser(UUID id, UUID schoolClassId, boolean includeInResearch) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+        if (user.getRole() != UserRole.GUEST) {
+            throw new BadRequestException("Korisnik nije GUEST");
+        }
+
+        user.setRole(UserRole.STUDENT);
+        user.setActive(true);
+
+        if (schoolClassId != null) {
+            SchoolClass schoolClass = schoolClassRepository.findById(schoolClassId)
+                    .orElseThrow(() -> new ResourceNotFoundException("SchoolClass not found with id: " + schoolClassId));
+            user.setSchoolClass(schoolClass);
+        }
+
+        if (includeInResearch && schoolClassId != null) {
+            user.setResearchGroup(researchGroupService.assignGroup(schoolClassId));
+        } else {
+            user.setResearchGroup(ResearchGroup.NOT_ASSIGNED);
+        }
+
+        User saved = userRepository.save(user);
+        return UserResponse.fromEntity(saved);
+    }
+
+    @Override
+    @Transactional
+    public void rejectPendingUser(UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+        if (user.getRole() != UserRole.GUEST) {
+            throw new BadRequestException("Korisnik nije GUEST");
+        }
 
         userRepository.delete(user);
     }
