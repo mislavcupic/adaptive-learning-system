@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Editor from '@monaco-editor/react';
@@ -49,22 +49,21 @@ export function TaskSolvePage() {
         loadTask();
     }, [id]);
 
+    const submittingRef = useRef(false);
+
     const handleSubmit = async () => {
-        if (!id || !code.trim()) return;
-        
+        if (!id || !code.trim() || submittingRef.current) return;
+        submittingRef.current = true;
         setSubmitting(true);
         setSubmission(null);
-        
         try {
-            const result = await submissionService.submit({
-                taskId: id,
-                code: code,
-            });
+            const result = await submissionService.submit({ taskId: id, code });
             setSubmission(result);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Submission failed');
         } finally {
             setSubmitting(false);
+            submittingRef.current = false;
         }
     };
 
@@ -72,8 +71,9 @@ export function TaskSolvePage() {
     if (error && !task) return <ErrorState description={error} onRetry={() => navigate(-1)} />;
     if (!task) return null;
 
-    const language = task.languageType === 'CSHARP' ? 'csharp' : 'c';
-
+    const language = task.languageType === 'CSHARP' ? 'csharp'
+        : task.languageType === 'PYTHON' ? 'python'
+            : 'c';
     return (
         <div className="space-y-6 animate-fade-in">
             {/* Header */}

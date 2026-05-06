@@ -6,6 +6,8 @@ export { TeacherDashboard } from './TeacherDashboard';
 export { AdminDashboard } from './AdminDashboard';
 export { SettingsPage } from './SettingsPage';
 export { CoursesPage } from './CoursesPage';
+export { CoursesFormPage } from './CoursesFormPage';
+export { CourseDetailPage } from './CourseDetailPage';
 export { TasksPage } from './TasksPage';
 export { TaskSolvePage } from './TaskSolvePage';
 export { SubmissionsPage } from './SubmissionsPage';
@@ -14,3 +16,6 @@ export { ClassesPage } from './ClassesPage';
 export {UsersPage} from './UsersPage';
 export {RegistrationPendingPage} from './RegistrationPendingPage';
 export { ApprovalQueuePage } from './ApprovalQueuePage';
+export { TaskFormPage } from './TaskFormPage';
+export { TaskDetailPage } from './TaskDetailPage';
+

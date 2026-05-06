@@ -2,7 +2,7 @@
 
 export type UserRole = 'ADMIN' | 'TEACHER' | 'STUDENT';
 export type GroupType = 'CONTROL' | 'EXPERIMENTAL';
-export type LanguageType = 'C' | 'CSHARP';
+export type LanguageType = 'C' | 'CSHARP' | 'PYTHON';
 export type SubmissionStatus = 
     | 'PENDING' 
     | 'COMPILING' 
@@ -138,6 +138,7 @@ export interface LearningOutcomeRequest {
 //task
 
 export interface Task {
+    orderIndex: number;
     id: string;
     title: string;
     description?: string | null;
@@ -176,6 +177,7 @@ export interface TaskRequest {
     memoryLimitMb: number;
     outcomeId: string;
     dueDate?: string;
+    orderIndex?:number;
 }
 
 //subm

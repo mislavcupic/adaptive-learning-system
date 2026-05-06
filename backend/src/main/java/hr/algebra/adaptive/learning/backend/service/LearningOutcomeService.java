@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface LearningOutcomeService {
+    List<LearningOutcomeResponse> getAll();
 
     LearningOutcomeResponse create(LearningOutcomeRequest request);
 

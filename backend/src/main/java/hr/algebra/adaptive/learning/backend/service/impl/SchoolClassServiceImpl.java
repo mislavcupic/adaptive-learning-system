@@ -67,7 +67,7 @@ public class SchoolClassServiceImpl implements SchoolClassService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public List<SchoolClassResponse> getAll() {
         List<SchoolClass> classes = classRepository.findByIsActiveTrue();
         classes.forEach(sc -> sc.getStudents().size());  // DODAJ SAMO OVO

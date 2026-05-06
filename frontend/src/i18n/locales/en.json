@@ -248,6 +248,35 @@
       "checkEmail": "Check your email for registration confirmation",
       "backToLogin": "Back to login"
     }
+  },
+  "tasks": {
+    "newTask": "New task",
+    "newTaskDesc": "Create a new task for students",
+    "basicInfo": "Basic",
+    "code": "Code",
+    "testing": "Testing",
+    "settings": "Settings",
+    "taskInfo": "Task information",
+    "taskTitlePlaceholder": "e.g. Bubble sort implementation",
+    "descriptionPlaceholder": "Short task description...",
+    "learningOutcome": "Learning outcome",
+    "selectOutcome": "-- Select learning outcome --",
+    "selectOutcomeFirst": "Select a learning outcome in the \"Basic\" tab to set the correct language.",
+    "courseLabel": "Course",
+    "studentInstructions": "Student instructions",
+    "instructionsPlaceholder": "Describe what the task should do, expectations, grading criteria...",
+    "instructionsHint": "This will be visible to students and used as context for AI feedback.",
+    "starterCodeTitle": "Starter code",
+    "solutionCodeTitle": "Solution (visible to teacher only)",
+    "testCasesFormat": "Format: one test case per line, input and expected output separated by |",
+    "testCasesHint": "Example: 5 3|8 — program receives \"5 3\" as input, expects \"8\" as output.",
+    "taskSettings": "Task settings",
+    "orderIndex": "Display order",
+    "saveTask": "Save task",
+    "titleRequired": "Task title is required",
+    "outcomeRequired": "Learning outcome is required",
+    "createSuccess": "Task created successfully",
+    "createError": "Error creating task"
   }
 }
 

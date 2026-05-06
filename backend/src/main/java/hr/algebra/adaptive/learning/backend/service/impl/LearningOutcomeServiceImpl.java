@@ -26,6 +26,13 @@ public class LearningOutcomeServiceImpl implements LearningOutcomeService {
     private final CourseRepository courseRepository;
 
     @Override
+    @Transactional(readOnly = true)
+    public List<LearningOutcomeResponse> getAll() {
+        return outcomeRepository.findAll().stream()
+                .map(LearningOutcomeResponse::fromEntity)
+                .toList();
+    }
+    @Override
     @Transactional
     public LearningOutcomeResponse create(LearningOutcomeRequest request) {
         log.info("Creating learning outcome: {}", request.getName());

@@ -10,6 +10,7 @@ import {
     SettingsPage,
     CoursesPage,
     TasksPage,
+    TaskFormPage,
     UsersPage,
     TaskSolvePage,
     SubmissionsPage,
@@ -57,6 +58,11 @@ function App() {
 
                                 {/* Tasks */}
                                 <Route path="tasks" element={<TasksPage />} />
+                                <Route path="tasks/new" element={
+                                    <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
+                                        <TaskFormPage />
+                                    </ProtectedRoute>
+                                } />
                                 <Route path="tasks/:id" element={<TasksPage />} />
                                 <Route path="tasks/:id/solve" element={<TaskSolvePage />} />
 
@@ -88,7 +94,7 @@ function App() {
                                     </ProtectedRoute>
                                 } />
 
-                                {/* Approval Queue - Teacher/Admin vide listu GUEST korisnika */}
+                                {/* Approval Queue */}
                                 <Route path="pending-registrations" element={
                                     <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
                                         <ApprovalQueuePage />

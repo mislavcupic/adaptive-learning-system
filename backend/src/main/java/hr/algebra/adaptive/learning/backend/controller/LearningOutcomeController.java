@@ -22,7 +22,12 @@ import java.util.UUID;
 public class LearningOutcomeController {
 
     private final LearningOutcomeService outcomeService;
-
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<LearningOutcomeResponse>>> getAll() {
+        log.info("Getting all learning outcomes");
+        List<LearningOutcomeResponse> response = outcomeService.getAll();
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     public ResponseEntity<ApiResponse<LearningOutcomeResponse>> create(

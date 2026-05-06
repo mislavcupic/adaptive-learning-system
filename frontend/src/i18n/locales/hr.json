@@ -247,6 +247,35 @@
       "checkEmail": "Provjerite email za potvrdu registracije",
       "backToLogin": "Povratak na prijavu"
     }
+  },
+  "tasks": {
+    "newTask": "Novi zadatak",
+    "newTaskDesc": "Kreirajte novi zadatak za studente",
+    "basicInfo": "Osnovno",
+    "code": "Kod",
+    "testing": "Testiranje",
+    "settings": "Postavke",
+    "taskInfo": "Informacije o zadatku",
+    "taskTitlePlaceholder": "npr. Implementacija bubble sorta",
+    "descriptionPlaceholder": "Kratki opis zadatka...",
+    "learningOutcome": "Ishod učenja",
+    "selectOutcome": "-- Odaberi ishod učenja --",
+    "selectOutcomeFirst": "Odaberi ishod učenja u kartici \"Osnovno\" da bi se postavio ispravni jezik.",
+    "courseLabel": "Kolegij",
+    "studentInstructions": "Upute za studente",
+    "instructionsPlaceholder": "Opišite što zadatak treba raditi, koja su očekivanja, kriteriji ocjenjivanja...",
+    "instructionsHint": "Ovo će biti vidljivo studentima i koristi se kao kontekst za AI feedback.",
+    "starterCodeTitle": "Početni kod (Starter code)",
+    "solutionCodeTitle": "Rješenje (vidljivo samo nastavniku)",
+    "testCasesFormat": "Format: jedan test case po liniji, input i expected output odvojeni s |",
+    "testCasesHint": "Primjer: 5 3|8 — program dobiva \"5 3\" kao input, očekuje se \"8\" kao output.",
+    "taskSettings": "Postavke zadatka",
+    "orderIndex": "Redosljed prikaza",
+    "saveTask": "Spremi zadatak",
+    "titleRequired": "Naziv zadatka je obavezan",
+    "outcomeRequired": "Ishod učenja je obavezan",
+    "createSuccess": "Zadatak uspješno kreiran",
+    "createError": "Greška pri kreiranju zadatka"
   }
 }
 

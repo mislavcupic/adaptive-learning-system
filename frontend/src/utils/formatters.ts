@@ -21,8 +21,9 @@ export const formatDateTime = (dateStr: string | null | undefined): string => {
 
 export const formatRelativeTime = (dateStr: string | null | undefined): string => {
     if (!dateStr) return '-';
-    
-    const date = new Date(dateStr);
+    // Dodaj Z ako nema timezone info
+    const normalized = dateStr.endsWith('Z') || dateStr.includes('+') ? dateStr : dateStr + 'Z';
+    const date = new Date(normalized);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffSec = Math.floor(diffMs / 1000);
@@ -35,7 +36,7 @@ export const formatRelativeTime = (dateStr: string | null | undefined): string =
     if (diffHour < 24) return `Prije ${diffHour}h`;
     if (diffDay < 7) return `Prije ${diffDay} dana`;
     
-    return formatDate(dateStr);
+    return formatDate(normalized);
 };
 
 // Number formatting

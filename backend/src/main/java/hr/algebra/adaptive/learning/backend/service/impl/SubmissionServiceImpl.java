@@ -66,6 +66,7 @@ public class SubmissionServiceImpl implements SubmissionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<SubmissionResponse> getByStudent(UUID studentId) {
         return submissionRepository.findByStudentIdOrderByCreatedAtDesc(studentId).stream()
                 .map(SubmissionResponse::fromEntity)

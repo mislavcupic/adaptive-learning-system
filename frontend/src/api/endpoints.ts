@@ -47,7 +47,7 @@ export const ENDPOINTS = {
     SUBMISSIONS: {
         BASE: '/submissions',
         BY_ID: (id: string) => `/submissions/${id}`,
-        SUBMIT: '/student/submit',
+        SUBMIT: '/submissions',
         MY: '/submissions/my',
         BY_TASK: (taskId: string) => `/submissions/task/${taskId}`,
         BY_STUDENT: (studentId: string) => `/submissions/student/${studentId}`,

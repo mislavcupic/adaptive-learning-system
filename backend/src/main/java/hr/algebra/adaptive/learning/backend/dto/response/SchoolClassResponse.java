@@ -16,7 +16,7 @@ public class SchoolClassResponse {
     private String academicYear;
     private String teacherName;
     private UUID teacherId;
-    private int studentsCount;
+    private int studentCount;
     private int coursesCount;
     private boolean isActive;
     private LocalDateTime createdAt;
@@ -31,7 +31,7 @@ public class SchoolClassResponse {
                         ? schoolClass.getTeacher().getFirstName() + " " + schoolClass.getTeacher().getLastName()
                         : null)
                 .teacherId(schoolClass.getTeacher() != null ? schoolClass.getTeacher().getId() : null)
-                .studentsCount(schoolClass.getStudents() != null ? schoolClass.getStudents().size() : 0)
+                .studentCount(schoolClass.getStudents() != null ? schoolClass.getStudents().size() : 0)
                 .coursesCount(schoolClass.getCourses() != null ? schoolClass.getCourses().size() : 0)
                 .isActive(schoolClass.isActive())
                 .createdAt(schoolClass.getCreatedAt())
