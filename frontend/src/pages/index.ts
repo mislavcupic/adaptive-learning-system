@@ -11,6 +11,7 @@ export { CourseDetailPage } from './CourseDetailPage';
 export { TasksPage } from './TasksPage';
 export { TaskSolvePage } from './TaskSolvePage';
 export { SubmissionsPage } from './SubmissionsPage';
+export { SubmissionDetailPage } from './SubmissionDetailPage';
 export { StudentsPage } from './StudentsPage';
 export { ClassesPage } from './ClassesPage';
 export {UsersPage} from './UsersPage';

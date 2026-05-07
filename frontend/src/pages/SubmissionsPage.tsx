@@ -121,11 +121,9 @@ export function SubmissionsPage() {
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
-                                            {submission.testCasesPassed}/{submission.testCasesTotal}
-                                        </TableCell>
+                                            {submission.testsPassed ?? 0}/{submission.testsTotal ?? 0}                                        </TableCell>
                                         <TableCell>
-                                            {submission.score ?? '-'}
-                                        </TableCell>
+                                            {submission.finalScore ?? submission.aiScore ?? '-'}                                      </TableCell>
                                         <TableCell className="text-zinc-500">
                                             {formatRelativeTime(submission.createdAt)}
                                         </TableCell>

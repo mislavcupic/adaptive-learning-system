@@ -54,11 +54,16 @@ public class SubmissionServiceImpl implements SubmissionService {
         Submission saved = submissionRepository.save(submission);
         log.info("Submission created with ID: {}", saved.getId());
 
-        // TODO: Asinkrono pokreni kompilaciju i AI feedback
 
         return SubmissionResponse.fromEntity(saved);
     }
 
+    @Override
+    public List<SubmissionResponse> getAll() {
+        return submissionRepository.findAll().stream()
+                .map(SubmissionResponse::fromEntity)
+                .toList();
+    }
     @Override
     public SubmissionResponse getById(UUID id) {
         Submission submission = findSubmissionOrThrow(id);

@@ -17,6 +17,8 @@ public interface SubmissionService {
 
     PaginatedResponse<SubmissionResponse> getByStudentPaginated(UUID studentId, int page, int size);
 
+    List<SubmissionResponse> getAll();
+
     List<SubmissionResponse> getByTask(UUID taskId);
 
     PaginatedResponse<SubmissionResponse> getByTaskPaginated(UUID taskId, int page, int size);

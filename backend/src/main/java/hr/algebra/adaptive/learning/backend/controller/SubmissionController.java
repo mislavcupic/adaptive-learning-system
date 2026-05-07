@@ -25,7 +25,13 @@ import java.util.UUID;
 public class SubmissionController {
 
     private final SubmissionService submissionService;
-
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    public ResponseEntity<ApiResponse<List<SubmissionResponse>>> getAllSubmissions() {
+        log.info("Getting all submissions");
+        List<SubmissionResponse> response = submissionService.getAll();
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
     @PostMapping
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<SubmissionResponse>> submit(

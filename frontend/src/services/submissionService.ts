@@ -49,10 +49,10 @@ export const submissionService = {
         return response.data;
     },
 
-    addTeacherFeedback: async (id: string, feedback: string): Promise<Submission> => {
+    addFeedback: async (id: string, feedback: string, score?: number): Promise<Submission> => {
         const response = await apiClient.patch<ApiResponse<Submission>>(
             ENDPOINTS.SUBMISSIONS.FEEDBACK(id),
-            { teacherFeedback: feedback }
+            { feedback, score }
         );
         return response.data;
     },

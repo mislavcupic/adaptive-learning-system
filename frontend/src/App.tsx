@@ -14,6 +14,7 @@ import {
     UsersPage,
     TaskSolvePage,
     SubmissionsPage,
+    SubmissionDetailPage,
     StudentsPage,
     ClassesPage,
     ApprovalQueuePage
@@ -68,7 +69,7 @@ function App() {
 
                                 {/* Submissions */}
                                 <Route path="submissions" element={<SubmissionsPage />} />
-                                <Route path="submissions/:id" element={<SubmissionsPage />} />
+                                <Route path="/submissions/:id" element={<SubmissionDetailPage />} />
 
                                 {/* Students */}
                                 <Route path="students" element={

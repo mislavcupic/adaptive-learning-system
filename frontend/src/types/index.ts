@@ -184,23 +184,26 @@ export interface TaskRequest {
 
 export interface Submission {
     id: string;
-    code: string;
-    status: SubmissionStatus;
-    score?: number | null;
-    compilerOutput?: string | null;
-    executionOutput?: string | null;
-    executionTimeMs?: number | null;
-    memoryUsedKb?: number | null;
-    testCasesPassed: number;
-    testCasesTotal: number;
-    aiFeedback?: string | null;
-    teacherFeedback?: string | null;
     studentId: string;
     studentName?: string;
     taskId: string;
     taskTitle?: string;
+    submittedCode: string;
+    status: SubmissionStatus;
+    compilerOutput?: string | null;
+    executionOutput?: string | null;
+    testResults?: string | null;
+    valgrindOutput?: string | null;
+    executionTimeMs?: number | null;
+    memoryUsedKb?: number | null;
+    aiFeedback?: string | null;
+    aiScore?: number | null;
+    teacherFeedback?: string | null;
+    teacherScore?: number | null;
+    finalScore?: number | null;
+    testsPassed?: number | null;
+    testsTotal?: number | null;
     createdAt: string;
-    updatedAt?: string;
 }
 
 export interface SubmissionRequest {

@@ -5,8 +5,8 @@ import Editor from '@monaco-editor/react';
 import { Play, Clock, Award, ArrowLeft, Loader2 } from 'lucide-react';
 import { useTheme } from '../context';
 import { taskService, submissionService } from '../services';
-import { 
-    Card, 
+import {
+    Card,
     CardHeader,
     CardTitle,
     CardContent,
@@ -23,7 +23,7 @@ export function TaskSolvePage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { theme } = useTheme();
-    
+
     const [task, setTask] = useState<Task | null>(null);
     const [code, setCode] = useState('');
     const [loading, setLoading] = useState(true);
@@ -33,7 +33,7 @@ export function TaskSolvePage() {
 
     useEffect(() => {
         if (!id) return;
-        
+
         const loadTask = async () => {
             try {
                 const data = await taskService.getById(id);
@@ -179,7 +179,7 @@ export function TaskSolvePage() {
                             <Badge
                                 variant={
                                     submission.status === 'COMPLETED' ? 'success' :
-                                    submission.status.includes('ERROR') ? 'danger' : 'warning'
+                                        submission.status.includes('ERROR') ? 'danger' : 'warning'
                                 }
                             >
                                 {formatSubmissionStatus(submission.status).label}
@@ -191,14 +191,14 @@ export function TaskSolvePage() {
                         <div className="flex items-center gap-4">
                             <div className="text-center">
                                 <p className="text-2xl font-semibold text-zinc-900 dark:text-white">
-                                    {submission.testCasesPassed}/{submission.testCasesTotal}
+                                    {submission.testsPassed ?? 0}/{submission.testsTotal ?? 0}
                                 </p>
                                 <p className="text-sm text-zinc-500">testova prošlo</p>
                             </div>
-                            {submission.score !== null && (
+                            {(submission.finalScore ?? submission.aiScore) != null && (
                                 <div className="text-center">
                                     <p className="text-2xl font-semibold text-zinc-900 dark:text-white">
-                                        {submission.score}/{task.maxScore}
+                                        {submission.finalScore ?? submission.aiScore ?? 0}/{task.maxScore}
                                     </p>
                                     <p className="text-sm text-zinc-500">bodova</p>
                                 </div>
@@ -268,7 +268,7 @@ class Program
     }
 }`;
     }
-    
+
     return `#include <stdio.h>
 
 int main() {
