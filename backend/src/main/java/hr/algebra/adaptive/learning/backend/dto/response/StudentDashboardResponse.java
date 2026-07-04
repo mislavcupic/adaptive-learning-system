@@ -13,17 +13,17 @@ import java.util.List;
 @AllArgsConstructor
 public class StudentDashboardResponse {
 
-    // Student info - FRONTEND OVO TREBA!
+
     private StudentResponse student;
     
-    // Statistike
-    private int totalSubmissions;      // bilo: submissionsCount
-    private int completedTasks;        // NOVO - nije postojalo
-    private int pendingTasks;          // bilo: pendingTasksCount (broj, ne lista)
+
+    private int totalSubmissions;
+    private int completedTasks;
+    private int pendingTasks;
     private double averageMastery;
     
-    // Liste
+
     private List<SubmissionResponse> recentSubmissions;
-    private List<SkillMasteryResponse> skillMasteries;  // bilo: skillProgress
-    private List<CourseResponse> enrolledCourses;       // bilo: coursesCount (samo broj)
+    private List<SkillMasteryResponse> skillMasteries;
+    private List<CourseResponse> enrolledCourses;
 }

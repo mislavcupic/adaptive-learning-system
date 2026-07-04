@@ -17,7 +17,10 @@ import {
     SubmissionDetailPage,
     StudentsPage,
     ClassesPage,
-    ApprovalQueuePage
+    ApprovalQueuePage,
+    AssessmentsPage,
+    AssessmentSolvePage,
+    AssessmentFormPage
 } from './pages';
 
 function App() {
@@ -66,6 +69,21 @@ function App() {
                                 } />
                                 <Route path="tasks/:id" element={<TasksPage />} />
                                 <Route path="tasks/:id/solve" element={<TaskSolvePage />} />
+
+                                {/* Assessments */}
+                                {/* Assessments */}
+                                <Route path="assessments" element={<AssessmentsPage />} />
+                                <Route path="assessments/:id/solve" element={<AssessmentSolvePage />} />
+                                <Route path="assessments/new" element={
+                                    <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
+                                        <AssessmentFormPage />
+                                    </ProtectedRoute>
+                                } />
+                                <Route path="assessments/:id/edit" element={
+                                    <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
+                                        <AssessmentFormPage />
+                                    </ProtectedRoute>
+                                } />
 
                                 {/* Submissions */}
                                 <Route path="submissions" element={<SubmissionsPage />} />

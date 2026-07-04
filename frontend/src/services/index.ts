@@ -6,3 +6,4 @@ export { taskService } from './taskService';
 export { submissionService } from './submissionService';
 export { userService } from './userService';
 export { outcomeService } from './outcomeService';
+export {assessmentService} from './assessmentService';

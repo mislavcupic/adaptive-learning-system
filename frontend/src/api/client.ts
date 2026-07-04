@@ -30,29 +30,29 @@ const request = async <T>(
     options?: RequestOptions
 ): Promise<T> => {
     const token = getAuthToken();
-    
+
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         ...options?.headers,
     };
-    
+
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
     const config: RequestInit = {
         method,
         headers,
     };
-    
+
     if (data && method !== 'GET') {
         config.body = JSON.stringify(data);
     }
-    
+
     const url = buildUrl(endpoint, options?.params);
-    
+
     const response = await fetch(url, config);
-    
+
     if (response.status === 401) {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
@@ -60,30 +60,41 @@ const request = async <T>(
         window.location.href = '/login';
         throw new Error('Unauthorized');
     }
-    
-    const json = await response.json();
-    
-    if (!response.ok) {
-        throw new Error(json.message || `HTTP Error: ${response.status}`);
+
+    // 204 No Content — nema tijela za parsiranje
+    if (response.status === 204) {
+        if (!response.ok) {
+            throw new Error(`HTTP Error: ${response.status}`);
+        }
+        return undefined as T;
     }
-    
+
+    // Pročitaj tijelo kao tekst pa parsiraj samo ako nije prazno.
+    // Time izbjegavamo "Unexpected end of JSON input" kod praznih odgovora.
+    const text = await response.text();
+    const json = text ? JSON.parse(text) : null;
+
+    if (!response.ok) {
+        throw new Error(json?.message || `HTTP Error: ${response.status}`);
+    }
+
     return json as T;
 };
 
 export const apiClient = {
-    get: <T>(endpoint: string, options?: RequestOptions) => 
+    get: <T>(endpoint: string, options?: RequestOptions) =>
         request<T>('GET', endpoint, undefined, options),
-    
-    post: <T>(endpoint: string, data?: unknown, options?: RequestOptions) => 
+
+    post: <T>(endpoint: string, data?: unknown, options?: RequestOptions) =>
         request<T>('POST', endpoint, data, options),
-    
-    put: <T>(endpoint: string, data?: unknown, options?: RequestOptions) => 
+
+    put: <T>(endpoint: string, data?: unknown, options?: RequestOptions) =>
         request<T>('PUT', endpoint, data, options),
-    
-    patch: <T>(endpoint: string, data?: unknown, options?: RequestOptions) => 
+
+    patch: <T>(endpoint: string, data?: unknown, options?: RequestOptions) =>
         request<T>('PATCH', endpoint, data, options),
-    
-    delete: <T>(endpoint: string, options?: RequestOptions) => 
+
+    delete: <T>(endpoint: string, options?: RequestOptions) =>
         request<T>('DELETE', endpoint, undefined, options),
 };
 

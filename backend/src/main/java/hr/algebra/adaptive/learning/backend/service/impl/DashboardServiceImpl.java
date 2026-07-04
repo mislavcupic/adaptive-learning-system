@@ -37,14 +37,28 @@ public class DashboardServiceImpl implements DashboardService {
         List<SkillMastery> masteries = skillMasteryRepository.findByStudentId(studentId);
         List<Submission> recentSubmissions = submissionRepository.findByStudentIdOrderByCreatedAtDesc(studentId);
 
+        // Izračunaj statistike
+        long totalSubmissions = submissionRepository.countByStudentId(studentId);
+        long completedTasks = recentSubmissions.stream()
+                .map(s -> s.getTask().getId())
+                .distinct()
+                .count();
+        double averageMastery = masteries.stream()
+                .mapToDouble(SkillMastery::getMasteryLevel)
+                .average()
+                .orElse(0.0);
+
         return StudentDashboardResponse.builder()
                 .student(mapToStudentResponse(student))
+                .totalSubmissions((int) totalSubmissions)
+                .completedTasks((int) completedTasks)
+                .pendingTasks(0) // TODO: izračunati prave pending taskove
+                .averageMastery(averageMastery)
                 .enrolledCourses(enrolledCourses.stream().map(this::mapToCourseResponse).toList())
                 .recentSubmissions(recentSubmissions.stream().limit(5).map(this::mapToSubmissionResponse).toList())
                 .skillMasteries(masteries.stream().map(this::mapToSkillMasteryResponse).toList())
                 .build();
     }
-
     @Override
     public TeacherDashboardResponse getTeacherDashboard(UUID teacherId) {
         User teacher = userRepository.findById(teacherId)

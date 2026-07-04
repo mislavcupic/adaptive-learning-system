@@ -8,7 +8,8 @@ import {
     Settings,
     GraduationCap,
     FolderKanban,
-    UserPlus
+    UserPlus,
+    FileCheck
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useAuth } from '../../context';
@@ -26,7 +27,6 @@ interface NavItem {
 export function Sidebar() {
     const { user } = useAuth();
 
-    // Dohvati broj pending registracija (samo za TEACHER/ADMIN)
     const { data: pendingCount } = useFetch<number>(
         async () => {
             if (!user || !['TEACHER', 'ADMIN'].includes(user.role)) return 0;
@@ -52,6 +52,11 @@ export function Sidebar() {
             label: 'Zadaci',
             href: '/tasks',
             icon: <ClipboardList className="w-5 h-5" />
+        },
+        {
+            label: 'Testovi',
+            href: '/assessments',
+            icon: <FileCheck className="w-5 h-5" />
         },
         {
             label: 'Predaje',
@@ -98,14 +103,12 @@ export function Sidebar() {
     return (
         <aside className="fixed left-0 top-0 h-screen w-64 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 z-30">
             <div className="flex flex-col h-full">
-                {/* Logo */}
                 <div className="h-16 flex items-center px-6 border-b border-zinc-100 dark:border-zinc-800">
                     <span className="text-xl font-bold text-zinc-900 dark:text-white">
                         Adaptive<span className="text-zinc-400">Learn</span>
                     </span>
                 </div>
 
-                {/* Navigation */}
                 <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
                     {filteredItems.map((item) => (
                         <NavLink
@@ -131,7 +134,6 @@ export function Sidebar() {
                     ))}
                 </nav>
 
-                {/* User info */}
                 {user && (
                     <div className="p-4 border-t border-zinc-100 dark:border-zinc-800">
                         <div className="flex items-center gap-3">

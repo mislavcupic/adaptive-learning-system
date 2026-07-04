@@ -56,4 +56,17 @@ export const ENDPOINTS = {
     SKILLS: {
         BY_STUDENT: (studentId: string) => `/skills/student/${studentId}`,
     },
+    ASSESSMENTS: {
+        BASE: '/assessments',
+        BY_ID: (id: string) => `/assessments/${id}`,
+        BY_COURSE: (courseId: string) => `/assessments/course/${courseId}`,
+        QUESTIONS: '/assessments/questions',
+        DELETE_QUESTION: (questionId: string) => `/assessments/questions/${questionId}`,
+        START: (assessmentId: string) => `/assessments/${assessmentId}/start`,
+        SUBMIT: '/assessments/submit',
+        MY_ATTEMPTS: '/assessments/attempts/my',
+        ATTEMPT_BY_ID: (attemptId: string) => `/assessments/attempts/${attemptId}`,
+        CHECK_PRETEST: (courseId: string) => `/assessments/check/pretest/${courseId}`,
+        CHECK_POSTTEST: (courseId: string) => `/assessments/check/posttest/${courseId}`,
+    },
 } as const;

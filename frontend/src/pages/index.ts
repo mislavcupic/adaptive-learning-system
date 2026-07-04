@@ -19,4 +19,6 @@ export {RegistrationPendingPage} from './RegistrationPendingPage';
 export { ApprovalQueuePage } from './ApprovalQueuePage';
 export { TaskFormPage } from './TaskFormPage';
 export { TaskDetailPage } from './TaskDetailPage';
-
+export { AssessmentSolvePage } from './AssessmentSolvePage';
+export { AssessmentsPage } from './AssessmentsPage';
+export { AssessmentFormPage } from './AssessmentFormPage';
