@@ -8,5 +8,5 @@ public enum SubmissionStatus {
     COMPILE_ERROR,
     RUNTIME_ERROR,
     TIMEOUT,
-    FAILED
+    REVIEWED, FAILED
 }
