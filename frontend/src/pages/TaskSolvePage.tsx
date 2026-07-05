@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Editor from '@monaco-editor/react';
-import { Play, Clock, Award, ArrowLeft, Loader2 } from 'lucide-react';
+import { Play, Clock, Award, ArrowLeft, Loader2, AlertTriangle } from 'lucide-react';
 import { useTheme } from '../context';
 import { taskService, submissionService } from '../services';
 import {
@@ -56,6 +56,7 @@ export function TaskSolvePage() {
         submittingRef.current = true;
         setSubmitting(true);
         setSubmission(null);
+        setError(null); // očisti prethodnu grešku prije novog pokušaja
         try {
             const result = await submissionService.submit({ taskId: id, code });
             setSubmission(result);
@@ -110,6 +111,18 @@ export function TaskSolvePage() {
                     {t('tasks.submitCode')}
                 </Button>
             </div>
+
+            {/* Submit error (npr. pretest nije riješen) */}
+            {error && task && (
+                <Card>
+                    <CardContent className="py-4">
+                        <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
+                            <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                            <p className="text-sm font-medium">{error}</p>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             <div className="grid lg:grid-cols-2 gap-6">
                 {/* Instructions */}

@@ -196,12 +196,16 @@ public class AssessmentServiceImpl implements AssessmentService {
 
     @Override
     public boolean hasCompletedPretest(UUID studentId, UUID courseId) {
-        return attemptRepository.findCompletedByStudentAndType(studentId, AssessmentType.PRETEST).isPresent();
+        return attemptRepository
+                .findCompletedByStudentTypeAndCourse(studentId, AssessmentType.PRETEST, courseId)
+                .isPresent();
     }
 
     @Override
     public boolean hasCompletedPosttest(UUID studentId, UUID courseId) {
-        return attemptRepository.findCompletedByStudentAndType(studentId, AssessmentType.POSTTEST).isPresent();
+        return attemptRepository
+                .findCompletedByStudentTypeAndCourse(studentId, AssessmentType.POSTTEST, courseId)
+                .isPresent();
     }
 
     private int gradeQuestion(AssessmentQuestion question, String studentAnswer) {

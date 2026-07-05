@@ -11,10 +11,12 @@ import hr.algebra.adaptive.learning.backend.dto.ml.MLFeedbackResponse;
 import hr.algebra.adaptive.learning.backend.dto.request.SubmissionRequest;
 import hr.algebra.adaptive.learning.backend.dto.response.PaginatedResponse;
 import hr.algebra.adaptive.learning.backend.dto.response.SubmissionResponse;
+import hr.algebra.adaptive.learning.backend.exception.PretestRequiredException;
 import hr.algebra.adaptive.learning.backend.exception.ResourceNotFoundException;
 import hr.algebra.adaptive.learning.backend.repository.SubmissionRepository;
 import hr.algebra.adaptive.learning.backend.repository.TaskRepository;
 import hr.algebra.adaptive.learning.backend.repository.UserRepository;
+import hr.algebra.adaptive.learning.backend.service.AssessmentService;
 import hr.algebra.adaptive.learning.backend.service.CodeExecutorClient;
 import hr.algebra.adaptive.learning.backend.service.MLServiceClient;
 import hr.algebra.adaptive.learning.backend.service.SubmissionService;
@@ -40,6 +42,7 @@ public class SubmissionServiceImpl implements SubmissionService {
     private final UserRepository userRepository;
     private final CodeExecutorClient codeExecutorClient;
     private final MLServiceClient mlServiceClient;
+    private final AssessmentService assessmentService;
 
     @Override
     @Transactional
@@ -52,6 +55,11 @@ public class SubmissionServiceImpl implements SubmissionService {
         User student = userRepository.findById(studentId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", studentId));
 
+        UUID courseId = task.getOutcome().getCourse().getId();
+        if (!assessmentService.hasCompletedPretest(studentId, courseId)) {
+            log.warn("Student {} pokušao predati zadatak bez riješenog pretesta za kolegij {}", studentId, courseId);
+            throw new PretestRequiredException(courseId);
+        }
         // 1. Kreiraj submission
         Submission submission = Submission.builder()
                 .student(student)

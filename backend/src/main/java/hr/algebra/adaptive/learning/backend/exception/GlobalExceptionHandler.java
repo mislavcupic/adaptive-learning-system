@@ -69,6 +69,14 @@ public class GlobalExceptionHandler {
                         .build());
     }
 
+    @ExceptionHandler(PretestRequiredException.class)
+    public ResponseEntity<ApiResponse<Void>> handlePretestRequired(PretestRequiredException ex) {
+        log.warn("Pretest required: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
         log.error("Unexpected error: ", ex);
