@@ -339,6 +339,24 @@
       "true": "True",
       "false": "False",
       "select": "Select"
+    },
+    "research": {
+      "title": "Research results",
+      "subtitle": "Comparison of control and experimental groups",
+      "export": "Export for analysis (CSV)",
+      "controlGroup": "Control group",
+      "experimentalGroup": "Experimental group",
+      "subjects": "subjects",
+      "avgPretest": "avg pre-test",
+      "avgPosttest": "avg post-test",
+      "resultsBySubject": "Results by subject",
+      "noResults": "No results yet. Results appear when subjects complete the pre-test or post-test.",
+      "subject": "Subject",
+      "group": "Group",
+      "pretest": "Pre-test",
+      "posttest": "Post-test",
+      "experimental": "Experimental",
+      "control": "Control"
     }
   }
 }

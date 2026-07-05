@@ -31,5 +31,13 @@ public interface AssessmentAttemptRepository extends JpaRepository<AssessmentAtt
             @Param("type") AssessmentType type,
             @Param("courseId") UUID courseId);
 
+    @Query("SELECT aa FROM AssessmentAttempt aa " +
+            "JOIN FETCH aa.student s " +
+            "JOIN FETCH aa.assessment a " +
+            "WHERE aa.isCompleted = true " +
+            "AND s.researchGroup <> hr.algebra.adaptive.learning.backend.domain.enums.ResearchGroup.NOT_ASSIGNED")
+    List<AssessmentAttempt> findAllCompletedForResearch();
+
     boolean existsByStudentIdAndAssessmentIdAndIsCompletedTrue(UUID studentId, UUID assessmentId);
 }
+

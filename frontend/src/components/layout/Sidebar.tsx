@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
     LayoutDashboard,
     BookOpen,
@@ -9,12 +10,14 @@ import {
     GraduationCap,
     FolderKanban,
     UserPlus,
-    FileCheck
+    FileCheck,
+    TrendingUp
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useAuth } from '../../context';
 import { useFetch } from '../../hooks';
 import { apiClient } from '../../api/client';
+
 
 interface NavItem {
     label: string;
@@ -25,6 +28,7 @@ interface NavItem {
 }
 
 export function Sidebar() {
+    const { t } = useTranslation();
     const { user } = useAuth();
 
     const { data: pendingCount } = useFetch<number>(
@@ -38,58 +42,64 @@ export function Sidebar() {
 
     const navItems: NavItem[] = [
         {
-            label: 'Dashboard',
+            label: t('nav.dashboard'),
             href: '/dashboard',
             icon: <LayoutDashboard className="w-5 h-5" />
         },
         {
-            label: 'Kolegiji',
+            label: t('nav.courses'),
             href: '/courses',
             icon: <BookOpen className="w-5 h-5" />,
             roles: ['TEACHER', 'ADMIN']
         },
         {
-            label: 'Zadaci',
+            label: t('nav.tasks'),
             href: '/tasks',
             icon: <ClipboardList className="w-5 h-5" />
         },
         {
-            label: 'Testovi',
+            label: t('nav.assessments'),
             href: '/assessments',
             icon: <FileCheck className="w-5 h-5" />
         },
         {
-            label: 'Predaje',
+            label: t('nav.submissions'),
             href: '/submissions',
             icon: <FileText className="w-5 h-5" />
         },
         {
-            label: 'Studenti',
+            label: t('nav.students'),
             href: '/students',
             icon: <GraduationCap className="w-5 h-5" />,
             roles: ['TEACHER', 'ADMIN']
         },
         {
-            label: 'Razredi',
+            label: t('nav.classes'),
             href: '/classes',
             icon: <FolderKanban className="w-5 h-5" />,
             roles: ['TEACHER', 'ADMIN']
         },
         {
-            label: 'Prijave',
+            label: t('nav.pending'),
             href: '/pending-registrations',
             icon: <UserPlus className="w-5 h-5" />,
             roles: ['TEACHER', 'ADMIN'],
             badge: pendingCount || 0
         },
         {
-            label: 'Korisnici',
+            label: t('nav.users'),
             href: '/users',
             icon: <Users className="w-5 h-5" />,
             roles: ['ADMIN']
         },
         {
-            label: 'Postavke',
+            label: t('nav.research'),
+            href: '/research-results',
+            icon: <TrendingUp className="w-5 h-5" />,
+            roles: ['TEACHER', 'ADMIN']
+        },
+        {
+            label: t('nav.settings'),
             href: '/settings',
             icon: <Settings className="w-5 h-5" />
         },

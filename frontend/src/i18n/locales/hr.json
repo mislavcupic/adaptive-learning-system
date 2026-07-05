@@ -339,6 +339,24 @@
       "true": "Točno",
       "false": "Netočno",
       "select": "Odaberi"
+    },
+    "research": {
+      "title": "Rezultati istraživanja",
+      "subtitle": "Usporedba kontrolne i eksperimentalne skupine",
+      "export": "Izvezi za analizu (CSV)",
+      "controlGroup": "Kontrolna skupina",
+      "experimentalGroup": "Eksperimentalna skupina",
+      "subjects": "ispitanika",
+      "avgPretest": "prosjek pretesta",
+      "avgPosttest": "prosjek posttesta",
+      "resultsBySubject": "Rezultati po ispitaniku",
+      "noResults": "Nema još rezultata. Rezultati se pojavljuju kad ispitanici riješe pretest ili posttest.",
+      "subject": "Ispitanik",
+      "group": "Skupina",
+      "pretest": "Pretest",
+      "posttest": "Posttest",
+      "experimental": "Eksperimentalna",
+      "control": "Kontrolna"
     }
   }
 }

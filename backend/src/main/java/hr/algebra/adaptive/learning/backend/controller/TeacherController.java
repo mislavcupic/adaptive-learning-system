@@ -1,7 +1,9 @@
 package hr.algebra.adaptive.learning.backend.controller;
 import hr.algebra.adaptive.learning.backend.dto.request.ApproveRequest;
 import hr.algebra.adaptive.learning.backend.dto.response.ApiResponse;
+import hr.algebra.adaptive.learning.backend.dto.response.ResearchResultResponse;
 import hr.algebra.adaptive.learning.backend.dto.response.UserResponse;
+import hr.algebra.adaptive.learning.backend.service.ResearchResultService;
 import hr.algebra.adaptive.learning.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,8 +20,9 @@ import java.util.UUID;
 public class TeacherController {
 
     private final UserService userService;
+    private final ResearchResultService researchResultService;
 
-    // Dohvati sve GUEST korisnike koji čekaju odobrenje
+    //guest za odobrenje
     @GetMapping("/pending-registrations")
     public ResponseEntity<ApiResponse<List<UserResponse>>> getPendingRegistrations() {
         return ResponseEntity.ok(ApiResponse.success(userService.getPendingRegistrations()));
@@ -50,5 +53,10 @@ public class TeacherController {
     public ResponseEntity<ApiResponse<String>> rejectUser(@PathVariable UUID id) {
         userService.rejectPendingUser(id);
         return ResponseEntity.ok(ApiResponse.success(null, "Prijava odbijena"));
+    }
+
+    @GetMapping("/research-results")
+    public ResponseEntity<ApiResponse<List<ResearchResultResponse>>> getResearchResults() {
+        return ResponseEntity.ok(ApiResponse.success(researchResultService.getResults()));
     }
 }

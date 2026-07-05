@@ -69,4 +69,7 @@ export const ENDPOINTS = {
         CHECK_PRETEST: (courseId: string) => `/assessments/check/pretest/${courseId}`,
         CHECK_POSTTEST: (courseId: string) => `/assessments/check/posttest/${courseId}`,
     },
+    RESEARCH: {
+        RESULTS: '/teacher/research-results',
+    },
 } as const;

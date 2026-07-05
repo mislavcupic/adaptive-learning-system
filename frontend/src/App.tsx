@@ -20,7 +20,8 @@ import {
     ApprovalQueuePage,
     AssessmentsPage,
     AssessmentSolvePage,
-    AssessmentFormPage
+    AssessmentFormPage,
+    ResearchResultsPage
 } from './pages';
 
 function App() {
@@ -130,6 +131,7 @@ function App() {
 
                             {/* 404 */}
                             <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                            <Route path="/research-results" element={<ResearchResultsPage />} />
                         </Routes>
                     </AuthProvider>
                 </AccessibilityProvider>
