@@ -26,6 +26,7 @@ Pravila:
 4. Koristi jednostavan jezik prilagođen početnicima
 5. Daj konkretne primjere kada je moguće
 6. Odgovaraj na hrvatskom jeziku
+7. Ako postoje prethodne bilješke, usporedi trenutni rad s njima — eksplicitno istakni napredak ili ponavljajuće greške (npr. "ovo je sličan problem kao prošli put..." ili "vidim da si od prošlog puta savladao...")
 
 Format odgovora:
 1. Kratki pregled (što je dobro)
@@ -33,6 +34,12 @@ Format odgovora:
 3. Konkretni savjeti za poboljšanje
 4. Ohrabrenje za dalje
 """
+
+    INSIGHT_PROMPT = """Na temelju studentovog koda i danog feedbacka, napiši JEDNU sažetu analitičku bilješku (max 2 rečenice) koja bilježi:
+- konkretne greške ili obrasce grešaka (npr. "off-by-one u granicama petlje", "ne provjerava raspon unosa")
+- koncepte s kojima se student muči ili ih dobro vlada
+
+Bilješka služi kao dugoročna memorija za praćenje napretka — piši je tako da bude korisna za usporedbu s budućim predajama. NE piši samo status "riješeno/nije riješeno". Fokusiraj se na SADRŽAJ učenja. Odgovori na hrvatskom, bez uvoda i bez markdown formatiranja."""
 
     def __init__(self):
         self.settings = get_settings()
@@ -52,17 +59,17 @@ Format odgovora:
     def _generate_control_feedback(self, request: FeedbackRequest) -> FeedbackResponse:
         """Generira feedback za kontrolnu grupu - samo score, bez AI feedbacka."""
 
-    # Izračunaj score isto kao za EXPERIMENTAL
-    score = self._calculate_score(request)
+        # Izračunaj score isto kao za EXPERIMENTAL
+        score = self._calculate_score(request)
 
-    logger.info(f"Generated CONTROL feedback for submission {request.submission_id}")
+        logger.info(f"Generated CONTROL feedback for submission {request.submission_id}")
 
-    return FeedbackResponse(
-        submission_id=request.submission_id,
-        ai_feedback="",  # Prazan feedback za CONTROL
-        ai_score=score,
-        skills_updated=[]
-    )
+        return FeedbackResponse(
+            submission_id=request.submission_id,
+            ai_feedback="",  # Prazan feedback za CONTROL
+            ai_score=score,
+            skills_updated=[]
+        )
 
     def _generate_experimental_feedback(self, request: FeedbackRequest) -> FeedbackResponse:
         """Generira personalizirani AI feedback za eksperimentalnu grupu."""
@@ -149,11 +156,12 @@ Prolaznost: {request.tests_passed}/{request.tests_total}
             context += f"\n## Detalji testova\n{request.test_results}\n"
 
         if previous_notes:
-            context += "\n## Prethodne bilješke o ovom studentu\n"
+            context += "\n## Prethodne bilješke o ovom studentu (kronološki, najnovije prvo)\n"
             for note in previous_notes:
-                context += f"- {note.get('insight', '')}\n"
+                created = note.get('created_at', '')
+                context += f"- ({created}) {note.get('insight', '')}\n"
 
-        context += "\n## Tvoj zadatak\nNapiši personalizirani feedback za ovog studenta na hrvatskom jeziku."
+        context += "\n## Tvoj zadatak\nNapiši personalizirani feedback za ovog studenta na hrvatskom jeziku. Ako postoje prethodne bilješke, usporedi trenutni rad s njima i istakni napredak ili ponavljajuće greške."
 
         return context
 
@@ -171,20 +179,46 @@ Prolaznost: {request.tests_passed}/{request.tests_total}
         return min(100, max(0, total))
 
     def _generate_insight(self, request: FeedbackRequest, ai_feedback: str) -> str:
-        """Generira sažetu bilješku za Agentic Memory."""
+        """Generira analitičku bilješku za Agentic Memory pomoću LLM-a."""
 
+        if not self.client:
+            return self._fallback_insight(request)
+
+        context = f"""Zadatak: {request.task_title}
+Rezultat testova: {request.tests_passed}/{request.tests_total}
+
+Kod studenta:
+```{request.language_type.lower()}
+{request.submitted_code}
+```
+
+Generirani feedback:
+{ai_feedback}
+"""
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.settings.openai_model,
+                messages=[
+                    {"role": "system", "content": self.INSIGHT_PROMPT},
+                    {"role": "user", "content": context}
+                ],
+                max_tokens=150,
+                temperature=0.3
+            )
+            insight = response.choices[0].message.content.strip()
+            # Prefiksiraj zadatkom radi konteksta pri retrievalu
+            return f"[{request.task_title}] {insight}"[:500]
+
+        except Exception as e:
+            logger.error(f"Error generating insight: {e}")
+            return self._fallback_insight(request)
+
+    def _fallback_insight(self, request: FeedbackRequest) -> str:
+        """Rezervna bilješka ako LLM nije dostupan."""
         success = request.tests_passed == request.tests_total
-        insight = f"Zadatak '{request.task_title}': "
-
-        if success:
-            insight += "Uspješno riješeno. "
-        else:
-            insight += f"Djelomično riješeno ({request.tests_passed}/{request.tests_total}). "
-
-        if request.compiler_output and "error" in request.compiler_output.lower():
-            insight += "Imao/la problema s kompilacijom. "
-
-        return insight[:500]
+        status = "uspješno" if success else f"djelomično ({request.tests_passed}/{request.tests_total})"
+        return f"[{request.task_title}] Riješeno {status}."[:500]
 
     def _identify_skills(self, request: FeedbackRequest) -> list[str]:
         """Identificira skills koje treba ažurirati u BKT."""
