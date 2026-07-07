@@ -346,6 +346,15 @@ function QuestionCard({ question, index, answer, onAnswerChange, theme, parseOpt
                             }}
                         />
                     </div>
+                )},
+                {question.questionType === 'SHORT_ANSWER' && (
+                    <input
+                        type="text"
+                        value={answer}
+                        onChange={(e) => onAnswerChange(e.target.value)}
+                        placeholder={t('assessments.questionForm.shortAnswerPlaceholder')}
+                        className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
+                    />
                 )}
             </CardContent>
         </Card>

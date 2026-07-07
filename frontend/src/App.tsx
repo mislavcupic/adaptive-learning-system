@@ -71,7 +71,8 @@ function App() {
                                 <Route path="tasks/:id" element={<TasksPage />} />
                                 <Route path="tasks/:id/solve" element={<TaskSolvePage />} />
 
-                                {/* Assessments */}
+                                {/* Research */}
+                                <Route path="/research-results" element={<ResearchResultsPage />} />
                                 {/* Assessments */}
                                 <Route path="assessments" element={<AssessmentsPage />} />
                                 <Route path="assessments/:id/solve" element={<AssessmentSolvePage />} />
@@ -131,7 +132,6 @@ function App() {
 
                             {/* 404 */}
                             <Route path="*" element={<Navigate to="/dashboard" replace />} />
-                            <Route path="/research-results" element={<ResearchResultsPage />} />
                         </Routes>
                     </AuthProvider>
                 </AccessibilityProvider>

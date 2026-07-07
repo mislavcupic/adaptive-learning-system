@@ -71,5 +71,6 @@ export const ENDPOINTS = {
     },
     RESEARCH: {
         RESULTS: '/teacher/research-results',
+        ANCOVA: '/teacher/research-results/ancova',
     },
 } as const;

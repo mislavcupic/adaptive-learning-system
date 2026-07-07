@@ -11,3 +11,5 @@ pgvector==0.2.4
 numpy==1.26.3
 python-dotenv==1.0.0
 httpx==0.26.0
+pandas==2.1.4
+pingouin==0.5.4

@@ -63,7 +63,10 @@
         "classes": "Classes",
         "users": "Users",
         "settings": "Settings",
-        "profile": "Profile"
+        "profile": "Profile",
+        "research": "Research results",
+        "pending": "Pending registrations...",
+        "assessments": "Pretests"
     },
     "roles": {
         "admin": "Administrator",
@@ -304,6 +307,7 @@
     "backToDashboard": "Back to Dashboard",
     "continueWithTasks": "Continue with tasks",
     "timeLeft": "Time remaining",
+
     "form": {
       "title": "Basic information",
       "testName": "Test name",
@@ -338,7 +342,8 @@
       "enterQuestionText": "Enter question text",
       "true": "True",
       "false": "False",
-      "select": "Select"
+      "select": "Select",
+      "shortAnswer": "Short answer"
     },
     "research": {
       "title": "Research results",

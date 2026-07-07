@@ -1,5 +1,5 @@
 export type AssessmentType = 'PRETEST' | 'POSTTEST';
-export type QuestionType = 'MULTIPLE_CHOICE' | 'TRUE_FALSE' | 'CODE';
+export type QuestionType = 'MULTIPLE_CHOICE' | 'TRUE_FALSE' | 'CODE' | 'SHORT_ANSWER';
 
 export interface Assessment {
     id: string;

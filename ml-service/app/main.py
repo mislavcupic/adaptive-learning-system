@@ -5,6 +5,7 @@ FastAPI aplikacija za:
 - Generiranje personaliziranog AI feedbacka
 - Bayesian Knowledge Tracing (BKT)
 - RAG (Retrieval-Augmented Generation)
+- ANCOVA statistička analiza
 """
 
 import logging
@@ -17,9 +18,12 @@ from .models.schemas import (
     FeedbackResponse,
     HealthResponse,
     BKTUpdateRequest,
-    BKTResponse
+    BKTResponse,
+    AncovaRequest,
+    AncovaResponse
 )
 from .services import FeedbackService, BKTService
+from .services.statistics_service import StatisticsService
 
 # Logging setup
 logging.basicConfig(
@@ -48,6 +52,7 @@ app.add_middleware(
 # Services
 feedback_service = FeedbackService()
 bkt_service = BKTService()
+statistics_service = StatisticsService()
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -108,6 +113,24 @@ async def update_bkt(request: BKTUpdateRequest):
         mastery_level=new_mastery,
         previous_level=current_mastery
     )
+
+
+@app.post("/api/statistics/ancova", response_model=AncovaResponse)
+async def run_ancova(request: AncovaRequest):
+    """
+    Provodi ANCOVA analizu (posttest ~ group + pretest kovarijat).
+    Vraća deskriptivnu statistiku po grupama + F, p, partial eta².
+    """
+    logger.info(f"Running ANCOVA on {len(request.records)} records")
+    try:
+        records = [r.model_dump() for r in request.records]
+        result = statistics_service.run_ancova(records)
+        return AncovaResponse(**result)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"ANCOVA error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/")

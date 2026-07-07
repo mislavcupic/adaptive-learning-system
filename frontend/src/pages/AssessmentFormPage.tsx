@@ -448,6 +448,7 @@ function QuestionItem({ question, index, isActive, saving, onToggle, onRemove, o
                                 <option value="MULTIPLE_CHOICE">{t('assessments.questionForm.multipleChoice')}</option>
                                 <option value="TRUE_FALSE">{t('assessments.questionForm.trueFalse')}</option>
                                 <option value="CODE">{t('assessments.questionForm.code')}</option>
+                                <option value="SHORT_ANSWER">{t('assessments.questionForm.shortAnswer')}</option>
                             </select>
                         </div>
                         <div>
@@ -475,6 +476,19 @@ function QuestionItem({ question, index, isActive, saving, onToggle, onRemove, o
                                     <option value="">{t('assessments.questionForm.select')}</option>
                                     <option value="Točno">{t('assessments.questionForm.true')}</option>
                                     <option value="Netočno">{t('assessments.questionForm.false')}</option>
+                                </select>
+                            ) : question.questionType === 'MULTIPLE_CHOICE' ? (
+                                <select
+                                    value={question.correctAnswer}
+                                    onChange={(e) => onChange('correctAnswer', e.target.value)}
+                                    className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
+                                >
+                                    <option value="">{t('assessments.questionForm.select')}</option>
+                                    {question.options
+                                        .filter(o => o.trim())
+                                        .map((opt, i) => (
+                                            <option key={i} value={opt}>{opt}</option>
+                                        ))}
                                 </select>
                             ) : (
                                 <input
@@ -504,21 +518,41 @@ function QuestionItem({ question, index, isActive, saving, onToggle, onRemove, o
                                     />
                                 ))}
                             </div>
+                            <p className="text-xs text-zinc-500 mt-2">
+                                Nakon unosa opcija, odaberite točnu iznad u polju "{t('assessments.questionForm.correctAnswer')}".
+                            </p>
                         </div>
                     )}
 
                     {question.questionType === 'CODE' && (
-                        <div>
-                            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                                {t('assessments.questionForm.codeTemplate')}
-                            </label>
-                            <textarea
-                                value={question.codeTemplate}
-                                onChange={(e) => onChange('codeTemplate', e.target.value)}
-                                rows={4}
-                                className="w-full px-3 py-2 font-mono text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
-                            />
-                        </div>
+                        <>
+                            <div>
+                                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                    {t('assessments.questionForm.codeTemplate')}
+                                </label>
+                                <textarea
+                                    value={question.codeTemplate}
+                                    onChange={(e) => onChange('codeTemplate', e.target.value)}
+                                    rows={4}
+                                    className="w-full px-3 py-2 font-mono text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                                    Test primjeri (JSON)
+                                </label>
+                                <textarea
+                                    value={question.testCases}
+                                    onChange={(e) => onChange('testCases', e.target.value)}
+                                    rows={4}
+                                    placeholder='[{"input": "5 3", "expectedOutput": "8"}]'
+                                    className="w-full px-3 py-2 font-mono text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
+                                />
+                                <p className="text-xs text-zinc-500 mt-1">
+                                    Format: JSON lista objekata s poljima "input" i "expectedOutput". Bez test primjera pitanje se ne može automatski ocijeniti.
+                                </p>
+                            </div>
+                        </>
                     )}
 
                     <div className="flex justify-end pt-2">

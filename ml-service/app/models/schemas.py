@@ -53,3 +53,63 @@ class BKTResponse(BaseModel):
     skill_name: str
     mastery_level: float
     previous_level: float
+
+    # ============================================================
+# ANCOVA / STATISTICS SHEME — dodaj u app/models/schemas.py
+# ============================================================
+
+from typing import List, Optional
+from pydantic import BaseModel
+
+
+class AncovaRecord(BaseModel):
+    """Jedan ispitanik: grupa + pretest (kovarijat) + posttest (ishod)."""
+    group: str          # "CONTROL" | "EXPERIMENTAL"
+    pretest: float
+    posttest: float
+
+
+class AncovaRequest(BaseModel):
+    """Zahtjev za ANCOVA analizu — lista ispitanika."""
+    records: List[AncovaRecord]
+
+
+class GroupDescriptive(BaseModel):
+    group: str
+    n: int
+    pretest_mean: float
+    pretest_sd: float
+    posttest_mean: float
+    posttest_sd: float
+
+
+class AncovaTableRow(BaseModel):
+    source: str
+    ss: Optional[float] = None
+    df: Optional[float] = None
+    f: Optional[float] = None
+    p: Optional[float] = None
+    partial_eta_sq: Optional[float] = None
+
+
+class AncovaEffect(BaseModel):
+    source: str
+    ss: Optional[float] = None
+    df: Optional[float] = None
+    f: Optional[float] = None
+    p: Optional[float] = None
+    partial_eta_sq: Optional[float] = None
+
+
+class AncovaResult(BaseModel):
+    table: List[AncovaTableRow]
+    group_effect: Optional[AncovaEffect] = None
+    significant: bool
+
+
+class AncovaResponse(BaseModel):
+    n_total: int
+    groups: List[str]
+    descriptives: List[GroupDescriptive]
+    ancova: Optional[AncovaResult] = None
+    warning: Optional[str] = None

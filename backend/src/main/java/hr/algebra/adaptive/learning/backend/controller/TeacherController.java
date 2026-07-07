@@ -1,4 +1,5 @@
 package hr.algebra.adaptive.learning.backend.controller;
+import hr.algebra.adaptive.learning.backend.dto.ml.MLAncovaResponse;
 import hr.algebra.adaptive.learning.backend.dto.request.ApproveRequest;
 import hr.algebra.adaptive.learning.backend.dto.response.ApiResponse;
 import hr.algebra.adaptive.learning.backend.dto.response.ResearchResultResponse;
@@ -58,5 +59,11 @@ public class TeacherController {
     @GetMapping("/research-results")
     public ResponseEntity<ApiResponse<List<ResearchResultResponse>>> getResearchResults() {
         return ResponseEntity.ok(ApiResponse.success(researchResultService.getResults()));
+    }
+
+    // ANCOVA statistička analiza (posttest ~ group + pretest kovarijat)
+    @GetMapping("/research-results/ancova")
+    public ResponseEntity<ApiResponse<MLAncovaResponse>> getAncova() {
+        return ResponseEntity.ok(ApiResponse.success(researchResultService.getAncova()));
     }
 }

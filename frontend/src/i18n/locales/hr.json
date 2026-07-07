@@ -63,7 +63,10 @@
         "classes": "Razredi",
         "users": "Korisnici",
         "settings": "Postavke",
-        "profile": "Profil"
+        "profile": "Profil",
+        "research": "Rezultati pretesta",
+        "pending": "Potvrda registriranih...",
+        "assessments": "Pretestovi"
     },
     "roles": {
         "admin": "Administrator",
@@ -304,6 +307,7 @@
     "backToDashboard": "Natrag na Dashboard",
     "continueWithTasks": "Nastavi s zadacima",
     "timeLeft": "Preostalo vrijeme",
+
     "form": {
       "title": "Osnovni podaci",
       "testName": "Naziv testa",
@@ -338,7 +342,8 @@
       "enterQuestionText": "Unesite tekst pitanja",
       "true": "Točno",
       "false": "Netočno",
-      "select": "Odaberi"
+      "select": "Odaberi",
+      "shortAnswer": "Kratki odgovor"
     },
     "research": {
       "title": "Rezultati istraživanja",
