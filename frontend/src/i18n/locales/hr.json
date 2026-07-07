@@ -307,7 +307,12 @@
     "backToDashboard": "Natrag na Dashboard",
     "continueWithTasks": "Nastavi s zadacima",
     "timeLeft": "Preostalo vrijeme",
-
+    "alreadyCompleted": {
+      "title": "Test je već riješen",
+      "message": "Ovaj test ste već ispunili i ne možete ga ponovno rješavati. Svaki test moguće je riješiti samo jednom.",
+      "backToTests": "Natrag na testove",
+      "toDashboard": "Na naslovnicu"
+    },
     "form": {
       "title": "Osnovni podaci",
       "testName": "Naziv testa",

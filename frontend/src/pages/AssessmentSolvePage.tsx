@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Editor from '@monaco-editor/react';
-import { ArrowLeft, Clock, CheckCircle, XCircle, Send } from 'lucide-react';
+import { ArrowLeft, Clock, CheckCircle, XCircle, Send, Lock } from 'lucide-react';
 import { useTheme } from '../context';
 import { assessmentService } from '../services';
 import {
@@ -30,22 +30,34 @@ export function AssessmentSolvePage() {
     const [submitting, setSubmitting] = useState(false);
     const [result, setResult] = useState<AssessmentAttempt | null>(null);
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
+    const [alreadyCompleted, setAlreadyCompleted] = useState(false);
 
     useEffect(() => {
         if (!id) return;
 
         const loadAssessment = async () => {
             try {
+                // Prvo dohvati podatke o testu (bez prikazivanja pitanja)
                 const data = await assessmentService.getById(id);
-                setAssessment(data);
 
+                // BRANA: pokušaj započeti pokušaj PRIJE nego prikažemo pitanja.
+                // Ako je test već riješen, backend vraća 409 -> ne prikazujemo pitanja.
                 await assessmentService.startAttempt(id);
 
+                // Tek sada, kad je start prošao, prikaži test
+                setAssessment(data);
                 if (data.timeLimitMinutes) {
                     setTimeLeft(data.timeLimitMinutes * 60);
                 }
             } catch (err) {
-                setError(err instanceof Error ? err.message : t('errors.generic'));
+                // 409 = test je već riješen
+                const msg = err instanceof Error ? err.message : '';
+                const status = (err as { status?: number })?.status;
+                if (status === 409 || /već ste riješili|already completed/i.test(msg)) {
+                    setAlreadyCompleted(true);
+                } else {
+                    setError(msg || t('errors.generic'));
+                }
             } finally {
                 setLoading(false);
             }
@@ -86,7 +98,13 @@ export function AssessmentSolvePage() {
             });
             setResult(attemptResult);
         } catch (err) {
-            setError(err instanceof Error ? err.message : t('errors.generic'));
+            const msg = err instanceof Error ? err.message : '';
+            const status = (err as { status?: number })?.status;
+            if (status === 409 || /već ste riješili|already completed/i.test(msg)) {
+                setAlreadyCompleted(true);
+            } else {
+                setError(msg || t('errors.generic'));
+            }
         } finally {
             setSubmitting(false);
         }
@@ -108,6 +126,38 @@ export function AssessmentSolvePage() {
     };
 
     if (loading) return <LoadingScreen />;
+
+    // Test je već riješen — jasna poruka umjesto pitanja
+    if (alreadyCompleted) {
+        return (
+            <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
+                <Card>
+                    <CardContent className="py-12 text-center space-y-6">
+                        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-amber-100 dark:bg-amber-900/30">
+                            <Lock className="w-10 h-10 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-semibold text-zinc-900 dark:text-white">
+                                {t('assessments.alreadyCompleted.title')}
+                            </h2>
+                            <p className="text-zinc-500 dark:text-zinc-400 mt-2">
+                                {t('assessments.alreadyCompleted.message')}
+                            </p>
+                        </div>
+                        <div className="flex justify-center gap-4">
+                            <Button variant="secondary" onClick={() => navigate('/assessments')}>
+                                {t('assessments.alreadyCompleted.backToTests')}
+                            </Button>
+                            <Button onClick={() => navigate('/dashboard')}>
+                                {t('assessments.alreadyCompleted.toDashboard')}
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
     if (error && !assessment) return <ErrorState description={error} onRetry={() => navigate(-1)} />;
     if (!assessment) return null;
 
@@ -212,6 +262,12 @@ export function AssessmentSolvePage() {
                     </div>
                 )}
             </div>
+
+            {error && assessment && (
+                <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    <p className="text-red-700 dark:text-red-300">{error}</p>
+                </div>
+            )}
 
             {assessment.description && (
                 <Card>
@@ -329,6 +385,16 @@ function QuestionCard({ question, index, answer, onAnswerChange, theme, parseOpt
                     </div>
                 )}
 
+                {question.questionType === 'SHORT_ANSWER' && (
+                    <input
+                        type="text"
+                        value={answer}
+                        onChange={(e) => onAnswerChange(e.target.value)}
+                        placeholder={t('assessments.questionForm.shortAnswerPlaceholder')}
+                        className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
+                    />
+                )}
+
                 {question.questionType === 'CODE' && (
                     <div className="h-[300px] border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden">
                         <Editor
@@ -346,15 +412,6 @@ function QuestionCard({ question, index, answer, onAnswerChange, theme, parseOpt
                             }}
                         />
                     </div>
-                )},
-                {question.questionType === 'SHORT_ANSWER' && (
-                    <input
-                        type="text"
-                        value={answer}
-                        onChange={(e) => onAnswerChange(e.target.value)}
-                        placeholder={t('assessments.questionForm.shortAnswerPlaceholder')}
-                        className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
-                    />
                 )}
             </CardContent>
         </Card>

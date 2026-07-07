@@ -9,6 +9,7 @@ import hr.algebra.adaptive.learning.backend.domain.enums.QuestionType;
 import hr.algebra.adaptive.learning.backend.dto.assessment.*;
 import hr.algebra.adaptive.learning.backend.dto.execution.CodeExecutionRequest;
 import hr.algebra.adaptive.learning.backend.dto.execution.CodeExecutionResponse;
+import hr.algebra.adaptive.learning.backend.exception.AssessmentAlreadyCompletedException;
 import hr.algebra.adaptive.learning.backend.exception.ResourceNotFoundException;
 import hr.algebra.adaptive.learning.backend.repository.*;
 import hr.algebra.adaptive.learning.backend.service.AssessmentService;
@@ -114,7 +115,12 @@ public class AssessmentServiceImpl implements AssessmentService {
     public AssessmentAttemptResponse startAttempt(UUID assessmentId, UUID studentId) {
         log.info("Student {} starting assessment {}", studentId, assessmentId);
 
-        // Provjeri postoji li već pokušaj
+        // TVRDA BRANA: ako je student već ZAVRŠIO ovaj assessment, ne dopuštaj ponovno.
+        if (attemptRepository.existsByStudentIdAndAssessmentIdAndIsCompletedTrue(studentId, assessmentId)) {
+            throw new AssessmentAlreadyCompletedException("Ovaj test ste već riješili i ne možete ga ponovno pisati.");
+        }
+
+        // Ako postoji NEZAVRŠEN pokušaj (npr. student osvježio stranicu), vrati njega
         Optional<AssessmentAttempt> existing = attemptRepository.findByStudentIdAndAssessmentId(studentId, assessmentId);
         if (existing.isPresent()) {
             return AssessmentAttemptResponse.fromEntity(existing.get());
@@ -146,12 +152,13 @@ public class AssessmentServiceImpl implements AssessmentService {
     public AssessmentAttemptResponse submitAttempt(AssessmentAttemptRequest request, UUID studentId) {
         log.info("Student {} submitting assessment {}", studentId, request.getAssessmentId());
 
+        // TVRDA BRANA: ako je student već ZAVRŠIO ovaj assessment, odbij ponovnu predaju.
+        if (attemptRepository.existsByStudentIdAndAssessmentIdAndIsCompletedTrue(studentId, request.getAssessmentId())) {
+            throw new AssessmentAlreadyCompletedException("Ovaj test ste već riješili i ne možete ga ponovno predati.");
+        }
+
         AssessmentAttempt attempt = attemptRepository.findByStudentIdAndAssessmentId(studentId, request.getAssessmentId())
                 .orElseThrow(() -> new ResourceNotFoundException("AssessmentAttempt", "assessmentId", request.getAssessmentId()));
-
-        if (attempt.isCompleted()) {
-            return AssessmentAttemptResponse.fromEntity(attempt);
-        }
 
         Assessment assessment = attempt.getAssessment();
         int totalScore = 0;

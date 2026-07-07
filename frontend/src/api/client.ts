@@ -64,7 +64,9 @@ const request = async <T>(
     // 204 No Content — nema tijela za parsiranje
     if (response.status === 204) {
         if (!response.ok) {
-            throw new Error(`HTTP Error: ${response.status}`);
+            const err = new Error(`HTTP Error: ${response.status}`) as Error & { status?: number };
+            err.status = response.status;
+            throw err;
         }
         return undefined as T;
     }
@@ -75,7 +77,9 @@ const request = async <T>(
     const json = text ? JSON.parse(text) : null;
 
     if (!response.ok) {
-        throw new Error(json?.message || `HTTP Error: ${response.status}`);
+        const err = new Error(json?.message || `HTTP Error: ${response.status}`) as Error & { status?: number };
+        err.status = response.status;
+        throw err;
     }
 
     return json as T;

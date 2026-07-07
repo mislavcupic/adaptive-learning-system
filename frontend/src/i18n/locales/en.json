@@ -307,6 +307,12 @@
     "backToDashboard": "Back to Dashboard",
     "continueWithTasks": "Continue with tasks",
     "timeLeft": "Time remaining",
+    "alreadyCompleted": {
+      "title": "Test already completed",
+      "message": "You have already completed this test and cannot take it again. Each test can be taken only once.",
+      "backToTests": "Back to tests",
+      "toDashboard": "To dashboard"
+    },
 
     "form": {
       "title": "Basic information",

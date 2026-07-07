@@ -84,4 +84,13 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("Došlo je do greške na serveru"));
     }
+
+    // Handler metoda (409 Conflict):
+    @ExceptionHandler(AssessmentAlreadyCompletedException.class)
+    public ResponseEntity<ApiResponse<Object>> handleAssessmentAlreadyCompleted(
+            AssessmentAlreadyCompletedException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)  // 409
+                .body(ApiResponse.error(ex.getMessage()));
+    }
 }
