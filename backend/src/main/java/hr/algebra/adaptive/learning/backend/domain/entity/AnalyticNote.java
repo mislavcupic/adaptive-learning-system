@@ -30,7 +30,7 @@ public class AnalyticNote extends BaseEntity {
     @Column(name = "note_type")
     private String noteType; // ERROR_PATTERN, IMPROVEMENT, STRENGTH, etc.
 
-    // PGVector embedding - za sada TEXT, kasnije VECTOR(1536)
-    @Column(name = "embedding", columnDefinition = "TEXT")
+
+    @Column(name = "embedding", insertable = false, updatable = false)
     private String embedding;
 }

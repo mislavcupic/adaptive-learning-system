@@ -73,4 +73,8 @@ export const ENDPOINTS = {
         RESULTS: '/teacher/research-results',
         ANCOVA: '/teacher/research-results/ancova',
     },
+
+    AUDIT: {
+        LOGS: '/teacher/audit-logs',
+    },
 } as const;

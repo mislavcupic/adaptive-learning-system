@@ -21,7 +21,8 @@ import {
     AssessmentsPage,
     AssessmentSolvePage,
     AssessmentFormPage,
-    ResearchResultsPage
+    ResearchResultsPage,
+    AuditLogsPage
 } from './pages';
 
 function App() {
@@ -73,6 +74,14 @@ function App() {
 
                                 {/* Research */}
                                 <Route path="/research-results" element={<ResearchResultsPage />} />
+
+                                {/* Audit logs */}
+                                <Route path="/audit-logs" element={
+                                    <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
+                                        <AuditLogsPage />
+                                    </ProtectedRoute>
+                                } />
+
                                 {/* Assessments */}
                                 <Route path="assessments" element={<AssessmentsPage />} />
                                 <Route path="assessments/:id/solve" element={<AssessmentSolvePage />} />

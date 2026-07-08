@@ -55,6 +55,7 @@
         "welcomeMessage": "Prijavite se za pristup sustavu"
     },
     "nav": {
+        "audit": "Nadzor logova",
         "dashboard": "Nadzorna ploča",
         "courses": "Kolegiji",
         "tasks": "Zadaci",

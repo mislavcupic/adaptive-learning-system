@@ -25,8 +25,7 @@ import {
     CardTitle, 
     CardContent,
     LoadingScreen,
-    ErrorState,
-    Button
+    ErrorState
 } from '../components/ui';
 import type { AdminDashboardData } from '../types';
 
@@ -55,9 +54,6 @@ export function AdminDashboard() {
                         {t('dashboard.overview')} - {t('roles.admin')}
                     </p>
                 </div>
-                <Link to="/users/new">
-                    <Button>{t('users.createUser')}</Button>
-                </Link>
             </div>
 
             {/* User Stats */}

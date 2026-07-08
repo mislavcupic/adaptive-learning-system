@@ -55,6 +55,7 @@
         "welcomeMessage": "Sign in to access the system"
     },
     "nav": {
+        "audit": "Log record",
         "dashboard": "Dashboard",
         "courses": "Courses",
         "tasks": "Tasks",

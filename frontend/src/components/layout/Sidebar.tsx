@@ -11,7 +11,8 @@ import {
     FolderKanban,
     UserPlus,
     FileCheck,
-    TrendingUp
+    TrendingUp,
+    ShieldCheck
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useAuth } from '../../context';
@@ -96,6 +97,12 @@ export function Sidebar() {
             label: t('nav.research'),
             href: '/research-results',
             icon: <TrendingUp className="w-5 h-5" />,
+            roles: ['TEACHER', 'ADMIN']
+        },
+        {
+            label: t('nav.audit'),
+            href: '/audit-logs',
+            icon: <ShieldCheck className="w-5 h-5" />,
             roles: ['TEACHER', 'ADMIN']
         },
         {

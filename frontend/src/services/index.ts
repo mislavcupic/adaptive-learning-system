@@ -8,3 +8,4 @@ export { userService } from './userService';
 export { outcomeService } from './outcomeService';
 export {assessmentService} from './assessmentService';
 export { researchService } from './researchService';
+export * from './auditService';
