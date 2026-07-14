@@ -30,7 +30,7 @@ public class AssessmentAttempt extends BaseEntity {
     private LocalDateTime completedAt;
 
     @Column(columnDefinition = "TEXT")
-    private String answers; // JSON: {"questionId": "answer", ...}
+    private String answers;
 
     private Integer score;
 

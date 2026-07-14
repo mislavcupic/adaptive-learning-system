@@ -83,7 +83,7 @@ public class AuthServiceImpl implements AuthService {
                     )
             );
         } catch (BadCredentialsException e) {
-            log.warn("Failed login attempt for user: {}", request.getEmail());
+            log.warn("Failed login attempt for user: {}, exception message: {}", request.getEmail(), e.getMessage());
             throw new UnauthorizedException(messageService.invalidCredentials());
         }
 

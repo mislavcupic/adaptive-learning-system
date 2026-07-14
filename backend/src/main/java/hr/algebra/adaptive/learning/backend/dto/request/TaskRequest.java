@@ -1,5 +1,6 @@
 package hr.algebra.adaptive.learning.backend.dto.request;
 
+import hr.algebra.adaptive.learning.backend.domain.enums.TaskType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -14,6 +15,14 @@ public class TaskRequest {
     private String title;
 
     private String description;
+
+    private String instructions;
+
+    private TaskType taskType = TaskType.CODE;
+
+    private String options;
+
+    private String correctAnswer;
 
     private String starterCode;
 

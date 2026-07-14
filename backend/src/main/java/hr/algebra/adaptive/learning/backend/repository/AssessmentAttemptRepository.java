@@ -25,7 +25,8 @@ public interface AssessmentAttemptRepository extends JpaRepository<AssessmentAtt
             "WHERE aa.student.id = :studentId " +
             "AND aa.assessment.assessmentType = :type " +
             "AND aa.assessment.course.id = :courseId " +
-            "AND aa.isCompleted = true")
+            "AND aa.isCompleted = true " +
+            "ORDER BY aa.completedAt DESC LIMIT 1")
     Optional<AssessmentAttempt> findCompletedByStudentTypeAndCourse(
             @Param("studentId") UUID studentId,
             @Param("type") AssessmentType type,

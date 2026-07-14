@@ -115,12 +115,10 @@ public class AssessmentServiceImpl implements AssessmentService {
     public AssessmentAttemptResponse startAttempt(UUID assessmentId, UUID studentId) {
         log.info("Student {} starting assessment {}", studentId, assessmentId);
 
-        // TVRDA BRANA: ako je student već ZAVRŠIO ovaj assessment, ne dopuštaj ponovno.
         if (attemptRepository.existsByStudentIdAndAssessmentIdAndIsCompletedTrue(studentId, assessmentId)) {
             throw new AssessmentAlreadyCompletedException("Ovaj test ste već riješili i ne možete ga ponovno pisati.");
         }
 
-        // Ako postoji NEZAVRŠEN pokušaj (npr. student osvježio stranicu), vrati njega
         Optional<AssessmentAttempt> existing = attemptRepository.findByStudentIdAndAssessmentId(studentId, assessmentId);
         if (existing.isPresent()) {
             return AssessmentAttemptResponse.fromEntity(existing.get());
@@ -152,7 +150,6 @@ public class AssessmentServiceImpl implements AssessmentService {
     public AssessmentAttemptResponse submitAttempt(AssessmentAttemptRequest request, UUID studentId) {
         log.info("Student {} submitting assessment {}", studentId, request.getAssessmentId());
 
-        // TVRDA BRANA: ako je student već ZAVRŠIO ovaj assessment, odbij ponovnu predaju.
         if (attemptRepository.existsByStudentIdAndAssessmentIdAndIsCompletedTrue(studentId, request.getAssessmentId())) {
             throw new AssessmentAlreadyCompletedException("Ovaj test ste već riješili i ne možete ga ponovno predati.");
         }
@@ -163,7 +160,6 @@ public class AssessmentServiceImpl implements AssessmentService {
         Assessment assessment = attempt.getAssessment();
         int totalScore = 0;
 
-        // Ocijeni svako pitanje
         for (AssessmentQuestion question : assessment.getQuestions()) {
             String studentAnswer = request.getAnswers().get(question.getId().toString());
             if (studentAnswer == null) continue;
@@ -172,7 +168,6 @@ public class AssessmentServiceImpl implements AssessmentService {
             totalScore += points;
         }
 
-        // Spremi odgovore kao JSON
         try {
             attempt.setAnswers(objectMapper.writeValueAsString(request.getAnswers()));
         } catch (JsonProcessingException e) {
@@ -219,7 +214,6 @@ public class AssessmentServiceImpl implements AssessmentService {
         if (question.getQuestionType() == QuestionType.CODE) {
             return gradeCodeQuestion(question, studentAnswer);
         } else {
-            // MULTIPLE_CHOICE ili TRUE_FALSE
             if (question.getCorrectAnswer() != null &&
                     question.getCorrectAnswer().trim().equalsIgnoreCase(studentAnswer.trim())) {
                 return question.getPoints();
@@ -232,9 +226,11 @@ public class AssessmentServiceImpl implements AssessmentService {
         try {
             List<CodeExecutionRequest.TestCase> testCases = parseTestCases(question.getTestCases());
 
+            String language = mapLanguageType(question.getAssessment().getCourse().getLanguageType().name());
+
             CodeExecutionRequest execRequest = CodeExecutionRequest.builder()
                     .code(code)
-                    .language("C") // TODO: dinamički iz assessmenta
+                    .language(language)
                     .testCases(testCases)
                     .timeoutSeconds(10)
                     .build();
@@ -250,6 +246,14 @@ public class AssessmentServiceImpl implements AssessmentService {
             log.error("Error grading code question: {}", e.getMessage());
             return 0;
         }
+    }
+
+    private String mapLanguageType(String languageType) {
+        return switch (languageType) {
+            case "CSHARP" -> "CSHARP";
+            case "PYTHON" -> "PYTHON";
+            default -> "C";
+        };
     }
 
     private List<CodeExecutionRequest.TestCase> parseTestCases(String testCasesJson) {

@@ -1,5 +1,6 @@
 package hr.algebra.adaptive.learning.backend.domain.entity;
 
+import hr.algebra.adaptive.learning.backend.domain.enums.TaskType;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -23,6 +24,20 @@ public class Task extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(columnDefinition = "TEXT")
+    private String instructions;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "task_type")
+    @Builder.Default
+    private TaskType taskType = TaskType.CODE;
+
+    @Column(columnDefinition = "TEXT")
+    private String options; // JSON array za MULTIPLE_CHOICE i CHECKLIST
+
+    @Column(name = "correct_answer", columnDefinition = "TEXT")
+    private String correctAnswer; // Za TEXT, MULTIPLE_CHOICE, CHECKLIST
+
     @Column(name = "starter_code", columnDefinition = "TEXT")
     private String starterCode;
 
@@ -30,7 +45,7 @@ public class Task extends BaseEntity {
     private String solutionCode;
 
     @Column(name = "test_cases", columnDefinition = "TEXT")
-    private String testCases; // JSON format
+    private String testCases;
 
     @Column(name = "grading_criteria", columnDefinition = "TEXT")
     private String gradingCriteria;

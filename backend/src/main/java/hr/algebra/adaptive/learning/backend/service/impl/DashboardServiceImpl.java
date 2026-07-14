@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -37,12 +38,25 @@ public class DashboardServiceImpl implements DashboardService {
         List<SkillMastery> masteries = skillMasteryRepository.findByStudentId(studentId);
         List<Submission> recentSubmissions = submissionRepository.findByStudentIdOrderByCreatedAtDesc(studentId);
 
-        // Izračunaj statistike
         long totalSubmissions = submissionRepository.countByStudentId(studentId);
-        long completedTasks = recentSubmissions.stream()
+
+        Set<UUID> completedTaskIds = recentSubmissions.stream()
                 .map(s -> s.getTask().getId())
-                .distinct()
-                .count();
+                .collect(Collectors.toSet());
+
+        long completedTasks = completedTaskIds.size();
+
+        Set<UUID> courseIds = enrolledCourses.stream()
+                .map(Course::getId)
+                .collect(Collectors.toSet());
+
+        long totalAvailableTasks = 0;
+        if (!courseIds.isEmpty()) {
+            totalAvailableTasks = taskRepository.countByOutcomeCourseIdInAndIsActiveTrue(courseIds);
+        }
+
+        long pendingTasks = Math.max(0, totalAvailableTasks - completedTasks);
+
         double averageMastery = masteries.stream()
                 .mapToDouble(SkillMastery::getMasteryLevel)
                 .average()
@@ -52,13 +66,14 @@ public class DashboardServiceImpl implements DashboardService {
                 .student(mapToStudentResponse(student))
                 .totalSubmissions((int) totalSubmissions)
                 .completedTasks((int) completedTasks)
-                .pendingTasks(0) // TODO: izračunati prave pending taskove
+                .pendingTasks((int) pendingTasks)
                 .averageMastery(averageMastery)
                 .enrolledCourses(enrolledCourses.stream().map(this::mapToCourseResponse).toList())
                 .recentSubmissions(recentSubmissions.stream().limit(5).map(this::mapToSubmissionResponse).toList())
                 .skillMasteries(masteries.stream().map(this::mapToSkillMasteryResponse).toList())
                 .build();
     }
+
     @Override
     public TeacherDashboardResponse getTeacherDashboard(UUID teacherId) {
         User teacher = userRepository.findById(teacherId)

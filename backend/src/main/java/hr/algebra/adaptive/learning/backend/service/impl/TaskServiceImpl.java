@@ -3,6 +3,7 @@ package hr.algebra.adaptive.learning.backend.service.impl;
 import hr.algebra.adaptive.learning.backend.domain.entity.LearningOutcome;
 import hr.algebra.adaptive.learning.backend.domain.entity.Task;
 import hr.algebra.adaptive.learning.backend.domain.entity.User;
+import hr.algebra.adaptive.learning.backend.domain.enums.TaskType;
 import hr.algebra.adaptive.learning.backend.dto.request.TaskRequest;
 import hr.algebra.adaptive.learning.backend.dto.response.TaskResponse;
 import hr.algebra.adaptive.learning.backend.exception.ResourceNotFoundException;
@@ -32,7 +33,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public TaskResponse create(TaskRequest request, UUID createdById) {
-        log.info("Creating task: {}", request.getTitle());
+        log.info("Creating task: {} of type: {}", request.getTitle(), request.getTaskType());
 
         LearningOutcome outcome = outcomeRepository.findById(request.getOutcomeId())
                 .orElseThrow(() -> new ResourceNotFoundException("LearningOutcome", "id", request.getOutcomeId()));
@@ -43,6 +44,10 @@ public class TaskServiceImpl implements TaskService {
         Task task = Task.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
+                .instructions(request.getInstructions())
+                .taskType(request.getTaskType() != null ? request.getTaskType() : TaskType.CODE)
+                .options(request.getOptions())
+                .correctAnswer(request.getCorrectAnswer())
                 .starterCode(request.getStarterCode())
                 .solutionCode(request.getSolutionCode())
                 .testCases(request.getTestCases())
@@ -106,6 +111,10 @@ public class TaskServiceImpl implements TaskService {
 
         task.setTitle(request.getTitle());
         task.setDescription(request.getDescription());
+        task.setInstructions(request.getInstructions());
+        task.setTaskType(request.getTaskType() != null ? request.getTaskType() : task.getTaskType());
+        task.setOptions(request.getOptions());
+        task.setCorrectAnswer(request.getCorrectAnswer());
         task.setStarterCode(request.getStarterCode());
         task.setSolutionCode(request.getSolutionCode());
         task.setTestCases(request.getTestCases());
@@ -141,6 +150,10 @@ public class TaskServiceImpl implements TaskService {
         Task duplicate = Task.builder()
                 .title(original.getTitle() + " (kopija)")
                 .description(original.getDescription())
+                .instructions(original.getInstructions())
+                .taskType(original.getTaskType())
+                .options(original.getOptions())
+                .correctAnswer(original.getCorrectAnswer())
                 .starterCode(original.getStarterCode())
                 .solutionCode(original.getSolutionCode())
                 .testCases(original.getTestCases())

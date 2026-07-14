@@ -14,9 +14,7 @@ export interface ResearchResult {
     posttestPercentage: number | null;
 }
 
-// ============================================================
-// ANCOVA statistička analiza
-// ============================================================
+
 
 export interface GroupDescriptive {
     group: string;

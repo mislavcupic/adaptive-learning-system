@@ -51,7 +51,8 @@ public class AuditAspect {
                 endpoint = req.getRequestURI();
                 ipAddress = extractIp(req);
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.error(e.getMessage());
         }
 
         UserInfo user = currentUser();
@@ -60,16 +61,15 @@ public class AuditAspect {
         String errorMessage = null;
 
         try {
-            // Izvrši originalnu metodu
-            Object result = joinPoint.proceed();
+            Object result;
+            result = joinPoint.proceed();
             return result;
         } catch (Throwable ex) {
             success = false;
             errorMessage = ex.getMessage();
-            throw ex; // proslijedi grešku dalje, ne progutaj
+            throw ex;
         } finally {
             long duration = System.currentTimeMillis() - start;
-            // Zapiši audit log — bez rušenja originalne akcije ako logiranje padne
             try {
                 AuditLog logEntry = AuditLog.builder()
                         .userId(user.id())
@@ -103,9 +103,9 @@ public class AuditAspect {
                     .map(a -> a.substring(5))
                     .findFirst()
                     .orElse(null);
-            // userId nije uvijek dostupan iz SecurityContext-a; ostavljamo null ako ga nema
             return new UserInfo(null, email, role);
         } catch (Exception e) {
+            log.error(e.getMessage());
             return new UserInfo(null, null, null);
         }
     }

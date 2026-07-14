@@ -70,9 +70,7 @@ export interface User {
     researchGroup?: 'NOT_ASSIGNED' | 'EXPERIMENTAL' | 'CONTROL';
 }
 
-// ============================================================================
-// SCHOOL CLASS
-// ============================================================================
+
 
 export interface SchoolClass {
     id: string;
@@ -137,12 +135,15 @@ export interface LearningOutcomeRequest {
 
 //task
 
+export type TaskType = 'CODE' | 'TEXT' | 'MULTIPLE_CHOICE' | 'CHECKLIST';
+
 export interface Task {
-    orderIndex: number;
     id: string;
     title: string;
     description?: string | null;
-    instructions: string;
+    instructions?: string | null;
+    taskType: TaskType;
+    options?: string | null;
     starterCode?: string | null;
     solutionCode?: string | null;
     testCases?: string | null;
@@ -157,9 +158,10 @@ export interface Task {
     languageType?: LanguageType;
     createdById?: string;
     createdByName?: string;
-    submissionCount?: number;
+    submissionsCount?: number;
     isActive: boolean;
     dueDate?: string | null;
+    orderIndex: number;
     createdAt: string;
     updatedAt?: string;
 }
@@ -167,7 +169,10 @@ export interface Task {
 export interface TaskRequest {
     title: string;
     description?: string;
-    instructions: string;
+    instructions?: string;
+    taskType?: TaskType;
+    options?: string;
+    correctAnswer?: string;
     starterCode?: string;
     solutionCode?: string;
     testCases?: string;
@@ -177,9 +182,8 @@ export interface TaskRequest {
     memoryLimitMb: number;
     outcomeId: string;
     dueDate?: string;
-    orderIndex?:number;
+    orderIndex?: number;
 }
-
 //subm
 
 export interface Submission {
