@@ -13,3 +13,5 @@ python-dotenv==1.0.0
 httpx==0.26.0
 pandas==2.1.4
 pingouin==0.5.4
+scipy==1.11.4
+statsmodels==0.14.1

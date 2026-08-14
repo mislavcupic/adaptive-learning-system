@@ -3,8 +3,11 @@ Pydantic modeli za ML servis.
 """
 
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel
+
+
+# OSNOVNI MODELI
 
 
 class ResearchGroup(str, Enum):
@@ -54,13 +57,8 @@ class BKTResponse(BaseModel):
     mastery_level: float
     previous_level: float
 
-    # ============================================================
-# ANCOVA / STATISTICS SHEME — dodaj u app/models/schemas.py
-# ============================================================
 
-from typing import List, Optional
-from pydantic import BaseModel
-
+# ANCOVA / STATISTICS SHEME
 
 class AncovaRecord(BaseModel):
     """Jedan ispitanik: grupa + pretest (kovarijat) + posttest (ishod)."""
@@ -107,9 +105,49 @@ class AncovaResult(BaseModel):
     significant: bool
 
 
+class AdjustedMean(BaseModel):
+    """Prilagođena sredina posttesta uz kontrolu kovarijate."""
+    group: str
+    n: int
+    observed_mean: float
+    adjusted_mean: float
+    se: Optional[float] = None
+
+
+class EffectSize(BaseModel):
+    """Cohenov d i Hedgesov g s 95% intervalom pouzdanosti."""
+    cohens_d: float
+    hedges_g: float
+    se: float
+    ci_lower: float
+    ci_upper: float
+    mean_difference: float
+    pooled_sd: float
+    magnitude: str      # negligible | small | medium | large
+    favors: str         # CONTROL | EXPERIMENTAL
+
+
+class AssumptionTest(BaseModel):
+    """Rezultat provjere jedne pretpostavke ANCOVE."""
+    f: Optional[float] = None
+    statistic: Optional[float] = None
+    p: Optional[float] = None
+    satisfied: bool
+    note: Optional[str] = None
+
+
+class Assumptions(BaseModel):
+    homogeneity_of_slopes: Optional[AssumptionTest] = None
+    levene: Optional[AssumptionTest] = None
+    shapiro: Optional[AssumptionTest] = None
+
+
 class AncovaResponse(BaseModel):
     n_total: int
     groups: List[str]
     descriptives: List[GroupDescriptive]
     ancova: Optional[AncovaResult] = None
+    adjusted_means: Optional[List[AdjustedMean]] = None
+    effect_size: Optional[EffectSize] = None
+    assumptions: Optional[Assumptions] = None
     warning: Optional[str] = None

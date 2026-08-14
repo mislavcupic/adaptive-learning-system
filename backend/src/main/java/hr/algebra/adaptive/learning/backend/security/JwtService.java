@@ -107,7 +107,6 @@ public class JwtService {
                 .compact();
     }
 
-    // ==================== Token Validation ====================
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
@@ -140,7 +139,6 @@ public class JwtService {
         return refreshTokenExpiration;
     }
 
-    // ==================== Key ====================
 
     private SecretKey getSigningKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);

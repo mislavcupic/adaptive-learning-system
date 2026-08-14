@@ -56,7 +56,6 @@ public class User extends BaseEntity implements UserDetails {
     @Enumerated(EnumType.STRING)
     @Column(name = "research_group")
     private ResearchGroup researchGroup = ResearchGroup.NOT_ASSIGNED;
-    // userdetails impl
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

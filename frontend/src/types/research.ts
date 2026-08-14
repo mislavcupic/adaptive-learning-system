@@ -54,5 +54,42 @@ export interface AncovaResponse {
     groups: string[];
     descriptives: GroupDescriptive[];
     ancova: AncovaResult | null;
+    adjusted_means: AdjustedMean[] | null;
+    effect_size: EffectSize | null;
+    assumptions: Assumptions | null;
     warning: string | null;
+}
+
+export interface AdjustedMean {
+    group: string;
+    n: number;
+    observed_mean: number;
+    adjusted_mean: number;
+    se: number | null;
+}
+
+export interface EffectSize {
+    cohens_d: number;
+    hedges_g: number;
+    se: number;
+    ci_lower: number;
+    ci_upper: number;
+    mean_difference: number;
+    pooled_sd: number;
+    magnitude: 'negligible' | 'small' | 'medium' | 'large';
+    favors: string;
+}
+
+export interface AssumptionTest {
+    f?: number | null;
+    statistic?: number | null;
+    p: number | null;
+    satisfied: boolean;
+    note?: string;
+}
+
+export interface Assumptions {
+    homogeneity_of_slopes: AssumptionTest | null;
+    levene: AssumptionTest | null;
+    shapiro: AssumptionTest | null;
 }
