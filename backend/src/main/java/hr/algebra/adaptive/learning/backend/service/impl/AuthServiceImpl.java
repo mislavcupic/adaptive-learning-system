@@ -281,8 +281,7 @@ public class AuthServiceImpl implements AuthService {
     public UserResponse getCurrentUser(UUID userId) {
         // JOIN FETCH ucitava schoolClass odmah, pa mapiranje u DTO
         // ne ovisi o tome je li sesija jos otvorena.
-        User user = userRepository.findByIdWithSchoolClass(userId)
-                .orElseThrow(() -> new ResourceNotFoundException(messageService.userNotFound()));
+        User user = userRepository.findByIdWithSchoolClass(userId).orElseThrow(() -> new ResourceNotFoundException(messageService.userNotFound()));
 
         return UserResponse.fromEntity(user);
     }

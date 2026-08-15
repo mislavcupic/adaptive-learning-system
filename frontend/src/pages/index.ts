@@ -26,3 +26,5 @@ export { ResearchResultsPage } from './ResearchResultsPage';
 export { AuditLogsPage } from './AuditLogsPage';
 export * from './VerifyEmailPage';
 export * from './OAuth2CallbackPage';
+export * from './StudentAttemptsPage';
+export * from './StudentDetailPage'

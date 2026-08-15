@@ -1,3 +1,5 @@
+import {SubmissionStatus} from "./index";
+
 export type ResearchGroup = 'NOT_ASSIGNED' | 'EXPERIMENTAL' | 'CONTROL';
 
 export interface ResearchResult {
@@ -92,4 +94,44 @@ export interface Assumptions {
     homogeneity_of_slopes: AssumptionTest | null;
     levene: AssumptionTest | null;
     shapiro: AssumptionTest | null;
+}
+
+
+export interface AttemptEntry {
+    submissionId: string;
+    taskId: string;
+    taskTitle: string;
+    courseName: string;
+    status: SubmissionStatus;
+    aiScore: number | null;
+    teacherScore: number | null;
+    finalScore: number | null;
+    maxScore: number | null;
+    testsPassed: number | null;
+    testsTotal: number | null;
+    aiFeedback: string | null;
+    teacherFeedback: string | null;
+    executionTimeMs: number | null;
+    createdAt: string;
+}
+
+export interface StudentBlock {
+    studentId: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    schoolClassName: string | null;
+    researchGroup: ResearchGroup;
+    totalSubmissions: number;
+    tasksAttempted: number;
+    withAiFeedback: number;
+    averageScore: number | null;
+    lastActivity: string | null;
+    attempts: AttemptEntry[];
+}
+
+export interface SubmissionsOverview {
+    totalStudents: number;
+    totalSubmissions: number;
+    students: StudentBlock[];
 }

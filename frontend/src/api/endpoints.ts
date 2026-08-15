@@ -76,6 +76,10 @@ export const ENDPOINTS = {
         ANCOVA: '/teacher/research-results/ancova',
     },
 
+    TEACHER: {
+        SUBMISSIONS_OVERVIEW: '/submissions/overview',
+    },
+
     AUDIT: {
         LOGS: '/teacher/audit-logs',
     },

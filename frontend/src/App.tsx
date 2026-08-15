@@ -24,7 +24,9 @@ import {
     ResearchResultsPage,
     AuditLogsPage,
     VerifyEmailPage,
-    OAuth2CallbackPage
+    OAuth2CallbackPage,
+    StudentAttemptsPage,
+    StudentDetailPage
 } from './pages';
 
 function App() {
@@ -112,7 +114,12 @@ function App() {
                                 } />
                                 <Route path="students/:id" element={
                                     <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
-                                        <StudentsPage />
+                                        <StudentDetailPage />
+                                    </ProtectedRoute>
+                                } />
+                                <Route path="student-attempts" element={
+                                    <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
+                                        <StudentAttemptsPage />
                                     </ProtectedRoute>
                                 } />
 

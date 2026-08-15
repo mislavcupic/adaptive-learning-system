@@ -17,12 +17,19 @@ import java.util.UUID;
 @Repository
 public interface SubmissionRepository extends JpaRepository<Submission, UUID> {
     List<Submission> findByStudentIdOrderByCreatedAtDesc(UUID studentId);
+
     List<Submission> findByTaskIdOrderByCreatedAtDesc(UUID taskId);
+
     Page<Submission> findByStudentId(UUID studentId, Pageable pageable);
+
     Page<Submission> findByTaskId(UUID taskId, Pageable pageable);
+
     long countByStudentId(UUID studentId);
+
     long countByTaskId(UUID taskId);
+
     List<Submission> findByStudentIdAndTaskId(UUID studentId, UUID taskId);
+
     List<Submission> findByStatus(SubmissionStatus status);
 
     // Metode potrebne za Dashboard
@@ -33,5 +40,28 @@ public interface SubmissionRepository extends JpaRepository<Submission, UUID> {
 
     @Query("SELECT s FROM Submission s ORDER BY s.createdAt DESC")
     List<Submission> findAllOrderByCreatedAtDesc();
-}
 
+    /**
+     * Bulk dohvat svih predaja za nastavnicki pregled.
+     * <p>
+     * JOIN FETCH ucitava studenta, zadatak, ishod i kolegij u jednom upitu,
+     * cime se izbjegava N+1 problem pri mapiranju u DTO. Bez toga bi svaki
+     * pristup s.getTask().getTitle() pokrenuo zaseban SELECT.
+     */
+    @Query("""
+            SELECT s FROM Submission s
+            JOIN FETCH s.student st
+            LEFT JOIN FETCH st.schoolClass
+            JOIN FETCH s.task t
+            JOIN FETCH t.outcome o
+            JOIN FETCH o.course c
+            WHERE (CAST(:courseId AS uuid) IS NULL OR c.id = :courseId)
+              AND (CAST(:studentId AS uuid) IS NULL OR st.id = :studentId)
+              AND (CAST(:from AS timestamp) IS NULL OR s.createdAt >= :from)
+            ORDER BY st.lastName ASC, st.firstName ASC, s.createdAt DESC
+            """)
+    List<Submission> findAllForTeacherOverview(
+            @Param("courseId") UUID courseId,
+            @Param("studentId") UUID studentId,
+            @Param("from") LocalDateTime from);
+}

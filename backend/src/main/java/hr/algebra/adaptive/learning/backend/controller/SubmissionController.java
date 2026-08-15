@@ -4,7 +4,9 @@ import hr.algebra.adaptive.learning.backend.domain.entity.User;
 import hr.algebra.adaptive.learning.backend.dto.request.SubmissionRequest;
 import hr.algebra.adaptive.learning.backend.dto.response.ApiResponse;
 import hr.algebra.adaptive.learning.backend.dto.response.PaginatedResponse;
+import hr.algebra.adaptive.learning.backend.dto.response.StudentSubmissionsOverviewResponse;
 import hr.algebra.adaptive.learning.backend.dto.response.SubmissionResponse;
+import hr.algebra.adaptive.learning.backend.service.SubmissionOverviewService;
 import hr.algebra.adaptive.learning.backend.service.SubmissionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,8 @@ import java.util.UUID;
 public class SubmissionController {
 
     private final SubmissionService submissionService;
+    private final SubmissionOverviewService submissionOverviewService;
+
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     public ResponseEntity<ApiResponse<List<SubmissionResponse>>> getAllSubmissions() {
@@ -140,4 +144,16 @@ public class SubmissionController {
     }
 
     public record TeacherFeedbackRequest(String feedback, Integer score) {}
+
+
+    @GetMapping("/overview")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<StudentSubmissionsOverviewResponse>> getSubmissionsOverview(
+            @RequestParam(required = false) UUID courseId,
+            @RequestParam(required = false) UUID studentId,
+            @RequestParam(required = false) Integer lastDays) {
+
+        return ResponseEntity.ok(ApiResponse.success(
+                submissionOverviewService.getOverview(courseId, studentId, lastDays)));
+    }
 }
