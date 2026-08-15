@@ -40,4 +40,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     long countByRoleAndIsActiveFalseAndEmailVerifiedTrue(UserRole role);
 
     Optional<User> findByVerificationToken(String verificationToken);
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.schoolClass WHERE u.id = :id")
+    Optional<User> findByIdWithSchoolClass(@Param("id") UUID id);
 }

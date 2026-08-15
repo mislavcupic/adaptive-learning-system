@@ -275,4 +275,15 @@ public class AuthServiceImpl implements AuthService {
                 .user(UserResponse.fromEntity(user))
                 .build();
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserResponse getCurrentUser(UUID userId) {
+        // JOIN FETCH ucitava schoolClass odmah, pa mapiranje u DTO
+        // ne ovisi o tome je li sesija jos otvorena.
+        User user = userRepository.findByIdWithSchoolClass(userId)
+                .orElseThrow(() -> new ResourceNotFoundException(messageService.userNotFound()));
+
+        return UserResponse.fromEntity(user);
+    }
 }

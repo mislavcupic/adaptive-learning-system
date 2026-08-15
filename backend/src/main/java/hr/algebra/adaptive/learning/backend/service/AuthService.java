@@ -5,6 +5,9 @@ import hr.algebra.adaptive.learning.backend.dto.request.LoginRequest;
 import hr.algebra.adaptive.learning.backend.dto.request.RefreshTokenRequest;
 import hr.algebra.adaptive.learning.backend.dto.request.RegisterRequest;
 import hr.algebra.adaptive.learning.backend.dto.response.AuthResponse;
+import hr.algebra.adaptive.learning.backend.dto.response.UserResponse;
+
+import java.util.UUID;
 
 public interface AuthService {
 
@@ -21,4 +24,5 @@ public interface AuthService {
     void verifyEmail(String token);
 
     void resendVerification(String email);
+    UserResponse getCurrentUser(UUID userId);
 }

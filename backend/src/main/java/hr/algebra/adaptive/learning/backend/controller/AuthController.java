@@ -8,9 +8,11 @@ import hr.algebra.adaptive.learning.backend.dto.request.RegisterRequest;
 import hr.algebra.adaptive.learning.backend.dto.response.ApiResponse;
 import hr.algebra.adaptive.learning.backend.dto.response.AuthResponse;
 import hr.algebra.adaptive.learning.backend.dto.response.UserResponse;
+import hr.algebra.adaptive.learning.backend.exception.ResourceNotFoundException;
 import hr.algebra.adaptive.learning.backend.service.AuthService;
 import hr.algebra.adaptive.learning.backend.service.MessageService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -93,7 +95,7 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser(@AuthenticationPrincipal User user) {
         log.info("Get current user request for: {}", user.getEmail());
-        return ResponseEntity.ok(ApiResponse.success(UserResponse.fromEntity(user)));
+        return ResponseEntity.ok(ApiResponse.success(authService.getCurrentUser(user.getId())));
     }
 
     // ==================== PRIVATE METHODS ====================
