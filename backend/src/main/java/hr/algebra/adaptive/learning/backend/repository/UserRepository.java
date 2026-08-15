@@ -33,4 +33,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     List<User> findByRoleAndIsActiveFalse(UserRole role);
     long countByRoleAndIsActiveFalse(UserRole role);
 
-    long countBySchoolClassIdAndResearchGroup(UUID schoolClassId, ResearchGroup researchGroup);}
+    long countBySchoolClassIdAndResearchGroup(UUID schoolClassId, ResearchGroup researchGroup);
+
+    // Nastavnik vidi samo one koji su POTVRDILI email.
+    List<User> findByRoleAndIsActiveFalseAndEmailVerifiedTrue(UserRole role);
+    long countByRoleAndIsActiveFalseAndEmailVerifiedTrue(UserRole role);
+
+    Optional<User> findByVerificationToken(String verificationToken);
+}

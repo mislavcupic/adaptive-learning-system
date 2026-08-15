@@ -2,6 +2,7 @@ package hr.algebra.adaptive.learning.backend.domain.entity;
 
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import hr.algebra.adaptive.learning.backend.domain.enums.AuthProvider;
 import hr.algebra.adaptive.learning.backend.domain.enums.GroupType;
 import hr.algebra.adaptive.learning.backend.domain.enums.ResearchGroup;
 import hr.algebra.adaptive.learning.backend.domain.enums.UserRole;
@@ -11,6 +12,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 
@@ -48,6 +50,24 @@ public class User extends BaseEntity implements UserDetails {
     @Column(name = "is_active")
     @Builder.Default
     private boolean isActive = true;
+
+    @Column(name = "email_verified")
+    @Builder.Default
+    private boolean emailVerified = false;
+
+    @Column(name = "verification_token")
+    private String verificationToken;
+
+    @Column(name = "verification_token_expiry")
+    private Instant verificationTokenExpiry;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "auth_provider")
+    @Builder.Default
+    private AuthProvider authProvider = AuthProvider.LOCAL;
+
+    @Column(name = "provider_id")
+    private String providerId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "school_class_id")

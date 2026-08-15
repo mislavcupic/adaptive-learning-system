@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context';
 import { useForm } from '../hooks';
 import { Button, Input, Card, CardContent } from '../components/ui';
+import { GoogleButton } from '../components/GoogleButton';
 import { required, isEmail, compose } from '../utils/validators';
 import type { LoginCredentials } from '../types';
 
@@ -12,8 +13,17 @@ export function LoginPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { login } = useAuth();
+    const [searchParams] = useSearchParams();
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Backend preusmjerava ovamo s ?error=... kad Google prijava ne uspije
+    useEffect(() => {
+        const urlError = searchParams.get('error');
+        if (urlError) {
+            setError(urlError);
+        }
+    }, [searchParams]);
 
     const form = useForm<LoginCredentials>({
         initialValues: {
@@ -102,6 +112,20 @@ export function LoginPage() {
                                 {t('auth.loginButton')}
                             </Button>
                         </form>
+
+                        {/* Razdjelnik */}
+                        <div className="relative my-5">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
+                            </div>
+                            <div className="relative flex justify-center">
+                                <span className="px-3 bg-white dark:bg-zinc-900 text-xs text-zinc-400 uppercase tracking-wide">
+                                    ili
+                                </span>
+                            </div>
+                        </div>
+
+                        <GoogleButton label="Prijava putem Googlea" />
 
                         <div className="mt-6 text-center">
                             <p className="text-sm text-zinc-500 dark:text-zinc-400">

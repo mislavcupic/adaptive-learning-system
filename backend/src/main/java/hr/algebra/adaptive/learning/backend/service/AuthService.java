@@ -17,4 +17,8 @@ public interface AuthService {
     void logout(String accessToken, String refreshToken);
 
     void logoutAllDevices(User user);
+
+    void verifyEmail(String token);
+
+    void resendVerification(String email);
 }

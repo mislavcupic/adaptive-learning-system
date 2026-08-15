@@ -22,7 +22,9 @@ import {
     AssessmentSolvePage,
     AssessmentFormPage,
     ResearchResultsPage,
-    AuditLogsPage
+    AuditLogsPage,
+    VerifyEmailPage,
+    OAuth2CallbackPage
 } from './pages';
 
 function App() {
@@ -36,6 +38,8 @@ function App() {
                             <Route path="/login" element={<LoginPage />} />
                             <Route path="/register" element={<RegisterPage />} />
                             <Route path="/registration-pending" element={<RegistrationPendingPage />} />
+                            <Route path="/verify-email" element={<VerifyEmailPage />} />
+                            <Route path="/oauth2/callback" element={<OAuth2CallbackPage />} />
 
                             {/* Protected routes */}
                             <Route

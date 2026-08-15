@@ -11,6 +11,7 @@ import hr.algebra.adaptive.learning.backend.exception.BadRequestException;
 import hr.algebra.adaptive.learning.backend.exception.ResourceNotFoundException;
 import hr.algebra.adaptive.learning.backend.repository.SchoolClassRepository;
 import hr.algebra.adaptive.learning.backend.repository.UserRepository;
+import hr.algebra.adaptive.learning.backend.service.EmailService;
 import hr.algebra.adaptive.learning.backend.service.ResearchGroupService;
 import hr.algebra.adaptive.learning.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final SchoolClassRepository schoolClassRepository;
     private final ResearchGroupService researchGroupService;
+    private final EmailService emailService;
 
     @Override
     public UserResponse getById(UUID id) {
@@ -152,16 +154,20 @@ public class UserServiceImpl implements UserService {
 
         userRepository.delete(user);
     }
+
     @Override
     public List<UserResponse> getPendingRegistrations() {
-        return userRepository.findByRoleAndIsActiveFalse(UserRole.GUEST).stream()
+        // Nastavnik vidi samo one koji su potvrdili e-mail adresu.
+        return userRepository
+                .findByRoleAndIsActiveFalseAndEmailVerifiedTrue(UserRole.GUEST).stream()
                 .map(UserResponse::fromEntity)
                 .toList();
     }
 
     @Override
     public long getPendingRegistrationsCount() {
-        return userRepository.countByRoleAndIsActiveFalse(UserRole.GUEST);
+        return userRepository
+                .countByRoleAndIsActiveFalseAndEmailVerifiedTrue(UserRole.GUEST);
     }
 
     @Transactional
@@ -172,6 +178,10 @@ public class UserServiceImpl implements UserService {
 
         if (user.getRole() != UserRole.GUEST) {
             throw new BadRequestException("Korisnik nije GUEST");
+        }
+
+        if (!user.isEmailVerified()) {
+            throw new BadRequestException("Korisnik nije potvrdio e-mail adresu.");
         }
 
         user.setRole(UserRole.STUDENT);
@@ -190,6 +200,7 @@ public class UserServiceImpl implements UserService {
         }
 
         User saved = userRepository.save(user);
+        emailService.sendAccountApprovedEmail(saved);
         return UserResponse.fromEntity(saved);
     }
 

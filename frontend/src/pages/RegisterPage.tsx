@@ -7,6 +7,7 @@ import { useForm } from '../hooks';
 import { Button, Input, Card, CardContent } from '../components/ui';
 import { required, isEmail, isPassword, compose, minLength } from '../utils/validators';
 import type { RegisterRequest } from '../types';
+import { GoogleButton } from '../components/GoogleButton';
 
 interface RegisterFormData extends RegisterRequest {
     confirmPassword: string;
@@ -150,6 +151,18 @@ export function RegisterPage() {
                             >
                                 {t('auth.registerButton')}
                             </Button>
+                            <div className="relative my-5">
+                                <div className="absolute inset-0 flex items-center">
+                                    <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
+                                </div>
+                                <div className="relative flex justify-center">
+                                <span className="px-3 bg-white dark:bg-zinc-900 text-xs text-zinc-400 uppercase tracking-wide">
+                                    ili
+                                </span>
+                                </div>
+                            </div>
+
+                            <GoogleButton label="Registracija putem Googlea" />
                         </form>
 
                         <div className="mt-6 text-center">

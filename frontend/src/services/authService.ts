@@ -52,4 +52,18 @@ export const authService = {
     getAccessToken: (): string | null => {
         return localStorage.getItem('accessToken');
     },
+
+    verifyEmail: async (token: string): Promise<string> => {
+        const response = await apiClient.get<ApiResponse<void>>(
+            `${ENDPOINTS.AUTH.VERIFY}?token=${encodeURIComponent(token)}`
+        );
+        return response.message ?? 'E-mail adresa je potvrđena.';
+    },
+
+    resendVerification: async (email: string): Promise<string> => {
+        const response = await apiClient.post<ApiResponse<void>>(
+            `${ENDPOINTS.AUTH.RESEND_VERIFICATION}?email=${encodeURIComponent(email)}`
+        );
+        return response.message ?? 'Poveznica je poslana.';
+    },
 };

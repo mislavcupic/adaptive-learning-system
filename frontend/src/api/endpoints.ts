@@ -7,6 +7,8 @@ export const ENDPOINTS = {
         LOGOUT: '/auth/logout',
         REFRESH: '/auth/refresh',
         ME: '/auth/me',
+        VERIFY: '/auth/verify',
+        RESEND_VERIFICATION: '/auth/resend-verification',
     },
     DASHBOARD: {
         STUDENT: '/dashboard/student',

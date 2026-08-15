@@ -1,6 +1,9 @@
 package hr.algebra.adaptive.learning.backend.config;
 
 import hr.algebra.adaptive.learning.backend.filter.JwtAuthenticationFilter;
+import hr.algebra.adaptive.learning.backend.security.oauth.CustomOAuth2UserService;
+import hr.algebra.adaptive.learning.backend.security.oauth.OAuth2FailureHandler;
+import hr.algebra.adaptive.learning.backend.security.oauth.OAuth2SuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,15 +27,26 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
     private final CorsConfigurationSource corsConfigurationSource;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
+    private final OAuth2FailureHandler oAuth2FailureHandler;
 
     // Javne rute - bez autentikacije
     private static final String[] PUBLIC_URLS = {
             "/api/auth/login",
             "/api/auth/register",
-            "/api/auth/refresh-token"
+            "/api/auth/refresh-token",
+            "/api/auth/verify",
+            "/api/auth/resend-verification"
     };
 
-    // Swagger/OpenAPI (ako budeš koristio)
+    // OAuth2 tijek - Google preusmjerava natrag na ove rute
+    private static final String[] OAUTH2_URLS = {
+            "/oauth2/**",
+            "/login/oauth2/**"
+    };
+
+    // Swagger/OpenAPI
     private static final String[] SWAGGER_URLS = {
             "/swagger-ui/**",
             "/v3/api-docs/**",
@@ -42,41 +56,38 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Disable CSRF (koristimo JWT)
                 .csrf(AbstractHttpConfigurer::disable)
 
-                // CORS konfiguracija
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
 
-                // Autorizacija
                 .authorizeHttpRequests(auth -> auth
-                        // Javne rute
                         .requestMatchers(PUBLIC_URLS).permitAll()
+                        .requestMatchers(OAUTH2_URLS).permitAll()
                         .requestMatchers(SWAGGER_URLS).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // Admin rute
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-
-                        // Teacher rute
                         .requestMatchers("/teacher/**").hasAnyRole("ADMIN", "TEACHER")
-
-                        // Student rute
                         .requestMatchers("/student/**").hasAnyRole("ADMIN", "TEACHER", "STUDENT")
 
-                        // Sve ostalo zahtijeva autentikaciju
                         .anyRequest().authenticated()
                 )
 
-                // Stateless session (JWT)
+                // OAuth2 tijek treba sesiju samo tijekom preusmjeravanja na Google
+                // i natrag; nakon toga korisnik dobiva JWT i sesija se ne koristi.
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
 
-                // Authentication provider
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customOAuth2UserService))
+                        .successHandler(oAuth2SuccessHandler)
+                        .failureHandler(oAuth2FailureHandler)
+                )
+
                 .authenticationProvider(authenticationProvider)
 
-                // JWT filter prije UsernamePasswordAuthenticationFilter
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

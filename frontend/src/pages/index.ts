@@ -22,5 +22,7 @@ export { TaskDetailPage } from './TaskDetailPage';
 export { AssessmentSolvePage } from './AssessmentSolvePage';
 export { AssessmentsPage } from './AssessmentsPage';
 export { AssessmentFormPage } from './AssessmentFormPage';
-export { ResearchResultsPage } from './ResearchResultsPage'
-export { AuditLogsPage } from './AuditLogsPage'
+export { ResearchResultsPage } from './ResearchResultsPage';
+export { AuditLogsPage } from './AuditLogsPage';
+export * from './VerifyEmailPage';
+export * from './OAuth2CallbackPage';

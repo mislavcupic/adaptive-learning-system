@@ -40,6 +40,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=postgres
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+
     depends_on:
       postgres:
         condition: service_healthy
@@ -70,6 +71,7 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - DATABASE_URL=postgresql://${DB_USERNAME}:${DB_PASSWORD}@adaptive-postgres:5432/${DB_NAME}
+
     depends_on:
       postgres:
         condition: service_healthy

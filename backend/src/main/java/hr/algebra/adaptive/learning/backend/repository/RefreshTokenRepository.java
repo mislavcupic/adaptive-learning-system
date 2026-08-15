@@ -2,6 +2,7 @@ package hr.algebra.adaptive.learning.backend.repository;
 
 import hr.algebra.adaptive.learning.backend.domain.entity.RefreshToken;
 import hr.algebra.adaptive.learning.backend.domain.entity.User;
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -18,7 +19,7 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID
     Optional<RefreshToken> findByToken(String token);
 
     Optional<RefreshToken> findByTokenAndRevokedFalse(String token);
-
+    @Transactional
     @Modifying
     @Query("UPDATE RefreshToken rt SET rt.revoked = true WHERE rt.user = :user")
     void revokeAllUserTokens(@Param("user") User user);

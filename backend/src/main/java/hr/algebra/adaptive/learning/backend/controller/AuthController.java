@@ -36,7 +36,21 @@ public class AuthController {
         AuthResponse response = authService.register(request);
         return ResponseEntity.ok(ApiResponse.success(messageService.registerSuccess(), response));
     }
+    @GetMapping("/verify")
+    public ResponseEntity<ApiResponse<Void>> verifyEmail(@RequestParam String token) {
+        log.info("Email verification request");
+        authService.verifyEmail(token);
+        return ResponseEntity.ok(ApiResponse.success(
+                "E-mail adresa je potvrđena. Vaša prijava sada čeka odobrenje nastavnika.", null));
+    }
 
+    @PostMapping("/resend-verification")
+    public ResponseEntity<ApiResponse<Void>> resendVerification(@RequestParam String email) {
+        log.info("Resend verification request for: {}", email);
+        authService.resendVerification(email);
+        return ResponseEntity.ok(ApiResponse.success(
+                "Ako račun s tom adresom postoji i nije potvrđen, poslali smo novu poveznicu.", null));
+    }
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
         log.info("Login request for: {}", request.getEmail());
