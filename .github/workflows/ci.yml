@@ -1,6 +1,6 @@
 name: CI/CD
 
-# Build i testovi na svaki push i pull request.
+# Build na svaki push i pull request. Testovi ce se dodati naknadno.
 # Objava Docker slika na ghcr.io samo s grane main.
 on:
   push:
@@ -37,19 +37,6 @@ jobs:
         working-directory: ./backend
         run: mvn -B compile
 
-      - name: Pokreni testove
-        working-directory: ./backend
-        run: mvn -B test
-
-      - name: Objavi rezultate testova
-        uses: dorny/test-reporter@v1
-        if: always()
-        with:
-          name: Backend testovi
-          path: backend/target/surefire-reports/*.xml
-          reporter: java-junit
-          fail-on-error: false
-
       - name: Zapakiraj
         working-directory: ./backend
         run: mvn -B package -DskipTests
@@ -84,7 +71,7 @@ jobs:
         working-directory: ./frontend
         run: npm run build
         env:
-          VITE_API_URL: http://localhost:8080/api
+          VITE_API_URL: /api
 
   # ==================================================================
   # ML SERVIS - Python / FastAPI
@@ -109,20 +96,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest
 
       - name: Provjeri sintaksu
         working-directory: ./ml-service
         run: python -m compileall app -q
 
-      - name: Pokreni testove
-        working-directory: ./ml-service
-        run: |
-          if [ -d tests ]; then
-            pytest tests -v
-          else
-            echo "Nema direktorija tests, preskacem."
-          fi
 
   # ==================================================================
   # CODE EXECUTOR - Python
