@@ -12,7 +12,8 @@ const getAuthToken = (): string | null => {
 };
 
 const buildUrl = (endpoint: string, params?: Record<string, string>): string => {
-    const url = new URL(`${API_BASE_URL}${endpoint}`);
+    //const url = new URL(`${API_BASE_URL}${endpoint}`);
+    const url = new URL(`${API_BASE_URL}${endpoint}`, window.location.origin);
     if (params) {
         Object.entries(params).forEach(([key, value]) => {
             if (value !== undefined && value !== null) {
