@@ -12,17 +12,11 @@ import java.util.UUID;
 public interface AuthService {
 
     AuthResponse register(RegisterRequest request);
-
     AuthResponse login(LoginRequest request);
-
     AuthResponse refreshToken(RefreshTokenRequest request);
-
     void logout(String accessToken, String refreshToken);
-
     void logoutAllDevices(User user);
-
     void verifyEmail(String token);
-
     void resendVerification(String email);
     UserResponse getCurrentUser(UUID userId);
 }

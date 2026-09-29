@@ -13,4 +13,6 @@ public interface DashboardService {
     TeacherDashboardResponse getTeacherDashboard(UUID teacherId);
 
     AdminDashboardResponse getAdminDashboard();
+
+    TeacherDashboardResponse getTeacherDashboardByEmail(String email);
 }

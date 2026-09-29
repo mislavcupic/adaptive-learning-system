@@ -101,10 +101,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             log.info("Postojeci korisnik prijavljen preko Googlea: {}", email);
         }
 
-        return new DefaultOAuth2User(
-                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())),
-                attributes,
-                "sub"
-        );
+        return new OAuth2UserPrincipal(user, attributes);
     }
 }

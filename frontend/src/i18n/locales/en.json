@@ -67,7 +67,7 @@
     "profile": "Profile",
     "research": "Research results",
     "pending": "Pending registrations...",
-    "assessments": "Pretests"
+    "assessments": "Pretests/Posttests"
   },
   "roles": {
     "admin": "Administrator",

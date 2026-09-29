@@ -194,4 +194,10 @@ public class DashboardServiceImpl implements DashboardService {
                 .masteryLevel(sm.getMasteryLevel())
                 .build();
     }
+    @Override
+    public TeacherDashboardResponse getTeacherDashboardByEmail(String email) {
+        User teacher = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Nastavnik nije pronađen"));
+        return getTeacherDashboard(teacher.getId());
+    }
 }

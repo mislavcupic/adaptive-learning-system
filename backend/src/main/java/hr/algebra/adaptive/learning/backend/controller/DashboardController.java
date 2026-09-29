@@ -14,6 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
 
 @Slf4j
 @RestController
@@ -35,9 +36,10 @@ public class DashboardController {
     @GetMapping("/teacher")
     @PreAuthorize("hasRole('TEACHER')")
     public ResponseEntity<ApiResponse<TeacherDashboardResponse>> getTeacherDashboard(
-            @AuthenticationPrincipal User user) {
-        log.info("Getting dashboard for teacher: {}", user.getEmail());
-        TeacherDashboardResponse response = dashboardService.getTeacherDashboard(user.getId());
+            Authentication authentication) {
+        String email = authentication.getName();
+        log.info("Getting dashboard for teacher: {}", email);
+        TeacherDashboardResponse response = dashboardService.getTeacherDashboardByEmail(email);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
