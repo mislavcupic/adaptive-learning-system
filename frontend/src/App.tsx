@@ -26,7 +26,11 @@ import {
     VerifyEmailPage,
     OAuth2CallbackPage,
     StudentAttemptsPage,
-    StudentDetailPage
+    StudentDetailPage,
+    ExamFormPage,
+    ExamAttemptsPage,
+    ExamsPage,
+    ExamSolvePage
 } from './pages';
 
 function App() {
@@ -149,6 +153,23 @@ function App() {
                                     </ProtectedRoute>
                                 } />
                             </Route>
+                            <Route path="exams" element={<ExamsPage />} />
+                            <Route path="exams/:id/solve" element={<ExamSolvePage />} />
+                            <Route path="exams/new" element={
+                                <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
+                                    <ExamFormPage />
+                                </ProtectedRoute>
+                            } />
+                            <Route path="exams/:id/edit" element={
+                                <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
+                                    <ExamFormPage />
+                                </ProtectedRoute>
+                            } />
+                            <Route path="exams/:id/attempts" element={
+                                <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
+                                    <ExamAttemptsPage />
+                                </ProtectedRoute>
+                            } />
 
                             {/* 404 */}
                             <Route path="*" element={<Navigate to="/dashboard" replace />} />

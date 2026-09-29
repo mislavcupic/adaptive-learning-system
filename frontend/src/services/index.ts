@@ -10,3 +10,4 @@ export {assessmentService} from './assessmentService';
 export { researchService } from './researchService';
 export * from './auditService';
 export { submissionOverviewService } from './submissionOverviewService';
+export * from './examService';

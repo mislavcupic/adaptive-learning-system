@@ -83,4 +83,25 @@ export const ENDPOINTS = {
     AUDIT: {
         LOGS: '/teacher/audit-logs',
     },
+
+    EXAMS: {
+        BASE: '/exams',
+        BY_ID: (id: string) => `/exams/${id}`,
+        BY_COURSE: (courseId: string) => `/exams/course/${courseId}`,
+        MY: '/exams/my',
+        PUBLISH: (id: string) => `/exams/${id}/publish`,
+        UNPUBLISH: (id: string) => `/exams/${id}/unpublish`,
+        ATTEMPTS: (id: string) => `/exams/${id}/attempts`,
+        ATTEMPT_BY_ID: (attemptId: string) => `/exams/attempts/${attemptId}`,
+        GRADE_ANSWER: (attemptId: string, taskId: string) =>
+            `/exams/attempts/${attemptId}/tasks/${taskId}/grade`,
+        FINALIZE: (attemptId: string) => `/exams/attempts/${attemptId}/finalize`,
+
+        AVAILABLE: (courseId: string) => `/exams/available/${courseId}`,
+        START: (id: string) => `/exams/${id}/start`,
+        MY_ATTEMPT: (id: string) => `/exams/${id}/my-attempt`,
+        SAVE_ANSWER: (id: string) => `/exams/${id}/answer`,
+        SUBMIT: (id: string) => `/exams/${id}/submit`,
+        MY_ATTEMPTS: '/exams/attempts/my',
+    },
 } as const;

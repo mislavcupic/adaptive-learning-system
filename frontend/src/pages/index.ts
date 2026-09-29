@@ -27,4 +27,8 @@ export { AuditLogsPage } from './AuditLogsPage';
 export * from './VerifyEmailPage';
 export * from './OAuth2CallbackPage';
 export * from './StudentAttemptsPage';
-export * from './StudentDetailPage'
+export * from './StudentDetailPage';
+export * from './ExamsPage';
+export * from './ExamsSolvePage';
+export * from './ExamFormPage';
+export * from './ExamAttemptPage';
