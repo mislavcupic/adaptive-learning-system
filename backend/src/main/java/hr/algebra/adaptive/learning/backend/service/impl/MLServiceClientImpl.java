@@ -1,9 +1,6 @@
 package hr.algebra.adaptive.learning.backend.service.impl;
 
-import hr.algebra.adaptive.learning.backend.dto.ml.MLAncovaRequest;
-import hr.algebra.adaptive.learning.backend.dto.ml.MLAncovaResponse;
-import hr.algebra.adaptive.learning.backend.dto.ml.MLFeedbackRequest;
-import hr.algebra.adaptive.learning.backend.dto.ml.MLFeedbackResponse;
+import hr.algebra.adaptive.learning.backend.dto.ml.*;
 import hr.algebra.adaptive.learning.backend.service.MLServiceClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -85,5 +82,33 @@ public class MLServiceClientImpl implements MLServiceClient {
                 .retrieve()
                 .bodyToMono(MLAncovaResponse.class)
                 .block();
+    }
+
+    @Override
+    public MlBktResponse updateBkt(MlBktRequest request) {
+        log.info("Calling ML service for BKT update: student {}, skill {}",
+                request.getStudentId(), request.getSkillName());
+
+        try {
+            MlBktResponse response = webClientBuilder.build()
+                    .post()
+                    .uri(mlServiceUrl + "/api/bkt/update")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(request)
+                    .retrieve()
+                    .bodyToMono(MlBktResponse.class)
+                    .block();
+
+            if (response != null) {
+                log.info("BKT mastery: {} -> {}",
+                        response.getPreviousLevel(), response.getMasteryLevel());
+            }
+            return response;
+
+        } catch (Exception e) {
+            // Neuspjeh ne smije srusiti predaju koja je vec spremljena
+            log.error("BKT update failed: {}", e.getMessage());
+            return null;
+        }
     }
 }

@@ -15,7 +15,7 @@ import java.util.List;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Course extends BaseEntity {
+public class Course extends BaseEntity  {
 
     @Column(nullable = false)
     private String name;

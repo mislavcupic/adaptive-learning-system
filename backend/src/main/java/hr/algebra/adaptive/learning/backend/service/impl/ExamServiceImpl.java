@@ -29,6 +29,8 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class ExamServiceImpl implements ExamService {
 
+    public static final String ISPIT_NOT_STARTED = "Niste započeli ovaj ispit.";
+    public static final String EXAM_NOT_STARTED = ISPIT_NOT_STARTED;
     private final ExamRepository examRepository;
     private final ExamAttemptRepository attemptRepository;
     private final ExamAnswerRepository answerRepository;
@@ -249,54 +251,21 @@ public class ExamServiceImpl implements ExamService {
     public ExamAttemptResponse startAttempt(UUID examId, UUID studentId) {
         log.info("Student {} započinje ispit {}", studentId, examId);
 
-        // Ako pokusaj vec postoji, vrati njega umjesto da stvaras novi.
-        // Student je mozda osvjezio stranicu ili se vratio kasnije.
         var existing = attemptRepository.findByStudentAndExamWithAnswers(studentId, examId);
         if (existing.isPresent()) {
-            ExamAttempt attempt = existing.get();
-
-            if (attempt.getStatus() != ExamAttemptStatus.IN_PROGRESS) {
-                throw new BadRequestException("Ovaj ispit ste već predali.");
-            }
-
-            // Rok je u meduvremenu istekao
-            if (attempt.isExpired()) {
-                closeExpired(attempt);
-                throw new BadRequestException("Vrijeme za rješavanje ispita je isteklo.");
-            }
-
-            return ExamAttemptResponse.fromEntityWithAnswers(attempt);
+            return processExistingAttempt(existing.get());
         }
 
         Exam exam = examRepository.findByIdWithTasks(examId)
                 .orElseThrow(() -> new ResourceNotFoundException("Ispit nije pronađen."));
 
-        if (!exam.isPublished() || !exam.isActive()) {
-            throw new BadRequestException("Ispit trenutno nije dostupan.");
-        }
-
         LocalDateTime now = LocalDateTime.now();
-        if (exam.getAvailableFrom() != null && now.isBefore(exam.getAvailableFrom())) {
-            throw new BadRequestException("Ispit još nije otvoren za rješavanje.");
-        }
-        if (exam.getAvailableUntil() != null && now.isAfter(exam.getAvailableUntil())) {
-            throw new BadRequestException("Rok za rješavanje ispita je prošao.");
-        }
+        validateExamAvailability(exam, now);
 
         User student = userRepository.findById(studentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Student nije pronađen."));
 
-        // Rok se racuna pri otvaranju, pa timer prezivi osvjezavanje stranice
-        LocalDateTime deadline = exam.getTimeLimitMinutes() != null
-                ? now.plusMinutes(exam.getTimeLimitMinutes())
-                : null;
-
-        // Ako je ispit dostupan samo do odredenog trenutka, rok ne smije
-        // prelaziti tu granicu
-        if (deadline != null && exam.getAvailableUntil() != null
-                && deadline.isAfter(exam.getAvailableUntil())) {
-            deadline = exam.getAvailableUntil();
-        }
+        LocalDateTime deadline = calculateDeadline(exam, now);
 
         ExamAttempt attempt = ExamAttempt.builder()
                 .exam(exam)
@@ -309,9 +278,47 @@ public class ExamServiceImpl implements ExamService {
                 .build();
 
         ExamAttempt saved = attemptRepository.save(attempt);
+        createAndSaveAnswers(saved, exam);
 
-        // Prazan odgovor za svaki zadatak, kako bi ih frontend mogao
-        // prikazati redom i pratiti sto je rijeseno
+        return ExamAttemptResponse.fromEntityWithAnswers(saved);
+    }
+
+    private ExamAttemptResponse processExistingAttempt(ExamAttempt attempt) {
+        if (attempt.getStatus() != ExamAttemptStatus.IN_PROGRESS) {
+            throw new BadRequestException("Ovaj ispit ste već predali.");
+        }
+        if (attempt.isExpired()) {
+            closeExpired(attempt);
+            throw new BadRequestException("Vrijeme za rješavanje ispita je isteklo.");
+        }
+        return ExamAttemptResponse.fromEntityWithAnswers(attempt);
+    }
+
+    private void validateExamAvailability(Exam exam, LocalDateTime now) {
+        if (!exam.isPublished() || !exam.isActive()) {
+            throw new BadRequestException("Ispit trenutno nije dostupan.");
+        }
+        if (exam.getAvailableFrom() != null && now.isBefore(exam.getAvailableFrom())) {
+            throw new BadRequestException("Ispit još nije otvoren za rješavanje.");
+        }
+        if (exam.getAvailableUntil() != null && now.isAfter(exam.getAvailableUntil())) {
+            throw new BadRequestException("Rok za rješavanje ispita je prošao.");
+        }
+    }
+
+    private LocalDateTime calculateDeadline(Exam exam, LocalDateTime now) {
+        LocalDateTime deadline = exam.getTimeLimitMinutes() != null
+                ? now.plusMinutes(exam.getTimeLimitMinutes())
+                : null;
+
+        if (deadline != null && exam.getAvailableUntil() != null
+                && deadline.isAfter(exam.getAvailableUntil())) {
+            deadline = exam.getAvailableUntil();
+        }
+        return deadline;
+    }
+
+    private void createAndSaveAnswers(ExamAttempt saved, Exam exam) {
         for (Task task : exam.getTasks()) {
             ExamAnswer answer = ExamAnswer.builder()
                     .attempt(saved)
@@ -322,16 +329,13 @@ public class ExamServiceImpl implements ExamService {
                     .build();
             saved.getAnswers().add(answerRepository.save(answer));
         }
-
-        return ExamAttemptResponse.fromEntityWithAnswers(saved);
     }
-
     @Override
     public ExamAttemptResponse getMyAttempt(UUID examId, UUID studentId) {
         ExamAttempt attempt = attemptRepository
                 .findByStudentAndExamWithAnswers(studentId, examId)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Niste započeli ovaj ispit."));
+                        EXAM_NOT_STARTED));
         return ExamAttemptResponse.fromEntityWithAnswers(attempt);
     }
 
@@ -340,7 +344,7 @@ public class ExamServiceImpl implements ExamService {
     public ExamAttemptResponse saveAnswer(UUID examId, ExamAnswerRequest request, UUID studentId) {
         ExamAttempt attempt = attemptRepository
                 .findByStudentAndExamWithAnswers(studentId, examId)
-                .orElseThrow(() -> new ResourceNotFoundException("Niste započeli ovaj ispit."));
+                .orElseThrow(() -> new ResourceNotFoundException(EXAM_NOT_STARTED));
 
         if (attempt.getStatus() != ExamAttemptStatus.IN_PROGRESS) {
             throw new BadRequestException("Ispit je predan i više se ne može mijenjati.");
@@ -395,7 +399,7 @@ public class ExamServiceImpl implements ExamService {
 
         ExamAttempt attempt = attemptRepository
                 .findByStudentAndExamWithAnswers(studentId, examId)
-                .orElseThrow(() -> new ResourceNotFoundException("Niste započeli ovaj ispit."));
+                .orElseThrow(() -> new ResourceNotFoundException(EXAM_NOT_STARTED));
 
         if (attempt.getStatus() != ExamAttemptStatus.IN_PROGRESS) {
             throw new BadRequestException("Ispit je već predan.");
@@ -446,38 +450,49 @@ public class ExamServiceImpl implements ExamService {
     private void gradeAttempt(ExamAttempt attempt) {
         for (ExamAnswer answer : attempt.getAnswers()) {
             Task task = answer.getTask();
-            Integer maxScore = task.getMaxScore() != null ? task.getMaxScore() : 0;
+            int maxScore = task.getMaxScore() != null ? task.getMaxScore() : 0;
 
-            switch (task.getTaskType()) {
-                case CODE -> {
-                    if (answer.getSubmission() != null) {
-                        var sub = answer.getSubmission();
-                        if (sub.getTestsTotal() != null && sub.getTestsTotal() > 0) {
-                            double ratio = (double) sub.getTestsPassed() / sub.getTestsTotal();
-                            answer.setAiScore((int) Math.round(ratio * maxScore));
-                        } else if (sub.getAiScore() != null) {
-                            answer.setAiScore(sub.getAiScore());
-                        }
-                    }
-                }
-                case MULTIPLE_CHOICE -> {
-                    String correct = task.getCorrectAnswer();
-                    String given = answer.getAnswerContent();
-                    if (correct != null && given != null
-                            && correct.trim().equalsIgnoreCase(given.trim())) {
-                        answer.setAiScore(maxScore);
-                    } else {
-                        answer.setAiScore(0);
-                    }
-                }
-                // TEXT i CHECKLIST ocjenjuje nastavnik rucno
-                default -> { }
-            }
-
+            evaluateTaskAnswer(task, answer, maxScore);
             answerRepository.save(answer);
         }
 
         recalculateTotal(attempt);
+    }
+
+    private void evaluateTaskAnswer(Task task, ExamAnswer answer, int maxScore) {
+        if (task.getTaskType() == TaskType.CODE) {
+            processCodeTask(answer, maxScore);
+        } else if (task.getTaskType() == TaskType.MULTIPLE_CHOICE) {
+            processMultipleChoiceTask(task, answer, maxScore);
+        }
+    }
+
+    private void processCodeTask(ExamAnswer answer, int maxScore) {
+        var submission = answer.getSubmission();
+        if (submission == null) {
+            return;
+        }
+
+        if (submission.getTestsTotal() != null && submission.getTestsTotal() > 0) {
+            double ratio = (double) submission.getTestsPassed() / submission.getTestsTotal();
+            answer.setAiScore((int) Math.round(ratio * maxScore));
+            return;
+        }
+
+        if (submission.getAiScore() != null) {
+            answer.setAiScore(submission.getAiScore());
+        }
+    }
+
+    private void processMultipleChoiceTask(Task task, ExamAnswer answer, int maxScore) {
+        String correct = task.getCorrectAnswer();
+        String given = answer.getAnswerContent();
+
+        if (correct != null && given != null && correct.trim().equalsIgnoreCase(given.trim())) {
+            answer.setAiScore(maxScore);
+        } else {
+            answer.setAiScore(0);
+        }
     }
 
     private void recalculateTotal(ExamAttempt attempt) {

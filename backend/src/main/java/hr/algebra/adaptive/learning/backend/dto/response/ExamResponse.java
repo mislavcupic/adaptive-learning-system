@@ -1,5 +1,6 @@
 package hr.algebra.adaptive.learning.backend.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import hr.algebra.adaptive.learning.backend.domain.entity.Exam;
 import hr.algebra.adaptive.learning.backend.domain.entity.Task;
 import hr.algebra.adaptive.learning.backend.domain.enums.TaskType;
@@ -32,9 +33,11 @@ public class ExamResponse {
 
     private LocalDateTime availableFrom;
     private LocalDateTime availableUntil;
-
+    @JsonProperty("showTestResults")
     private boolean showTestResults;
+    @JsonProperty("isPublished")
     private boolean isPublished;
+    @JsonProperty("isActive")
     private boolean isActive;
 
     private LocalDateTime createdAt;

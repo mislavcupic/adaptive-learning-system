@@ -68,60 +68,74 @@ public class ResearchResultServiceImpl implements ResearchResultService {
 
     @Override
     public MLAncovaResponse getAncova() {
-        // Iskoristi već pivotirane rezultate po studentu
         List<ResearchResultResponse> results = getResults();
+        List<MLAncovaRequest.Record> records = extractValidRecords(results);
 
-        // ANCOVA zahtijeva SAMO ispitanike koji imaju I pretest I posttest,
-        // pripadaju grupi CONTROL/EXPERIMENTAL, i imaju smisleni max_score (> 0).
+        log.info("Prepared {} records for ANCOVA (students with both pretest and posttest)", records.size());
+
+        Set<String> distinctGroups = extractDistinctGroups(records);
+
+        if (records.isEmpty() || distinctGroups.size() < 2) {
+            return buildInsufficientDataResponse(records.size(), distinctGroups);
+        }
+
+        return executeAncovaRequest(records, distinctGroups);
+    }
+
+    private List<MLAncovaRequest.Record> extractValidRecords(List<ResearchResultResponse> results) {
         List<MLAncovaRequest.Record> records = new ArrayList<>();
-
         for (ResearchResultResponse r : results) {
-            if (r.getResearchGroup() == null) {
+            if (!isValidRecord(r)) {
                 continue;
             }
             String group = r.getResearchGroup().name();
-            if (!group.equals("CONTROL") && !group.equals("EXPERIMENTAL")) {
-                continue; // preskoči NOT_ASSIGNED
-            }
-            if (r.getPretestPercentage() == null || r.getPosttestPercentage() == null) {
-                continue;
-            }
-            // Preskoči degenerirane attempte gdje je max_score bio 0
-            if (r.getPretestMaxScore() == null || r.getPretestMaxScore() <= 0
-                    || r.getPosttestMaxScore() == null || r.getPosttestMaxScore() <= 0) {
-                continue;
-            }
-
             records.add(MLAncovaRequest.Record.builder()
                     .group(group)
                     .pretest(r.getPretestPercentage())
                     .posttest(r.getPosttestPercentage())
                     .build());
         }
+        return records;
+    }
 
-        log.info("Prepared {} records for ANCOVA (students with both pretest and posttest)", records.size());
+    private boolean isValidRecord(ResearchResultResponse r) {
+        if (r.getResearchGroup() == null) {
+            return false;
+        }
+        String group = r.getResearchGroup().name();
+        if (!group.equals("CONTROL") && !group.equals("EXPERIMENTAL")) {
+            return false;
+        }
+        if (r.getPretestPercentage() == null || r.getPosttestPercentage() == null) {
+            return false;
+        }
+        return r.getPretestMaxScore() != null && r.getPretestMaxScore() > 0
+                && r.getPosttestMaxScore() != null && r.getPosttestMaxScore() > 0;
+    }
 
-        // Ako nema dovoljno podataka, NE zovi ML servis (vratio bi 400) —
-        // vrati prazan rezultat s objašnjenjem.
+    private Set<String> extractDistinctGroups(List<MLAncovaRequest.Record> records) {
         Set<String> distinctGroups = new HashSet<>();
         for (MLAncovaRequest.Record rec : records) {
             distinctGroups.add(rec.getGroup());
         }
+        return distinctGroups;
+    }
 
-        if (records.isEmpty() || distinctGroups.size() < 2) {
-            log.info("Not enough data for ANCOVA (records={}, groups={}). Skipping ML call.",
-                    records.size(), distinctGroups.size());
-            return MLAncovaResponse.builder()
-                    .nTotal(records.size())
-                    .groups(new ArrayList<>(distinctGroups))
-                    .descriptives(new ArrayList<>())
-                    .ancova(null)
-                    .warning("Nema dovoljno podataka za ANCOVA analizu. " +
-                            "Potrebni su ispitanici u obje skupine (CONTROL i EXPERIMENTAL) " +
-                            "koji su riješili i pretest i posttest.")
-                    .build();
-        }
+    private MLAncovaResponse buildInsufficientDataResponse(int recordCount, Set<String> distinctGroups) {
+        log.info("Not enough data for ANCOVA (records={}, groups={}). Skipping ML call.",
+                recordCount, distinctGroups.size());
+        return MLAncovaResponse.builder()
+                .nTotal(recordCount)
+                .groups(new ArrayList<>(distinctGroups))
+                .descriptives(new ArrayList<>())
+                .ancova(null)
+                .warning("Nema dovoljno podataka za ANCOVA analizu. " +
+                        "Potrebni su ispitanici u obje skupine (CONTROL i EXPERIMENTAL) " +
+                        "koji su riješili i pretest i posttest.")
+                .build();
+    }
 
+    private MLAncovaResponse executeAncovaRequest(List<MLAncovaRequest.Record> records, Set<String> distinctGroups) {
         MLAncovaRequest request = MLAncovaRequest.builder()
                 .records(records)
                 .build();

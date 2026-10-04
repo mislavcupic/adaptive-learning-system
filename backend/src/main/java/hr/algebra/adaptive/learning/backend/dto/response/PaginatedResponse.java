@@ -21,7 +21,7 @@ public class PaginatedResponse<T> {
 
     public static <E, D> PaginatedResponse<D> fromPage(Page<E> page, Function<E, D> mapper) {
         return PaginatedResponse.<D>builder()
-                .content(page.getContent().stream().map(mapper).collect(Collectors.toList()))
+                .content(page.getContent().stream().map(mapper).toList())
                 .page(page.getNumber())
                 .size(page.getSize())
                 .totalElements(page.getTotalElements())

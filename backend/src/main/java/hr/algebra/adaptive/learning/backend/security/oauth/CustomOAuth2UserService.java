@@ -39,6 +39,13 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         OAuth2User oAuth2User = super.loadUser(request);
         Map<String, Object> attributes = oAuth2User.getAttributes();
 
+        OAuthAttributes parsedAttributes = parseAndValidateAttributes(attributes);
+        User user = getOrCreateOrUpdateUser(parsedAttributes);
+
+        return new OAuth2UserPrincipal(user, attributes);
+    }
+
+    private OAuthAttributes parseAndValidateAttributes(Map<String, Object> attributes) {
         String email = (String) attributes.get("email");
         Boolean googleVerified = (Boolean) attributes.get("email_verified");
         String providerId = (String) attributes.get("sub");
@@ -50,14 +57,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     new OAuth2Error("email_missing"), "Google račun nema e-mail adresu.");
         }
 
-        // Google je vec potvrdio vlasnistvo adrese; ako nije, ne vjerujemo mu.
         if (!Boolean.TRUE.equals(googleVerified)) {
             throw new OAuth2AuthenticationException(
                     new OAuth2Error("email_not_verified"),
                     "Google e-mail adresa nije potvrđena.");
         }
 
-        // Opcionalno ogranicenje na domenu skole.
         if (allowedDomain != null && !allowedDomain.isBlank()
                 && !email.toLowerCase().endsWith("@" + allowedDomain.toLowerCase())) {
             throw new OAuth2AuthenticationException(
@@ -65,25 +70,27 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     "Dozvoljene su samo adrese domene " + allowedDomain + ".");
         }
 
-        User user = userRepository.findByEmail(email).orElse(null);
+        return new OAuthAttributes(email, providerId, givenName, familyName);
+    }
+
+    private User getOrCreateOrUpdateUser(OAuthAttributes attr) {
+        User user = userRepository.findByEmail(attr.email()).orElse(null);
 
         if (user == null) {
-            // Novi korisnik ide u cekaonicu, jednako kao klasicna registracija.
             user = User.builder()
-                    .email(email)
+                    .email(attr.email())
                     .password(passwordEncoder.encode(UUID.randomUUID().toString()))
-                    .firstName(givenName.isBlank() ? "Korisnik" : givenName)
-                    .lastName(familyName.isBlank() ? "Google" : familyName)
+                    .firstName(attr.givenName().isBlank() ? "Korisnik" : attr.givenName())
+                    .lastName(attr.familyName().isBlank() ? "Google" : attr.familyName())
                     .role(UserRole.GUEST)
                     .isActive(false)
                     .emailVerified(true)
                     .authProvider(AuthProvider.GOOGLE)
-                    .providerId(providerId)
+                    .providerId(attr.providerId())
                     .build();
             user = userRepository.save(user);
-            log.info("Novi korisnik preko Googlea: {}", email);
+            log.info("Novi korisnik preko Googlea: {}", attr.email());
         } else {
-            // Postojeci racun: poveži s Googleom i potvrdi e-mail.
             boolean changed = false;
             if (!user.isEmailVerified()) {
                 user.setEmailVerified(true);
@@ -92,15 +99,17 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 changed = true;
             }
             if (user.getProviderId() == null) {
-                user.setProviderId(providerId);
+                user.setProviderId(attr.providerId());
                 changed = true;
             }
             if (changed) {
                 userRepository.save(user);
             }
-            log.info("Postojeci korisnik prijavljen preko Googlea: {}", email);
+            log.info("Postojeci korisnik prijavljen preko Googlea: {}", attr.email());
         }
-
-        return new OAuth2UserPrincipal(user, attributes);
+        return user;
     }
+
+    // Pomoćni record za prijenos parsiranih atributa
+    private record OAuthAttributes(String email, String providerId, String givenName, String familyName) {}
 }

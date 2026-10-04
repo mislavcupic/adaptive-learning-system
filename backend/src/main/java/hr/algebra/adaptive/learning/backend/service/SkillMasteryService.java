@@ -13,6 +13,4 @@ public interface SkillMasteryService {
 
     double getAverageMastery(UUID studentId);
 
-    // BKT update će se dodati kada implementiramo ML servis
-    void updateMasteryAfterSubmission(UUID studentId, UUID submissionId, boolean correct);
 }

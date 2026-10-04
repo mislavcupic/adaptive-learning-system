@@ -19,13 +19,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
-import java.util.stream.Collectors;
+
 
 
 @Service
 @RequiredArgsConstructor
 public class JwtService {
 
+    public static final String USER_ID = "userId";
     private final TokenBlacklistRepository tokenBlacklistRepository;
 
     @Value("${jwt.secret}")
@@ -44,7 +45,7 @@ public class JwtService {
     }
 
     public UUID extractUserId(String token) {
-        String userId = extractClaim(token, claims -> claims.get("userId", String.class));
+        String userId = extractClaim(token, claims -> claims.get(USER_ID, String.class));
         return userId != null ? UUID.fromString(userId) : null;
     }
 
@@ -72,7 +73,7 @@ public class JwtService {
 
         // Dodaj proširene claims
         if (userDetails instanceof User user) {
-            claims.put("userId", user.getId().toString());
+            claims.put(USER_ID, user.getId().toString());
             claims.put("role", user.getRole().name());
             claims.put("firstName", user.getFirstName());
             claims.put("lastName", user.getLastName());
@@ -91,7 +92,7 @@ public class JwtService {
         claims.put("type", "refresh");
 
         if (userDetails instanceof User user) {
-            claims.put("userId", user.getId().toString());
+            claims.put(USER_ID, user.getId().toString());
         }
 
         return buildToken(claims, userDetails, refreshTokenExpiration);

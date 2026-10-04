@@ -24,6 +24,9 @@ import org.springframework.web.cors.CorsConfigurationSource;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    public static final String ADMIN = "ADMIN";
+    public static final String TEACHER = "TEACHER";
+    public static final String STUDENT = "STUDENT";
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
     private final CorsConfigurationSource corsConfigurationSource;
@@ -66,9 +69,9 @@ public class SecurityConfig {
                         .requestMatchers(SWAGGER_URLS).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/teacher/**").hasAnyRole("ADMIN", "TEACHER")
-                        .requestMatchers("/student/**").hasAnyRole("ADMIN", "TEACHER", "STUDENT")
+                        .requestMatchers("/admin/**").hasRole(ADMIN)
+                        .requestMatchers("/teacher/**").hasAnyRole(ADMIN, TEACHER)
+                        .requestMatchers("/student/**").hasAnyRole(ADMIN, TEACHER, STUDENT)
 
                         .anyRequest().authenticated()
                 )

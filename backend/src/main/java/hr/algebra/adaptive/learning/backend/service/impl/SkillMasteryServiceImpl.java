@@ -48,12 +48,4 @@ public class SkillMasteryServiceImpl implements SkillMasteryService {
                 .orElse(0.0);
     }
 
-    @Override
-    @Transactional
-    public void updateMasteryAfterSubmission(UUID studentId, UUID submissionId, boolean correct) {
-        // TODO: Implementirati BKT algoritam
-        // Ovo će biti pozivano iz ML servisa nakon analize submission-a
-        log.info("Updating mastery for student {} after submission {}, correct: {}",
-                studentId, submissionId, correct);
-    }
 }

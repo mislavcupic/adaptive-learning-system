@@ -4,6 +4,7 @@ import hr.algebra.adaptive.learning.backend.domain.entity.Submission;
 import hr.algebra.adaptive.learning.backend.domain.entity.Task;
 import hr.algebra.adaptive.learning.backend.domain.entity.User;
 import hr.algebra.adaptive.learning.backend.domain.enums.SubmissionStatus;
+import hr.algebra.adaptive.learning.backend.domain.enums.TaskType;
 import hr.algebra.adaptive.learning.backend.dto.execution.CodeExecutionRequest;
 import hr.algebra.adaptive.learning.backend.dto.execution.CodeExecutionResponse;
 import hr.algebra.adaptive.learning.backend.dto.ml.MLFeedbackRequest;
@@ -27,6 +28,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 import java.util.UUID;
@@ -43,6 +46,7 @@ public class SubmissionServiceImpl implements SubmissionService {
     private final CodeExecutorClient codeExecutorClient;
     private final MLServiceClient mlServiceClient;
     private final AssessmentService assessmentService;
+    private final SubmissionPostProcessor postProcessor;
 
     @Override
     @Transactional
@@ -60,6 +64,7 @@ public class SubmissionServiceImpl implements SubmissionService {
             log.warn("Student {} pokušao predati zadatak bez riješenog pretesta za kolegij {}", studentId, courseId);
             throw new PretestRequiredException(courseId);
         }
+
         // 1. Kreiraj submission
         Submission submission = Submission.builder()
                 .student(student)
@@ -71,13 +76,19 @@ public class SubmissionServiceImpl implements SubmissionService {
         Submission saved = submissionRepository.save(submission);
         log.info("Submission created with ID: {}", saved.getId());
 
-        // 2. Izvršavanje koda
+        // 2. Zadaci koji nisu programski ne idu u compiler
+        TaskType taskType = task.getTaskType() != null ? task.getTaskType() : TaskType.CODE;
+        if (taskType != TaskType.CODE) {
+            return handleNonCodeSubmission(saved, task, request.getCode());
+        }
+
+        // 3. Izvršavanje koda
         saved.setStatus(SubmissionStatus.COMPILING);
         submissionRepository.save(saved);
 
         CodeExecutionResponse execResult = executeCode(request.getCode(), task);
 
-        // 3. Spremi rezultate izvršavanja
+        // 4. Spremi rezultate izvršavanja
         saved.setCompilerOutput(execResult.getCompilerOutput());
         saved.setTestsPassed(execResult.getTestsPassed());
         saved.setTestsTotal(execResult.getTestsTotal());
@@ -85,13 +96,16 @@ public class SubmissionServiceImpl implements SubmissionService {
         if (!execResult.isSuccess()) {
             saved.setStatus(SubmissionStatus.COMPILE_ERROR);
             saved.setExecutionOutput(execResult.getError());
-            return SubmissionResponse.fromEntity(submissionRepository.save(saved));
+
+            Submission failed = submissionRepository.save(saved);
+            scheduleAfterCommit(failed.getId());
+            return SubmissionResponse.fromEntity(failed);
         }
 
         saved.setStatus(SubmissionStatus.COMPLETED);
         saved.setExecutionOutput(execResult.getExecutionOutput());
 
-        // 4. Pozovi ML servis za AI feedback
+        // 5. Pozovi ML servis za AI feedback
         MLFeedbackResponse mlResponse = callMLService(saved, execResult);
         if (mlResponse != null) {
             saved.setAiFeedback(mlResponse.getAiFeedback());
@@ -99,7 +113,69 @@ public class SubmissionServiceImpl implements SubmissionService {
             saved.setFinalScore(mlResponse.getAiScore());
         }
 
-        return SubmissionResponse.fromEntity(submissionRepository.save(saved));
+        Submission result = submissionRepository.save(saved);
+        scheduleAfterCommit(result.getId());
+        return SubmissionResponse.fromEntity(result);
+    }
+
+    /**
+     * Obrada odgovora na TEXT, MULTIPLE_CHOICE i CHECKLIST zadatke.
+     *
+     * Multiple choice ima jedan točan odgovor pa se ocjenjuje odmah,
+     * ostalo ide profesoru na ručni pregled.
+     */
+    private SubmissionResponse handleNonCodeSubmission(Submission saved, Task task, String answer) {
+        saved.setStatus(SubmissionStatus.COMPLETED);
+        saved.setCompilerOutput(null);
+        saved.setExecutionOutput(null);
+        saved.setTestsPassed(null);
+        saved.setTestsTotal(null);
+
+        if (task.getTaskType() == TaskType.MULTIPLE_CHOICE) {
+            boolean correct = task.getCorrectAnswer() != null
+                    && answer != null
+                    && task.getCorrectAnswer().trim().equalsIgnoreCase(answer.trim());
+
+            int maxScore = task.getMaxScore() != null ? task.getMaxScore() : 0;
+            int score = correct ? maxScore : 0;
+
+            saved.setAiScore(score);
+            saved.setFinalScore(score);
+            saved.setAiFeedback(correct
+                    ? "Točan odgovor."
+                    : "Odgovor nije točan. Pokušajte ponovno razmotriti zadatak.");
+
+            log.info("Multiple choice ocijenjen: {}/{} bodova", score, maxScore);
+        } else {
+            saved.setAiFeedback("Vaš odgovor je zaprimljen. Nastavnik će ga pregledati i ocijeniti.");
+            log.info("Odgovor tipa {} spremljen za ručni pregled", task.getTaskType());
+        }
+
+        Submission result = submissionRepository.save(saved);
+        scheduleAfterCommit(result.getId());
+        return SubmissionResponse.fromEntity(result);
+    }
+
+    /**
+     * BKT update ide tek nakon commita.
+     *
+     * ML servis ima vlastitu konekciju na bazu i ne vidi submission dok
+     * transakcija nije potvrđena - zato prije ovoga nije mogao spremiti
+     * ni RAG bilješku ni mastery zapis (foreign key na submissions).
+     */
+    private void scheduleAfterCommit(UUID submissionId) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            postProcessor.process(submissionId);
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        postProcessor.process(submissionId);
+                    }
+                });
     }
 
     private CodeExecutionResponse executeCode(String code, Task task) {

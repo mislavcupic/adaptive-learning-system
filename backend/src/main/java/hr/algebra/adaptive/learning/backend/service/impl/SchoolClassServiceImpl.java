@@ -26,6 +26,7 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class SchoolClassServiceImpl implements SchoolClassService {
 
+    public static final String COURSE = "Course";
     private final SchoolClassRepository classRepository;
     private final UserRepository userRepository;
     private final CourseRepository courseRepository;
@@ -49,7 +50,7 @@ public class SchoolClassServiceImpl implements SchoolClassService {
         if (request.getCourseIds() != null && !request.getCourseIds().isEmpty()) {
             request.getCourseIds().forEach(courseId -> {
                 Course course = courseRepository.findById(courseId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Course", "id", courseId));
+                        .orElseThrow(() -> new ResourceNotFoundException(COURSE, "id", courseId));
                 schoolClass.getCourses().add(course);
             });
         }
@@ -157,7 +158,7 @@ public class SchoolClassServiceImpl implements SchoolClassService {
 
         SchoolClass schoolClass = findClassOrThrow(classId);
         Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException("Course", "id", courseId));
+                .orElseThrow(() -> new ResourceNotFoundException(COURSE, "id", courseId));
 
         if (schoolClass.getCourses().contains(course)) {
             throw new BadRequestException("Course is already assigned to this class");
@@ -174,7 +175,7 @@ public class SchoolClassServiceImpl implements SchoolClassService {
 
         SchoolClass schoolClass = findClassOrThrow(classId);
         Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException("Course", "id", courseId));
+                .orElseThrow(() -> new ResourceNotFoundException(COURSE, "id", courseId));
 
         schoolClass.getCourses().remove(course);
         classRepository.save(schoolClass);
