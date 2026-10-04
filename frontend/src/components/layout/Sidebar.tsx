@@ -5,6 +5,7 @@ import {
     BookOpen,
     Users,
     ClipboardList,
+    ClipboardCheck,
     FileText,
     Settings,
     GraduationCap,
@@ -63,6 +64,12 @@ export function Sidebar() {
             href: '/assessments',
             icon: <FileCheck className="w-5 h-5" />
         },
+        {
+            label: t('nav.exams'),
+            href: '/exams',
+            icon: <ClipboardCheck className="w-5 h-5" />
+        },
+
         {
             label: t('nav.submissions'),
             href: '/submissions',

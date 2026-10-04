@@ -104,4 +104,10 @@ export const ENDPOINTS = {
         SUBMIT: (id: string) => `/exams/${id}/submit`,
         MY_ATTEMPTS: '/exams/attempts/my',
     },
+    MASTERY: {
+        MY: '/mastery/my',
+        MY_AVERAGE: '/mastery/my/average',
+        BY_STUDENT: (studentId: string) => `/mastery/student/${studentId}`,
+        STUDENT_AVERAGE: (studentId: string) => `/mastery/student/${studentId}/average`,
+    },
 } as const;

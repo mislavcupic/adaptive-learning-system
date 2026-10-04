@@ -33,6 +33,24 @@ class MasteryRepository:
             logger.error(f"Dohvat procjene nije uspio: {e}")
             return None
 
+        def get_all_for_student(self, student_id: str) -> list:
+            """Sve procjene za jednog studenta, od najslabije prema najjacoj."""
+        query = """
+                SELECT skill_name, mastery_level, attempts_count,
+                       correct_count, updated_at
+                FROM skill_mastery
+                WHERE student_id = %s
+                ORDER BY mastery_level ASC
+                """
+        try:
+            with self._connect() as conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                    cur.execute(query, (student_id,))
+                    return [dict(r) for r in cur.fetchall()]
+        except Exception as e:
+            logger.error(f"Dohvat profila nije uspio: {e}")
+            return []
+
     def save_mastery(self, student_id: str, skill_name: str,
                      mastery_level: float, is_correct: bool,
                      p_guess: float, p_slip: float, p_transit: float) -> bool:
@@ -70,3 +88,4 @@ class MasteryRepository:
         except Exception as e:
             logger.error(f"Spremanje procjene nije uspjelo: {e}")
             return False
+

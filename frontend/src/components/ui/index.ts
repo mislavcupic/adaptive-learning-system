@@ -10,3 +10,4 @@ export { Avatar } from './Avatar';
 export { EmptyState, ErrorState } from './EmptyState';
 export { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from './Table';
 export { Progress, SkillProgress } from './Progress';
+export * from './SkillMasteryCard';

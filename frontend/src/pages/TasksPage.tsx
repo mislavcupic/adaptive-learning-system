@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, Search, Play, Clock, Award } from 'lucide-react';
+import { Plus, Search, Play, Clock, Award, Pencil } from 'lucide-react';
 import { useAuth } from '../context';
 import { useFetch } from '../hooks';
 import { taskService } from '../services';
-import { 
-    Card, 
+import {
+    Card,
     CardContent,
     Button,
     Input,
@@ -47,7 +47,7 @@ export function TasksPage() {
                         {t('tasks.title')}
                     </h1>
                     <p className="text-zinc-500 dark:text-zinc-400 mt-1">
-                        {tasks?.length || 0} zadataka
+                        {tasks?.length || 0} {t('exams.tasks')}
                     </p>
                 </div>
                 {isTeacherOrAdmin && (
@@ -75,7 +75,7 @@ export function TasksPage() {
             {filteredTasks.length === 0 ? (
                 <EmptyState
                     title={t('tasks.noTasks')}
-                    description={search ? 'Nema rezultata za pretragu' : t('tasks.noTasksDesc')}
+                    description={search ? t('common.noData') : t('tasks.noTasksDesc')}
                     action={
                         !search && isTeacherOrAdmin && (
                             <Link to="/tasks/new">
@@ -103,13 +103,13 @@ function TaskCard({ task, isStudent }: { task: Task; isStudent: boolean }) {
             <CardContent className="pt-4">
                 <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
-                        <Link to={isStudent ? `/tasks/${task.id}/solve` : `/tasks/${task.id}`}>
+                        <Link to={isStudent ? `/tasks/${task.id}/solve` : `/tasks/${task.id}/edit`}>
                             <h3 className="font-medium text-zinc-900 dark:text-white hover:underline">
                                 {task.title}
                             </h3>
                         </Link>
                         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                            {truncate(task.description, 100) || 'Nema opisa'}
+                            {truncate(task.description, 100) || t('common.noData')}
                         </p>
                     </div>
                 </div>
@@ -126,7 +126,7 @@ function TaskCard({ task, isStudent }: { task: Task; isStudent: boolean }) {
                 <div className="flex items-center gap-4 mt-4 text-sm text-zinc-500 dark:text-zinc-400">
                     <span className="flex items-center gap-1">
                         <Award className="w-4 h-4" />
-                        {task.maxScore} bodova
+                        {task.maxScore} {t('assessments.points')}
                     </span>
                     <span className="flex items-center gap-1">
                         <Clock className="w-4 h-4" />
@@ -146,9 +146,10 @@ function TaskCard({ task, isStudent }: { task: Task; isStudent: boolean }) {
                             </Button>
                         </Link>
                     ) : (
-                        <Link to={`/tasks/${task.id}`}>
-                            <Button size="sm" variant="secondary">
-                                Pregledaj
+                        <Link to={`/tasks/${task.id}/edit`}>
+                            <Button size="sm" variant="secondary" className="gap-2">
+                                <Pencil className="w-3 h-3" />
+                                {t('common.edit')}
                             </Button>
                         </Link>
                     )}

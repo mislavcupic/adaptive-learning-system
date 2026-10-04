@@ -298,6 +298,16 @@ export interface FormState<T> {
     isSubmitting: boolean;
     isValid: boolean;
 }
+
+export interface SkillMastery {
+    id: string;
+    skillName: string;
+    masteryLevel: number;
+    attemptsCount: number;
+    correctCount: number;
+    outcomeName: string | null;
+}
+
 export * from './research'
 export * from './assessment';
 export * from './audit'

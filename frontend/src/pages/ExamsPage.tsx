@@ -288,8 +288,7 @@ export function ExamsPage() {
                                                     <><PlayCircle className="w-4 h-4" />{t('exams.continue')}</>
                                                 )}
                                                 {exam.myAttemptStatus && exam.myAttemptStatus !== 'IN_PROGRESS' && (
-                                                    <><Eye className="w-4 h-4" />{t('exams.result')}</>
-                                                )}
+                                                    <><Eye className="w-4 h-4" />{t('exams.viewResult')}</>)}
                                             </Button>
                                         )}
                                     </div>

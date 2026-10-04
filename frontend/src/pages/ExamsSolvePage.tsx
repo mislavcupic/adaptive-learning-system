@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Editor from '@monaco-editor/react';
 import {
     Clock, CheckCircle2, Circle, AlertTriangle, Send, Save,
-    ChevronLeft, ChevronRight, Play, Award, XCircle, Bot
+    ChevronLeft, ChevronRight, Play, Award, XCircle, Bot, Info
 } from 'lucide-react';
 import { useTheme } from '../context';
 import { examService } from '../services';
@@ -268,25 +268,38 @@ export function ExamSolvePage() {
                         />
                     </Card>
 
+                    {/* Rezultat izvrsavanja. Blok se prikazuje i kad zadatak
+                        nema testnih primjera, kako student ne bi ostao bez
+                        ikakve povratne informacije nakon pokretanja. */}
                     {exam.showTestResults && current.taskType === 'CODE'
-                        && current.testsTotal != null && current.testsTotal > 0 && (
+                        && (current.testsTotal != null || current.compilerOutput) && (
                             <Card>
                                 <CardContent className="py-4">
-                                    <div className="flex items-center gap-3">
-                                        {current.testsPassed === current.testsTotal
-                                            ? <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                                            : <XCircle className="w-5 h-5 text-red-500" />}
-                                        <p className="text-sm text-zinc-700 dark:text-zinc-300">
-                                            {t('exams.solve.testsPassed', {
-                                                passed: current.testsPassed,
-                                                total: current.testsTotal
-                                            })}
-                                        </p>
-                                    </div>
+                                    {current.testsTotal != null && current.testsTotal > 0 ? (
+                                        <div className="flex items-center gap-3">
+                                            {current.testsPassed === current.testsTotal
+                                                ? <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                                                : <XCircle className="w-5 h-5 text-red-500" />}
+                                            <p className="text-sm text-zinc-700 dark:text-zinc-300">
+                                                {t('exams.solve.testsPassed', {
+                                                    passed: current.testsPassed,
+                                                    total: current.testsTotal
+                                                })}
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-start gap-3">
+                                            <Info className="w-5 h-5 text-zinc-400 shrink-0 mt-0.5" />
+                                            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                                                {t('exams.solve.noTests')}
+                                            </p>
+                                        </div>
+                                    )}
+
                                     {current.compilerOutput && (
                                         <pre className="mt-3 p-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-xs overflow-x-auto">
-                                        {current.compilerOutput}
-                                    </pre>
+                                            {current.compilerOutput}
+                                        </pre>
                                     )}
                                 </CardContent>
                             </Card>

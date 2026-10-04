@@ -9,6 +9,8 @@ import {
     DashboardPage,
     SettingsPage,
     CoursesPage,
+    CoursesFormPage,
+    CourseDetailPage,
     TasksPage,
     TaskFormPage,
     UsersPage,
@@ -66,15 +68,29 @@ function App() {
                                         <CoursesPage />
                                     </ProtectedRoute>
                                 } />
-                                <Route path="courses/:id" element={
+                                <Route path="courses/new" element={
                                     <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
-                                        <CoursesPage />
+                                        <CoursesFormPage />
                                     </ProtectedRoute>
                                 } />
-
+                                <Route path="courses/:id/edit" element={
+                                    <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
+                                        <CoursesFormPage />
+                                    </ProtectedRoute>
+                                } />
+                                <Route path="courses/:id" element={
+                                    <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
+                                        <CourseDetailPage />
+                                    </ProtectedRoute>
+                                } />
                                 {/* Tasks */}
                                 <Route path="tasks" element={<TasksPage />} />
                                 <Route path="tasks/new" element={
+                                    <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
+                                        <TaskFormPage />
+                                    </ProtectedRoute>
+                                } />
+                                <Route path="tasks/:id/edit" element={
                                     <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
                                         <TaskFormPage />
                                     </ProtectedRoute>
@@ -103,6 +119,25 @@ function App() {
                                 <Route path="assessments/:id/edit" element={
                                     <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
                                         <AssessmentFormPage />
+                                    </ProtectedRoute>
+                                } />
+
+                                {/* Exams */}
+                                <Route path="exams" element={<ExamsPage />} />
+                                <Route path="exams/:id/solve" element={<ExamSolvePage />} />
+                                <Route path="exams/new" element={
+                                    <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
+                                        <ExamFormPage />
+                                    </ProtectedRoute>
+                                } />
+                                <Route path="exams/:id/edit" element={
+                                    <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
+                                        <ExamFormPage />
+                                    </ProtectedRoute>
+                                } />
+                                <Route path="exams/:id/attempts" element={
+                                    <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
+                                        <ExamAttemptsPage />
                                     </ProtectedRoute>
                                 } />
 
@@ -153,23 +188,6 @@ function App() {
                                     </ProtectedRoute>
                                 } />
                             </Route>
-                            <Route path="exams" element={<ExamsPage />} />
-                            <Route path="exams/:id/solve" element={<ExamSolvePage />} />
-                            <Route path="exams/new" element={
-                                <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
-                                    <ExamFormPage />
-                                </ProtectedRoute>
-                            } />
-                            <Route path="exams/:id/edit" element={
-                                <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
-                                    <ExamFormPage />
-                                </ProtectedRoute>
-                            } />
-                            <Route path="exams/:id/attempts" element={
-                                <ProtectedRoute roles={['ADMIN', 'TEACHER']}>
-                                    <ExamAttemptsPage />
-                                </ProtectedRoute>
-                            } />
 
                             {/* 404 */}
                             <Route path="*" element={<Navigate to="/dashboard" replace />} />
