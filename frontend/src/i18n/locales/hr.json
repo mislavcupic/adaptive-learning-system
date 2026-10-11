@@ -257,7 +257,12 @@
     "activate": "Aktiviraj",
     "deactivate": "Deaktiviraj",
     "noUsers": "Nema korisnika",
-    "deleteConfirm": "Jeste li sigurni da želite obrisati ovog korisnika?"
+    "deleteConfirm": "Jeste li sigurni da želite obrisati ovog korisnika?",
+    "actions": "Radnje",
+    "anonymize": "Anonimiziraj",
+    "anonymized": "Anonimiziran korisnik",
+    "anonymizeHint": "Uklanja ime i e-mail adresu, a rezultate zadržava",
+    "anonymizeConfirm": "Anonimizirati korisnika {{name}}? Ime i e-mail adresa bit će trajno uklonjeni, a predaje i rezultati ostaju. Radnja je nepovratna."
   },
   "settings": {
     "title": "Postavke",

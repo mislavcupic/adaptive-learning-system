@@ -28,6 +28,9 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
 
+    private static final String ANONYMIZED_NAME = "Anonimizirano";
+    private static final String ANONYMIZED_DOMAIN = "@anonimizirano.local";
+
     private final UserRepository userRepository;
     private final SchoolClassRepository schoolClassRepository;
     private final ResearchGroupService researchGroupService;
@@ -146,6 +149,14 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
+    /**
+     * Fizicko brisanje korisnika.
+     *
+     * Namjerno nije izlozeno kroz sucelje. Uklanjanje sudionika tijekom
+     * istrazivanja znacilo bi gubitak para pretest-posttest, a time i
+     * nereproducibilan rezultat analize. Za svakodnevni rad koristi se
+     * deaktivacija, a za zahtjev ispitanika anonymize().
+     */
     @Override
     @Transactional
     public void delete(UUID id) {
@@ -153,6 +164,38 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
         userRepository.delete(user);
+    }
+
+    /**
+     * Pseudonimizacija korisnika na zahtjev ispitanika.
+     *
+     * Uklanja sve sto osobu cini prepoznatljivom, a ostavlja predaje,
+     * pokusaje i procjene znanja netaknutima. Razred i istrazivacka
+     * skupina ostaju jer su potrebni za analizu, a sami po sebi ne
+     * identificiraju osobu.
+     */
+    @Override
+    @Transactional
+    public UserResponse anonymize(UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+        if (user.getEmail() != null && user.getEmail().endsWith(ANONYMIZED_DOMAIN)) {
+            throw new BadRequestException("Korisnik je već anonimiziran.");
+        }
+
+        log.info("Anonimizacija korisnika: {}", user.getId());
+
+        user.setEmail("obrisan-" + UUID.randomUUID() + ANONYMIZED_DOMAIN);
+        user.setFirstName(ANONYMIZED_NAME);
+        user.setLastName(ANONYMIZED_NAME);
+        user.setPassword(UUID.randomUUID().toString());
+        user.setProviderId(null);
+        user.setVerificationToken(null);
+        user.setVerificationTokenExpiry(null);
+        user.setActive(false);
+
+        return UserResponse.fromEntity(userRepository.save(user));
     }
 
     @Override

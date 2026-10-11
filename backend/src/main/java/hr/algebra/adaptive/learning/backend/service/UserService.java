@@ -40,4 +40,5 @@ public interface UserService {
     @Transactional
     UserResponse approveUser(UUID id, UUID schoolClassId, boolean includeInResearch);
     void rejectPendingUser(UUID id);
+    UserResponse anonymize(UUID id);
 }

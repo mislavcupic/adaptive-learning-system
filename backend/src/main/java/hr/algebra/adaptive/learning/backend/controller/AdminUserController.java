@@ -46,6 +46,19 @@ public class AdminUserController {
         return ResponseEntity.ok(ApiResponse.success(userService.updateStatus(id, request.get("isActive"))));
     }
 
+    /**
+     * Pseudonimizacija na zahtjev ispitanika.
+     *
+     * Racun ostaje u bazi, ali bez podataka koji osobu cine prepoznatljivom.
+     * Predaje i rezultati ostaju cjeloviti, pa se istrazivacka analiza moze
+     * ponoviti i nakon zahtjeva za brisanjem.
+     */
+    @PutMapping("/{id}/anonymize")
+    public ResponseEntity<ApiResponse<UserResponse>> anonymizeUser(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "user.anonymized", userService.anonymize(id)));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<String>> deleteUser(@PathVariable UUID id) {
         userService.delete(id);

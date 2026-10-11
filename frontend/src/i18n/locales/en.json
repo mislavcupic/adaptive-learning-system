@@ -257,7 +257,12 @@
     "activate": "Activate",
     "deactivate": "Deactivate",
     "noUsers": "No users",
-    "deleteConfirm": "Are you sure you want to delete this user?"
+    "deleteConfirm": "Are you sure you want to delete this user?",
+    "actions": "Actions",
+    "anonymize": "Anonymise",
+    "anonymized": "Anonymised user",
+    "anonymizeHint": "Removes name and e-mail address, keeps the results",
+    "anonymizeConfirm": "Anonymise {{name}}? Their name and e-mail address will be permanently removed, while submissions and results are kept. This cannot be undone."
   },
   "settings": {
     "title": "Settings",

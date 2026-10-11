@@ -2,8 +2,10 @@ package hr.algebra.adaptive.learning.backend.service.impl;
 
 import hr.algebra.adaptive.learning.backend.domain.entity.SchoolClass;
 import hr.algebra.adaptive.learning.backend.domain.entity.User;
+import hr.algebra.adaptive.learning.backend.domain.enums.GroupType;
 import hr.algebra.adaptive.learning.backend.domain.enums.ResearchGroup;
 import hr.algebra.adaptive.learning.backend.domain.enums.UserRole;
+import hr.algebra.adaptive.learning.backend.dto.response.StudentResponse;
 import hr.algebra.adaptive.learning.backend.dto.response.UserResponse;
 import hr.algebra.adaptive.learning.backend.exception.BadRequestException;
 import hr.algebra.adaptive.learning.backend.exception.ResourceNotFoundException;
@@ -45,13 +47,16 @@ class UserServiceImplTest {
 
     private UUID guestId;
     private UUID classId;
+    private UUID unknownId;
     private User guest;
+    private User student;
     private SchoolClass schoolClass;
 
     @BeforeEach
     void setUp() {
         guestId = UUID.randomUUID();
         classId = UUID.randomUUID();
+        unknownId = UUID.randomUUID();
 
         schoolClass = new SchoolClass();
         schoolClass.setId(classId);
@@ -67,9 +72,141 @@ class UserServiceImplTest {
                 .build();
         guest.setId(guestId);
 
+        student = User.builder()
+                .email("ana@test.hr")
+                .firstName("Ana")
+                .lastName("Anić")
+                .role(UserRole.STUDENT)
+                .isActive(true)
+                .emailVerified(true)
+                .schoolClass(schoolClass)
+                .groupType(GroupType.EXPERIMENTAL)
+                .researchGroup(ResearchGroup.EXPERIMENTAL)
+                .build();
+        student.setId(UUID.randomUUID());
+
         when(userRepository.findById(guestId)).thenReturn(Optional.of(guest));
+        when(userRepository.findById(unknownId)).thenReturn(Optional.empty());
         when(schoolClassRepository.findById(classId)).thenReturn(Optional.of(schoolClass));
         when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
+    }
+
+    @Nested
+    @DisplayName("Dohvat korisnika")
+    class Reading {
+
+        @Test
+        @DisplayName("vraća pojedinog korisnika")
+        void returnsSingleUser() {
+            assertThat(userService.getById(guestId).getEmail()).isEqualTo("novi@test.hr");
+        }
+
+        @Test
+        @DisplayName("baca iznimku za nepostojećeg korisnika")
+        void missingUser() {
+            assertThatThrownBy(() -> userService.getById(unknownId))
+                    .isInstanceOf(ResourceNotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("vraća sve korisnike")
+        void returnsAll() {
+            when(userRepository.findAll()).thenReturn(List.of(guest, student));
+
+            assertThat(userService.getAll()).hasSize(2);
+        }
+
+        @Test
+        @DisplayName("vraća korisnike po ulozi")
+        void returnsByRole() {
+            when(userRepository.findByRole(UserRole.GUEST)).thenReturn(List.of(guest));
+
+            assertThat(userService.getByRole(UserRole.GUEST)).hasSize(1);
+            verify(userRepository).findByRole(UserRole.GUEST);
+        }
+
+        @Test
+        @DisplayName("vraća samo aktivne studente")
+        void returnsActiveStudents() {
+            when(userRepository.findByRoleAndIsActiveTrue(UserRole.STUDENT))
+                    .thenReturn(List.of(student));
+
+            List<StudentResponse> result = userService.getAllStudents();
+
+            assertThat(result).hasSize(1);
+            verify(userRepository).findByRoleAndIsActiveTrue(UserRole.STUDENT);
+        }
+
+        @Test
+        @DisplayName("vraća nastavnike")
+        void returnsTeachers() {
+            User teacher = User.builder()
+                    .email("ines@test.hr")
+                    .firstName("Ines")
+                    .lastName("Inić")
+                    .role(UserRole.TEACHER)
+                    .isActive(true)
+                    .emailVerified(true)
+                    .build();
+            teacher.setId(UUID.randomUUID());
+
+            when(userRepository.findByRoleAndIsActiveTrue(UserRole.TEACHER))
+                    .thenReturn(List.of(teacher));
+
+            assertThat(userService.getAllTeachers()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("prazan popis kad nema nastavnika")
+        void noTeachers() {
+            when(userRepository.findByRoleAndIsActiveTrue(UserRole.TEACHER))
+                    .thenReturn(List.of());
+
+            assertThat(userService.getAllTeachers()).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("Filtriranje po skupini")
+    class FilteringByGroup {
+
+        @Test
+        @DisplayName("vraća studente tražene skupine")
+        void returnsMatchingGroup() {
+            when(userRepository.findByRoleAndIsActiveTrue(UserRole.STUDENT))
+                    .thenReturn(List.of(student));
+
+            assertThat(userService.getStudentsByGroup(GroupType.EXPERIMENTAL)).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("izostavlja studente bez dodijeljene skupine")
+        void skipsStudentsWithoutGroup() {
+            User withoutGroup = User.builder()
+                    .email("bez@test.hr")
+                    .firstName("Bez")
+                    .lastName("Skupine")
+                    .role(UserRole.STUDENT)
+                    .isActive(true)
+                    .emailVerified(true)
+                    .schoolClass(schoolClass)
+                    .build();
+            withoutGroup.setId(UUID.randomUUID());
+
+            when(userRepository.findByRoleAndIsActiveTrue(UserRole.STUDENT))
+                    .thenReturn(List.of(student, withoutGroup));
+
+            assertThat(userService.getStudentsByGroup(GroupType.EXPERIMENTAL)).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("prazan popis kad nitko nije u toj skupini")
+        void noMatches() {
+            when(userRepository.findByRoleAndIsActiveTrue(UserRole.STUDENT))
+                    .thenReturn(List.of());
+
+            assertThat(userService.getStudentsByGroup(GroupType.EXPERIMENTAL)).isEmpty();
+        }
     }
 
     @Nested
@@ -124,6 +261,15 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("odobrenje bez razreda ne dira razred")
+        void keepsNoSchoolClass() {
+            userService.approveUser(guestId, null, false);
+
+            assertThat(guest.getSchoolClass()).isNull();
+            verify(schoolClassRepository, never()).findById(any());
+        }
+
+        @Test
         @DisplayName("šalje obavijest o aktivaciji računa")
         void sendsApprovalEmail() {
             userService.approveUser(guestId, classId, false);
@@ -158,20 +304,17 @@ class UserServiceImplTest {
         @Test
         @DisplayName("baca iznimku za nepostojećeg korisnika")
         void throwsForUnknownUser() {
-            UUID unknown = UUID.randomUUID();
-            when(userRepository.findById(unknown)).thenReturn(Optional.empty());
-
-            assertThatThrownBy(() -> userService.approveUser(unknown, classId, false))
+            assertThatThrownBy(() -> userService.approveUser(unknownId, classId, false))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
 
         @Test
         @DisplayName("baca iznimku za nepostojeći razred")
         void throwsForUnknownClass() {
-            UUID unknown = UUID.randomUUID();
-            when(schoolClassRepository.findById(unknown)).thenReturn(Optional.empty());
+            UUID unknownClass = UUID.randomUUID();
+            when(schoolClassRepository.findById(unknownClass)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> userService.approveUser(guestId, unknown, false))
+            assertThatThrownBy(() -> userService.approveUser(guestId, unknownClass, false))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
     }
@@ -197,6 +340,13 @@ class UserServiceImplTest {
                     .isInstanceOf(BadRequestException.class);
 
             verify(userRepository, never()).delete(any());
+        }
+
+        @Test
+        @DisplayName("baca iznimku za nepostojećeg korisnika")
+        void throwsForUnknownUser() {
+            assertThatThrownBy(() -> userService.rejectPendingUser(unknownId))
+                    .isInstanceOf(ResourceNotFoundException.class);
         }
     }
 
@@ -249,11 +399,44 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("prazno ime ostavlja staro")
+        void keepsNameWhenNull() {
+            UserResponse result = userService.updateProfile(guestId, null, null);
+
+            assertThat(result.getFirstName()).isEqualTo("Ivo");
+            assertThat(result.getLastName()).isEqualTo("Ivić");
+        }
+
+        @Test
+        @DisplayName("mijenja samo ime kad prezime nije zadano")
+        void updatesOnlyFirstName() {
+            UserResponse result = userService.updateProfile(guestId, "Ivana", null);
+
+            assertThat(result.getFirstName()).isEqualTo("Ivana");
+            assertThat(result.getLastName()).isEqualTo("Ivić");
+        }
+
+        @Test
         @DisplayName("mijenja ulogu")
         void updatesRole() {
             UserResponse result = userService.updateRole(guestId, UserRole.TEACHER);
 
             assertThat(result.getRole()).isEqualTo(UserRole.TEACHER);
+        }
+
+        @Test
+        @DisplayName("mijenja status računa")
+        void updatesStatus() {
+            assertThat(userService.updateStatus(guestId, true).isActive()).isTrue();
+            assertThat(userService.updateStatus(guestId, false).isActive()).isFalse();
+        }
+
+        @Test
+        @DisplayName("mijenja skupinu studenta")
+        void updatesGroup() {
+            userService.updateGroup(guestId, GroupType.EXPERIMENTAL);
+
+            assertThat(guest.getGroupType()).isEqualTo(GroupType.EXPERIMENTAL);
         }
 
         @Test
@@ -280,6 +463,62 @@ class UserServiceImplTest {
             userService.delete(guestId);
 
             verify(userRepository).delete(guest);
+        }
+    }
+
+    @Nested
+    @DisplayName("Nepostojeći korisnik")
+    class MissingUser {
+
+        @Test
+        @DisplayName("izmjena profila baca iznimku")
+        void updateProfileThrows() {
+            assertThatThrownBy(() -> userService.updateProfile(unknownId, "A", "B"))
+                    .isInstanceOf(ResourceNotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("izmjena uloge baca iznimku")
+        void updateRoleThrows() {
+            assertThatThrownBy(() -> userService.updateRole(unknownId, UserRole.TEACHER))
+                    .isInstanceOf(ResourceNotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("izmjena statusa baca iznimku")
+        void updateStatusThrows() {
+            assertThatThrownBy(() -> userService.updateStatus(unknownId, true))
+                    .isInstanceOf(ResourceNotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("izmjena skupine baca iznimku")
+        void updateGroupThrows() {
+            assertThatThrownBy(() -> userService.updateGroup(unknownId, GroupType.EXPERIMENTAL))
+                    .isInstanceOf(ResourceNotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("aktivacija baca iznimku")
+        void activateThrows() {
+            assertThatThrownBy(() -> userService.activate(unknownId))
+                    .isInstanceOf(ResourceNotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("deaktivacija baca iznimku")
+        void deactivateThrows() {
+            assertThatThrownBy(() -> userService.deactivate(unknownId))
+                    .isInstanceOf(ResourceNotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("brisanje baca iznimku")
+        void deleteThrows() {
+            assertThatThrownBy(() -> userService.delete(unknownId))
+                    .isInstanceOf(ResourceNotFoundException.class);
+
+            verify(userRepository, never()).delete(any());
         }
     }
 }

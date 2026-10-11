@@ -1,9 +1,12 @@
 package hr.algebra.adaptive.learning.backend.service.impl;
 
+import hr.algebra.adaptive.learning.backend.domain.entity.RefreshToken;
+import hr.algebra.adaptive.learning.backend.domain.entity.TokenBlacklist;
 import hr.algebra.adaptive.learning.backend.domain.entity.User;
 import hr.algebra.adaptive.learning.backend.domain.enums.AuthProvider;
 import hr.algebra.adaptive.learning.backend.domain.enums.UserRole;
 import hr.algebra.adaptive.learning.backend.dto.request.LoginRequest;
+import hr.algebra.adaptive.learning.backend.dto.request.RefreshTokenRequest;
 import hr.algebra.adaptive.learning.backend.dto.request.RegisterRequest;
 import hr.algebra.adaptive.learning.backend.dto.response.AuthResponse;
 import hr.algebra.adaptive.learning.backend.exception.BadRequestException;
@@ -76,12 +79,14 @@ class AuthServiceImplTest {
         when(messageService.emailExists()).thenReturn("Email već postoji");
         when(messageService.invalidCredentials()).thenReturn("Neispravni podaci");
         when(messageService.userNotFound()).thenReturn("Korisnik nije pronađen");
+        when(messageService.refreshTokenInvalid()).thenReturn("Token za osvježavanje nije valjan");
+        when(messageService.getMessage(anyString())).thenReturn("Token je istekao");
 
         when(passwordEncoder.encode(anyString())).thenReturn("$2a$10$hash");
         when(jwtService.generateAccessToken(any(UserDetails.class))).thenReturn("access.token");
         when(jwtService.generateRefreshToken(any(UserDetails.class))).thenReturn("refresh.token");
+        when(jwtService.getRefreshTokenExpiration()).thenReturn(604800000L);
     }
-
 
     @Nested
     @DisplayName("Registracija")
@@ -151,6 +156,30 @@ class AuthServiceImplTest {
         }
 
         @Test
+        @DisplayName("odbija registraciju na adresu već vezanu uz Google")
+        void rejectsGoogleAccount() {
+            User googleUser = User.builder()
+                    .email("google@test.hr")
+                    .password("$2a$10$hash")
+                    .firstName("Ivo")
+                    .lastName("Ivić")
+                    .role(UserRole.GUEST)
+                    .isActive(false)
+                    .emailVerified(false)
+                    .authProvider(AuthProvider.GOOGLE)
+                    .build();
+            googleUser.setId(UUID.randomUUID());
+
+            when(userRepository.findByEmail("google@test.hr"))
+                    .thenReturn(Optional.of(googleUser));
+
+            assertThatThrownBy(() -> authService.register(request("google@test.hr")))
+                    .isInstanceOf(IllegalArgumentException.class);
+
+            verify(emailService, never()).sendVerificationEmail(any(), anyString());
+        }
+
+        @Test
         @DisplayName("šalje novu poveznicu kad račun postoji ali nije potvrđen")
         void resendsLinkForUnverifiedAccount() {
             User unverified = User.builder()
@@ -176,7 +205,6 @@ class AuthServiceImplTest {
         }
     }
 
-
     @Nested
     @DisplayName("Prijava")
     class Login {
@@ -191,6 +219,18 @@ class AuthServiceImplTest {
 
             assertThat(response.getAccessToken()).isEqualTo("access.token");
             assertThat(response.getRefreshToken()).isEqualTo("refresh.token");
+        }
+
+        @Test
+        @DisplayName("sprema novi token za osvježavanje")
+        void storesRefreshToken() {
+            when(userRepository.findByEmail("ana@test.hr"))
+                    .thenReturn(Optional.of(verifiedUser));
+
+            authService.login(loginRequest("ana@test.hr"));
+
+            verify(refreshTokenRepository).save(argThat(t ->
+                    t.getToken().equals("refresh.token") && t.getExpiresAt() != null));
         }
 
         @Test
@@ -220,6 +260,17 @@ class AuthServiceImplTest {
         }
 
         @Test
+        @DisplayName("nepoznata adresa prolazi na provjeru lozinke")
+        void unknownEmailGoesToAuthentication() {
+            when(userRepository.findByEmail("nitko@test.hr")).thenReturn(Optional.empty());
+            when(authenticationManager.authenticate(any()))
+                    .thenThrow(new BadCredentialsException("bad"));
+
+            assertThatThrownBy(() -> authService.login(loginRequest("nitko@test.hr")))
+                    .isInstanceOf(UnauthorizedException.class);
+        }
+
+        @Test
         @DisplayName("odbija pogrešnu lozinku")
         void rejectsWrongPassword() {
             when(userRepository.findByEmail("ana@test.hr"))
@@ -243,6 +294,158 @@ class AuthServiceImplTest {
         }
     }
 
+    @Nested
+    @DisplayName("Osvježavanje tokena")
+    class RefreshingToken {
+
+        @Test
+        @DisplayName("izdaje novi pristupni token")
+        void issuesNewAccessToken() {
+            RefreshToken stored = storedToken(Instant.now().plus(7, ChronoUnit.DAYS));
+
+            when(refreshTokenRepository.findByTokenAndRevokedFalse("refresh.token"))
+                    .thenReturn(Optional.of(stored));
+            when(jwtService.isTokenValid("refresh.token", verifiedUser)).thenReturn(true);
+
+            AuthResponse response = authService.refreshToken(refreshRequest("refresh.token"));
+
+            assertThat(response.getAccessToken()).isEqualTo("access.token");
+            assertThat(response.getRefreshToken()).isEqualTo("refresh.token");
+        }
+
+        @Test
+        @DisplayName("odbija nepoznat token")
+        void rejectsUnknownToken() {
+            when(refreshTokenRepository.findByTokenAndRevokedFalse("nepostoji"))
+                    .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> authService.refreshToken(refreshRequest("nepostoji")))
+                    .isInstanceOf(UnauthorizedException.class);
+        }
+
+        @Test
+        @DisplayName("istekli token poništava i odbija")
+        void revokesExpiredToken() {
+            RefreshToken stored = storedToken(Instant.now().minus(1, ChronoUnit.DAYS));
+
+            when(refreshTokenRepository.findByTokenAndRevokedFalse("stari"))
+                    .thenReturn(Optional.of(stored));
+
+            assertThatThrownBy(() -> authService.refreshToken(refreshRequest("stari")))
+                    .isInstanceOf(UnauthorizedException.class);
+
+            assertThat(stored.isRevoked()).isTrue();
+            verify(refreshTokenRepository).save(stored);
+        }
+
+        @Test
+        @DisplayName("odbija token koji ne prolazi provjeru potpisa")
+        void rejectsInvalidSignature() {
+            RefreshToken stored = storedToken(Instant.now().plus(7, ChronoUnit.DAYS));
+
+            when(refreshTokenRepository.findByTokenAndRevokedFalse("refresh.token"))
+                    .thenReturn(Optional.of(stored));
+            when(jwtService.isTokenValid("refresh.token", verifiedUser)).thenReturn(false);
+
+            assertThatThrownBy(() -> authService.refreshToken(refreshRequest("refresh.token")))
+                    .isInstanceOf(UnauthorizedException.class);
+
+            verify(jwtService, never()).generateAccessToken(any());
+        }
+
+        private RefreshToken storedToken(Instant expiresAt) {
+            RefreshToken t = RefreshToken.builder()
+                    .token("refresh.token")
+                    .user(verifiedUser)
+                    .expiresAt(expiresAt)
+                    .build();
+            t.setId(UUID.randomUUID());
+            return t;
+        }
+    }
+
+    @Nested
+    @DisplayName("Odjava")
+    class LoggingOut {
+
+        @Test
+        @DisplayName("stavlja pristupni token na crnu listu")
+        void blacklistsAccessToken() {
+            Instant expiry = Instant.now().plus(1, ChronoUnit.HOURS);
+            when(jwtService.getExpirationInstant("access.token")).thenReturn(expiry);
+
+            authService.logout("access.token", null);
+
+            verify(tokenBlacklistRepository).save(argThat(t ->
+                    t.getToken().equals("access.token") && t.getExpiresAt().equals(expiry)));
+        }
+
+        @Test
+        @DisplayName("poništava token za osvježavanje")
+        void revokesRefreshToken() {
+            RefreshToken stored = RefreshToken.builder()
+                    .token("refresh.token")
+                    .user(verifiedUser)
+                    .expiresAt(Instant.now().plus(7, ChronoUnit.DAYS))
+                    .build();
+            stored.setId(UUID.randomUUID());
+
+            when(refreshTokenRepository.findByToken("refresh.token"))
+                    .thenReturn(Optional.of(stored));
+
+            authService.logout(null, "refresh.token");
+
+            assertThat(stored.isRevoked()).isTrue();
+            verify(refreshTokenRepository).save(stored);
+        }
+
+        @Test
+        @DisplayName("prazni tokeni ne rade ništa")
+        void ignoresEmptyTokens() {
+            authService.logout("", "");
+
+            verify(tokenBlacklistRepository, never()).save(any(TokenBlacklist.class));
+            verify(refreshTokenRepository, never()).save(any(RefreshToken.class));
+        }
+
+        @Test
+        @DisplayName("izostali tokeni ne rade ništa")
+        void ignoresNullTokens() {
+            authService.logout(null, null);
+
+            verify(tokenBlacklistRepository, never()).save(any(TokenBlacklist.class));
+            verify(refreshTokenRepository, never()).save(any(RefreshToken.class));
+        }
+
+        @Test
+        @DisplayName("nepoznat token za osvježavanje se tiho preskače")
+        void ignoresUnknownRefreshToken() {
+            when(refreshTokenRepository.findByToken("nepostoji")).thenReturn(Optional.empty());
+
+            authService.logout(null, "nepostoji");
+
+            verify(refreshTokenRepository, never()).save(any(RefreshToken.class));
+        }
+
+        @Test
+        @DisplayName("neispravan pristupni token ne ruši odjavu")
+        void survivesBadAccessToken() {
+            when(jwtService.getExpirationInstant("pokvaren"))
+                    .thenThrow(new IllegalArgumentException("Malformed JWT"));
+
+            authService.logout("pokvaren", null);
+
+            verify(tokenBlacklistRepository, never()).save(any(TokenBlacklist.class));
+        }
+
+        @Test
+        @DisplayName("odjava sa svih uređaja poništava sve tokene korisnika")
+        void logsOutEverywhere() {
+            authService.logoutAllDevices(verifiedUser);
+
+            verify(refreshTokenRepository).revokeAllUserTokens(verifiedUser);
+        }
+    }
 
     @Nested
     @DisplayName("Potvrda e-pošte")
@@ -289,6 +492,17 @@ class AuthServiceImplTest {
         }
 
         @Test
+        @DisplayName("odbija token bez roka valjanosti")
+        void rejectsTokenWithoutExpiry() {
+            User pending = pendingUser(null);
+            when(userRepository.findByVerificationToken("bez-roka"))
+                    .thenReturn(Optional.of(pending));
+
+            assertThatThrownBy(() -> authService.verifyEmail("bez-roka"))
+                    .isInstanceOf(BadRequestException.class);
+        }
+
+        @Test
         @DisplayName("ne radi ništa ako je adresa već potvrđena")
         void doesNothingWhenAlreadyVerified() {
             verifiedUser.setVerificationToken("vec-potvrden");
@@ -300,7 +514,6 @@ class AuthServiceImplTest {
             verify(userRepository, never()).save(any());
         }
     }
-
 
     @Nested
     @DisplayName("Ponovno slanje poveznice")
@@ -342,7 +555,6 @@ class AuthServiceImplTest {
         }
     }
 
-
     @Nested
     @DisplayName("Dohvat prijavljenog korisnika")
     class CurrentUser {
@@ -369,7 +581,6 @@ class AuthServiceImplTest {
         }
     }
 
-
     private RegisterRequest request(String email) {
         RegisterRequest r = new RegisterRequest();
         r.setEmail(email);
@@ -383,6 +594,12 @@ class AuthServiceImplTest {
         LoginRequest r = new LoginRequest();
         r.setEmail(email);
         r.setPassword("Lozinka123");
+        return r;
+    }
+
+    private RefreshTokenRequest refreshRequest(String token) {
+        RefreshTokenRequest r = new RefreshTokenRequest();
+        r.setRefreshToken(token);
         return r;
     }
 

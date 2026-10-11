@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search } from 'lucide-react';
+import { Search, UserX } from 'lucide-react';
 import { useFetch } from '../hooks';
 import { apiClient } from '../api/client';
 import {
@@ -11,9 +11,12 @@ import {
 import { formatDate } from '../utils';
 import type { User, UserRole } from '../types';
 
+const ANONYMIZED_DOMAIN = '@anonimizirano.local';
+
 export function UsersPage() {
     const { t } = useTranslation();
     const [search, setSearch] = useState('');
+    const [busyId, setBusyId] = useState<string | null>(null);
 
     const { data: users, loading, error, refetch } = useFetch<User[]>(
         async () => {
@@ -38,6 +41,21 @@ export function UsersPage() {
             refetch();
         } catch (err) {
             console.error('Failed to update status:', err);
+        }
+    };
+
+    const handleAnonymize = async (user: User) => {
+        const ime = `${user.firstName} ${user.lastName}`;
+        if (!window.confirm(t('users.anonymizeConfirm', { name: ime }))) return;
+
+        setBusyId(user.id);
+        try {
+            await apiClient.put(`/admin/users/${user.id}/anonymize`);
+            refetch();
+        } catch (err) {
+            console.error('Failed to anonymize user:', err);
+        } finally {
+            setBusyId(null);
         }
     };
 
@@ -86,51 +104,75 @@ export function UsersPage() {
                                 <TableHead>Uloga</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Registriran</TableHead>
+                                <TableHead className="text-right">{t('users.actions')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredUsers.map((user) => (
-                                <TableRow key={user.id}>
-                                    <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <Avatar firstName={user.firstName} lastName={user.lastName} size="sm" />
-                                            <span className="font-medium text-zinc-900 dark:text-white">
-                                                {user.firstName} {user.lastName}
-                                            </span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-zinc-500">
-                                        {user.email}
-                                    </TableCell>
-                                    <TableCell>
-                                        <select
-                                            value={user.role}
-                                            onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
-                                            className="px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500"
-                                        >
-                                            <option value="ADMIN">Admin</option>
-                                            <option value="TEACHER">Nastavnik</option>
-                                            <option value="STUDENT">Student</option>
-                                            <option value="GUEST">Gost</option>
-                                        </select>
-                                    </TableCell>
-                                    <TableCell>
-                                        <button
-                                            onClick={() => handleStatusToggle(user.id, user.isActive)}
-                                            className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                                                user.isActive
-                                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50'
-                                                    : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
-                                            }`}
-                                        >
-                                            {user.isActive ? 'Aktivan' : 'Neaktivan'}
-                                        </button>
-                                    </TableCell>
-                                    <TableCell className="text-zinc-500">
-                                        {formatDate(user.createdAt)}
-                                    </TableCell>
-                                </TableRow>
-                            ))}
+                            {filteredUsers.map((user) => {
+                                const anonimiziran = user.email.endsWith(ANONYMIZED_DOMAIN);
+
+                                return (
+                                    <TableRow key={user.id}>
+                                        <TableCell>
+                                            <div className="flex items-center gap-3">
+                                                <Avatar firstName={user.firstName} lastName={user.lastName} size="sm" />
+                                                <span className="font-medium text-zinc-900 dark:text-white">
+                                                    {user.firstName} {user.lastName}
+                                                </span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-zinc-500">
+                                            {anonimiziran ? (
+                                                <span className="italic">{t('users.anonymized')}</span>
+                                            ) : (
+                                                user.email
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            <select
+                                                value={user.role}
+                                                onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
+                                                className="px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500"
+                                            >
+                                                <option value="ADMIN">Admin</option>
+                                                <option value="TEACHER">Nastavnik</option>
+                                                <option value="STUDENT">Student</option>
+                                                <option value="GUEST">Gost</option>
+                                            </select>
+                                        </TableCell>
+                                        <TableCell>
+                                            <button
+                                                onClick={() => handleStatusToggle(user.id, user.isActive)}
+                                                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                                                    user.isActive
+                                                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50'
+                                                        : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                                                }`}
+                                            >
+                                                {user.isActive ? 'Aktivan' : 'Neaktivan'}
+                                            </button>
+                                        </TableCell>
+                                        <TableCell className="text-zinc-500">
+                                            {formatDate(user.createdAt)}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            {anonimiziran ? (
+                                                <span className="text-sm text-zinc-400">—</span>
+                                            ) : (
+                                                <button
+                                                    onClick={() => handleAnonymize(user)}
+                                                    disabled={busyId === user.id}
+                                                    title={t('users.anonymizeHint')}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    <UserX className="w-4 h-4" />
+                                                    {t('users.anonymize')}
+                                                </button>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
                         </TableBody>
                     </Table>
                 </Card>
