@@ -520,5 +520,93 @@ class UserServiceImplTest {
 
             verify(userRepository, never()).delete(any());
         }
+
+        @Nested
+        @DisplayName("Anonimizacija")
+        class Anonymizing {
+
+            @Test
+            @DisplayName("uklanja ime i prezime")
+            void removesName() {
+                UserResponse result = userService.anonymize(guestId);
+
+                assertThat(result.getFirstName()).isEqualTo("Anonimizirano");
+                assertThat(result.getLastName()).isEqualTo("Anonimizirano");
+            }
+
+            @Test
+            @DisplayName("zamjenjuje e-mail adresu oznakom")
+            void replacesEmail() {
+                UserResponse result = userService.anonymize(guestId);
+
+                assertThat(result.getEmail()).endsWith("@anonimizirano.local");
+                assertThat(result.getEmail()).doesNotContain("novi@test.hr");
+            }
+
+            @Test
+            @DisplayName("deaktivira račun")
+            void deactivatesAccount() {
+                guest.setActive(true);
+
+                userService.anonymize(guestId);
+
+                assertThat(guest.isActive()).isFalse();
+            }
+
+            @Test
+            @DisplayName("briše tragove vanjske prijave i potvrde adrese")
+            void clearsProviderAndToken() {
+                guest.setProviderId("111545373032881004436");
+                guest.setVerificationToken("token123");
+
+                userService.anonymize(guestId);
+
+                assertThat(guest.getProviderId()).isNull();
+                assertThat(guest.getVerificationToken()).isNull();
+                assertThat(guest.getVerificationTokenExpiry()).isNull();
+            }
+
+            @Test
+            @DisplayName("mijenja lozinku u neupotrebljivu")
+            void scramblesPassword() {
+                guest.setPassword("$2a$10$hash");
+
+                userService.anonymize(guestId);
+
+                assertThat(guest.getPassword()).isNotEqualTo("$2a$10$hash");
+            }
+
+            @Test
+            @DisplayName("zadržava razred i istraživačku skupinu")
+            void keepsResearchData() {
+                when(userRepository.findById(student.getId())).thenReturn(Optional.of(student));
+
+                userService.anonymize(student.getId());
+
+                assertThat(student.getSchoolClass()).isEqualTo(schoolClass);
+                assertThat(student.getResearchGroup()).isEqualTo(ResearchGroup.EXPERIMENTAL);
+            }
+
+            @Test
+            @DisplayName("odbija ponovnu anonimizaciju")
+            void rejectsSecondAnonymization() {
+                guest.setEmail("obrisan-nesto@anonimizirano.local");
+
+                assertThatThrownBy(() -> userService.anonymize(guestId))
+                        .isInstanceOf(BadRequestException.class)
+                        .hasMessageContaining("već anonimiziran");
+
+                verify(userRepository, never()).save(any());
+            }
+
+            @Test
+            @DisplayName("baca iznimku za nepostojećeg korisnika")
+            void missingUser() {
+                assertThatThrownBy(() -> userService.anonymize(unknownId))
+                        .isInstanceOf(ResourceNotFoundException.class);
+            }
+        }
     }
+
+
 }
