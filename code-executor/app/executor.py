@@ -114,6 +114,11 @@ class CodeExecutor:
         )
 
     def _execute_csharp(self, request: ExecutionRequest, work_dir: str) -> ExecutionResponse:
+        if shutil.which("dotnet") is None:
+            return ExecutionResponse(
+                success=False,
+                error="C# nije podržan na ovom poslužitelju jer .NET SDK nije instaliran."
+            )
         project_dir = os.path.join(work_dir, "CSharpProject")
         os.makedirs(project_dir, exist_ok=True)
 
