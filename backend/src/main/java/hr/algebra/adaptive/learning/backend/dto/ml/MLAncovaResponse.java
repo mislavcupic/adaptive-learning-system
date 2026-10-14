@@ -109,6 +109,7 @@ public class MLAncovaResponse {
         @JsonProperty("observed_mean")
         private Double observedMean;
         @JsonProperty("adjusted_mean")
+        @SuppressWarnings("java:S1700")
         private Double adjustedMean;
         private Double se;
     }

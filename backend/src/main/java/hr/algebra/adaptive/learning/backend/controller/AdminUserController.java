@@ -47,7 +47,7 @@ public class AdminUserController {
     }
 
     /**
-     * Pseudonimizacija na zahtjev ispitanika.
+     * Anonimizacija na zahtjev ispitanika. Znanstveno - istraživački razlozi.
      *
      * Racun ostaje u bazi, ali bez podataka koji osobu cine prepoznatljivom.
      * Predaje i rezultati ostaju cjeloviti, pa se istrazivacka analiza moze

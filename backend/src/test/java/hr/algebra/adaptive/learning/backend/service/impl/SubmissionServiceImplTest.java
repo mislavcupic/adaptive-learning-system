@@ -113,7 +113,9 @@ class SubmissionServiceImplTest {
             when(taskRepository.findById(codeTask.getId())).thenReturn(Optional.of(codeTask));
             when(assessmentService.hasCompletedPretest(studentId, courseId)).thenReturn(false);
 
-            assertThatThrownBy(() -> submissionService.submit(request(codeTask, "kod"), studentId))
+            var request = request(codeTask, "kod");
+
+            assertThatThrownBy(() -> submissionService.submit(request, studentId))
                     .isInstanceOf(PretestRequiredException.class);
 
             verify(submissionRepository, never()).save(any());

@@ -17,7 +17,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -25,13 +24,13 @@ import org.mockito.quality.Strictness;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -247,9 +246,10 @@ class AssessmentServiceImplTest {
             when(attemptRepository.existsByStudentIdAndAssessmentIdAndIsCompletedTrue(
                     studentId, assessmentId)).thenReturn(true);
 
-            assertThatThrownBy(() ->
-                    assessmentService.submitAttempt(requestWith(new HashMap<>()), studentId))
-                    .isInstanceOf(AssessmentAlreadyCompletedException.class);
+            var request = requestWith(new HashMap<>());
+
+            assertThatExceptionOfType(AssessmentAlreadyCompletedException.class)
+                    .isThrownBy(() -> assessmentService.submitAttempt(request, studentId));
         }
 
         @Test
@@ -260,9 +260,10 @@ class AssessmentServiceImplTest {
             when(attemptRepository.findByStudentIdAndAssessmentId(studentId, assessmentId))
                     .thenReturn(Optional.empty());
 
-            assertThatThrownBy(() ->
-                    assessmentService.submitAttempt(requestWith(new HashMap<>()), studentId))
-                    .isInstanceOf(ResourceNotFoundException.class);
+            var request = requestWith(new HashMap<>());
+
+            assertThatExceptionOfType(ResourceNotFoundException.class)
+                    .isThrownBy(() -> assessmentService.submitAttempt(request, studentId));
         }
     }
 

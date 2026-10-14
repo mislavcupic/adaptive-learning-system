@@ -74,11 +74,7 @@ public class Exam extends BaseEntity {
     @Column(name = "available_until")
     private LocalDateTime availableUntil;
 
-    /**
-     * Smiju li studenti tijekom ispita vidjeti prolaze li testovi kod
-     * programskih zadataka. AI feedback se u svakom slucaju daje tek
-     * nakon predaje.
-     */
+
     @Column(name = "show_test_results")
     @Builder.Default
     private boolean showTestResults = true;
@@ -91,7 +87,6 @@ public class Exam extends BaseEntity {
     @Builder.Default
     private boolean isActive = true;
 
-    /** Zbroj maksimalnih bodova svih zadataka u ispitu. */
     @Transient
     public int getMaxScore() {
         if (tasks == null) return 0;

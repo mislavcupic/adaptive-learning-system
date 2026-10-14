@@ -177,7 +177,9 @@ class LearningOutcomeServiceImplTest {
             UUID unknown = UUID.randomUUID();
             when(outcomeRepository.findById(unknown)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> outcomeService.update(unknown, request()))
+            var request = request();
+
+            assertThatThrownBy(() -> outcomeService.update(unknown, request))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
     }
@@ -225,7 +227,9 @@ class LearningOutcomeServiceImplTest {
             UUID unknown = UUID.randomUUID();
             when(outcomeRepository.findById(unknown)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> outcomeService.reorder(courseId, List.of(unknown)))
+            var outcomeIds = List.of(unknown);
+
+            assertThatThrownBy(() -> outcomeService.reorder(courseId, outcomeIds))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
 

@@ -31,9 +31,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
 
         final String authHeader = request.getHeader(AUTHORIZATION_HEADER);
@@ -49,8 +49,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             final String jwt = authHeader.substring(BEARER_PREFIX.length());
             final String userEmail = jwtService.extractUsername(jwt);
 
-            // Ako imamo email i korisnik nije već autenticiran
-            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            // Bearer token uvijek ima prednost pred onim što nosi sesija.
+            // OAuth2 prijava ostavlja JSESSIONID iza sebe i iz njega se vrati
+            // ranija autentikacija; dok sam ovdje provjeravao je li kontekst
+            // prazan, ta je stara prijava nadjačavala token i korisnik je
+            // radio pod tuđim identitetom.
+            if (userEmail != null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
 
                 // Validiraj token

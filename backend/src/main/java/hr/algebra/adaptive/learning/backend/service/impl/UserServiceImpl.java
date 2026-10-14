@@ -30,6 +30,7 @@ public class UserServiceImpl implements UserService {
 
     private static final String ANONYMIZED_NAME = "Anonimizirano";
     private static final String ANONYMIZED_DOMAIN = "@anonimizirano.local";
+    public static final String USER_NOT_FOUND_WITH_ID = "User not found with id: ";
 
     private final UserRepository userRepository;
     private final SchoolClassRepository schoolClassRepository;
@@ -39,7 +40,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse getById(UUID id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_WITH_ID + id));
         return UserResponse.fromEntity(user);
     }
 
@@ -83,7 +84,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponse updateProfile(UUID id, String firstName, String lastName) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_WITH_ID + id));
 
         if (firstName != null) {
             user.setFirstName(firstName);
@@ -100,7 +101,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponse updateRole(UUID id, UserRole role) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_WITH_ID + id));
 
         user.setRole(role);
         User saved = userRepository.save(user);
@@ -111,7 +112,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponse updateStatus(UUID id, boolean isActive) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_WITH_ID + id));
 
         user.setActive(isActive);
         User saved = userRepository.save(user);
@@ -122,7 +123,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponse updateGroup(UUID id, GroupType groupType) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_WITH_ID + id));
 
         user.setGroupType(groupType);
         User saved = userRepository.save(user);
@@ -133,7 +134,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void activate(UUID id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_WITH_ID + id));
 
         user.setActive(true);
         userRepository.save(user);
@@ -143,7 +144,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void deactivate(UUID id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_WITH_ID + id));
 
         user.setActive(false);
         userRepository.save(user);
@@ -161,7 +162,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void delete(UUID id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_WITH_ID + id));
 
         userRepository.delete(user);
     }
@@ -178,7 +179,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponse anonymize(UUID id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_WITH_ID + id));
 
         if (user.getEmail() != null && user.getEmail().endsWith(ANONYMIZED_DOMAIN)) {
             throw new BadRequestException("Korisnik je već anonimiziran.");
@@ -217,7 +218,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse approveUser(UUID id, UUID schoolClassId, boolean includeInResearch) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_WITH_ID + id));
 
         if (user.getRole() != UserRole.GUEST) {
             throw new BadRequestException("Korisnik nije GUEST");
@@ -251,7 +252,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void rejectPendingUser(UUID id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_WITH_ID + id));
 
         if (user.getRole() != UserRole.GUEST) {
             throw new BadRequestException("Korisnik nije GUEST");

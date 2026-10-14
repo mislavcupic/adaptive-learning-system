@@ -13,7 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -88,7 +88,7 @@ class ResearchGroupServiceImplTest {
         void bothGroupsOccurWhenTied() {
             stubCounts(0, 0);
 
-            Map<ResearchGroup, Integer> counts = new HashMap<>();
+            Map<ResearchGroup, Integer> counts = new EnumMap<>(ResearchGroup.class);
             for (int i = 0; i < 200; i++) {
                 counts.merge(groupService.assignGroup(classId), 1, Integer::sum);
             }

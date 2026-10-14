@@ -46,7 +46,7 @@ public class ExamAnswer extends BaseEntity {
     @Column(name = "answer_content", columnDefinition = "TEXT")
     private String answerContent;
 
-    /**
+    /*
      * Za programske zadatke: veza prema predaji koja nosi rezultate
      * prevodenja, testova i kasnije AI povratnu informaciju.
      */

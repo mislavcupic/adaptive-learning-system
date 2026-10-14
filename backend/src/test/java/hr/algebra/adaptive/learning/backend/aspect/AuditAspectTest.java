@@ -2,6 +2,7 @@ package hr.algebra.adaptive.learning.backend.aspect;
 
 import hr.algebra.adaptive.learning.backend.domain.entity.AuditLog;
 import hr.algebra.adaptive.learning.backend.repository.AuditLogRepository;
+import hr.algebra.adaptive.learning.backend.service.impl.AssessmentServiceImpl;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.Signature;
 import org.junit.jupiter.api.AfterEach;
@@ -15,6 +16,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -41,7 +44,7 @@ class AuditAspectTest {
 
     private AuditAspect aspect;
     private MockHttpServletRequest request;
-
+    private static final Logger log = LoggerFactory.getLogger(AssessmentServiceImpl.class);
     @BeforeEach
     void setUp() {
         aspect = new AuditAspect(auditLogRepository);
@@ -81,11 +84,12 @@ class AuditAspectTest {
 
             aspect.auditAction(joinPoint);
 
-            AuditLog log = captured();
-            assertThat(log.getAction()).isEqualTo("createTask");
-            assertThat(log.getHttpMethod()).isEqualTo("POST");
-            assertThat(log.getEndpoint()).isEqualTo("/api/tasks");
-            assertThat(log.getErrorMessage()).isNull();
+            AuditLog auditLog = captured();
+            assertThat(auditLog)
+                    .returns("createTask", AuditLog::getAction)
+                    .returns("POST", AuditLog::getHttpMethod)
+                    .returns("/api/tasks", AuditLog::getEndpoint)
+                    .returns(null, AuditLog::getErrorMessage);
         }
 
         @Test
@@ -120,11 +124,12 @@ class AuditAspectTest {
 
             try {
                 aspect.auditAction(joinPoint);
-            } catch (IllegalStateException ignored) {
+            } catch (IllegalStateException e) {
+                log.warn("Neuspješno izvršavanje revizije radnje (audit action): {}", e.getMessage(), e);
             }
 
-            AuditLog log = captured();
-            assertThat(log.getErrorMessage()).isEqualTo("pukla veza");
+            AuditLog auditLog = captured();
+            assertThat(auditLog.getErrorMessage()).isEqualTo("pukla veza");
         }
 
         @Test
@@ -155,9 +160,10 @@ class AuditAspectTest {
 
             aspect.auditAction(joinPoint);
 
-            AuditLog log = captured();
-            assertThat(log.getUserEmail()).isEqualTo("ines@test.hr");
-            assertThat(log.getUserRole()).isEqualTo("TEACHER");
+            AuditLog auditLog = captured();
+            assertThat(auditLog)
+                    .returns("ines@test.hr", AuditLog::getUserEmail)
+                    .returns("TEACHER", AuditLog::getUserRole);
         }
 
         @Test
@@ -184,10 +190,11 @@ class AuditAspectTest {
 
             aspect.auditAction(joinPoint);
 
-            AuditLog log = captured();
-            assertThat(log.getUserId()).isNull();
-            assertThat(log.getUserEmail()).isNull();
-            assertThat(log.getUserRole()).isNull();
+            AuditLog auditLog = captured();
+            assertThat(auditLog)
+                    .returns(null, AuditLog::getUserId)
+                    .returns(null, AuditLog::getUserEmail)
+                    .returns(null, AuditLog::getUserRole);
         }
 
         @Test
@@ -256,11 +263,12 @@ class AuditAspectTest {
             Object result = aspect.auditAction(joinPoint);
 
             assertThat(result).isEqualTo("ok");
-            AuditLog log = captured();
-            assertThat(log.getAction()).isEqualTo("createTask");
-            assertThat(log.getHttpMethod()).isNull();
-            assertThat(log.getEndpoint()).isNull();
-            assertThat(log.getIpAddress()).isNull();
+            AuditLog auditLog = captured();
+            assertThat(auditLog)
+                    .returns("createTask", AuditLog::getAction)
+                    .returns(null, AuditLog::getHttpMethod)
+                    .returns(null, AuditLog::getEndpoint)
+                    .returns(null, AuditLog::getIpAddress);
         }
     }
 

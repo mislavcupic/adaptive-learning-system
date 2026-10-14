@@ -54,11 +54,9 @@ public class SubmissionPostProcessor {
             // nema njegove ocjene nemamo osnovu za BKT. Da ih tretiramo
             // kao netočne, procjena bi pala bez razloga.
             TaskType type = task.getTaskType() != null ? task.getTaskType() : TaskType.CODE;
-            if (type == TaskType.TEXT || type == TaskType.CHECKLIST) {
-                if (submission.getTeacherScore() == null) {
-                    log.info("BKT preskočen - {} čeka ocjenu profesora", type);
-                    return;
-                }
+            if ((type == TaskType.TEXT || type == TaskType.CHECKLIST) && submission.getTeacherScore() == null) {
+                log.info("BKT preskočen - {} čeka ocjenu profesora", type);
+                return;
             }
 
             String skillName = task.getOutcome().getName();

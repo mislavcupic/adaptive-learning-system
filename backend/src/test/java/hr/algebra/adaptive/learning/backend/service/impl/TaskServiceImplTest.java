@@ -175,7 +175,9 @@ class TaskServiceImplTest {
             UUID unknown = UUID.randomUUID();
             when(userRepository.findById(unknown)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> taskService.create(request(TaskType.CODE), unknown))
+            var request = request(TaskType.CODE);
+
+            assertThatThrownBy(() -> taskService.create(request, unknown))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
     }
@@ -223,7 +225,9 @@ class TaskServiceImplTest {
             UUID unknown = UUID.randomUUID();
             when(taskRepository.findById(unknown)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> taskService.update(unknown, request(TaskType.CODE)))
+            var taskRequest = request(TaskType.CODE);
+
+            assertThatThrownBy(() -> taskService.update(unknown, taskRequest))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
     }

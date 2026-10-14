@@ -220,7 +220,7 @@ class ExamControllerTest {
             mockMvc.perform(post("/api/exams/{id}/start", examId).with(user(studentUser)))
                     .andExpect(status().isOk());
 
-            verify(examService).startAttempt(eq(examId), eq(studentUser.getId()));
+            verify(examService).startAttempt(examId, studentUser.getId());
         }
 
         @Test
@@ -262,7 +262,7 @@ class ExamControllerTest {
             mockMvc.perform(post("/api/exams/{id}/submit", examId).with(user(studentUser)))
                     .andExpect(status().isOk());
 
-            verify(examService).submitAttempt(eq(examId), eq(studentUser.getId()));
+            verify(examService).submitAttempt(examId, studentUser.getId());
         }
 
         @Test

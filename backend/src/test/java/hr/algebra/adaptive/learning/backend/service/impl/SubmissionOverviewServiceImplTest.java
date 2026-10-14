@@ -5,7 +5,6 @@ import hr.algebra.adaptive.learning.backend.domain.enums.LanguageType;
 import hr.algebra.adaptive.learning.backend.domain.enums.ResearchGroup;
 import hr.algebra.adaptive.learning.backend.domain.enums.SubmissionStatus;
 import hr.algebra.adaptive.learning.backend.domain.enums.TaskType;
-import hr.algebra.adaptive.learning.backend.dto.response.StudentSubmissionsOverviewResponse;
 import hr.algebra.adaptive.learning.backend.repository.SubmissionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

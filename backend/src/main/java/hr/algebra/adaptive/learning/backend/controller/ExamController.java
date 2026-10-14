@@ -28,9 +28,7 @@ public class ExamController {
     private final ExamService examService;
     private final UserRepository userRepository;
 
-    // ==================================================================
-    // NASTAVNIK
-    // ==================================================================
+  //nastavnik
 
     @PostMapping
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
@@ -115,7 +113,7 @@ public class ExamController {
 
     /**
      * Rucno ocjenjivanje pojedinog odgovora. Koristi se za tekstualne
-     * zadatke i ceklistu, koje sustav ne ocjenjuje automatski.
+     * zadatke i ceklistu, koje sustav ne ocjenjuje automatski. MORAM SE SJETITI
      */
     @PatchMapping("/attempts/{attemptId}/tasks/{taskId}/grade")
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
@@ -151,9 +149,7 @@ public class ExamController {
                 examService.finalizeReview(attemptId, feedback, teacherId)));
     }
 
-    // ==================================================================
-    // STUDENT
-    // ==================================================================
+//studetn
 
     @GetMapping("/available/{courseId}")
     public ResponseEntity<ApiResponse<List<ExamResponse>>> getAvailable(

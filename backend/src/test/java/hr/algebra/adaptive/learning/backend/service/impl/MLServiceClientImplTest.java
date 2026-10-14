@@ -44,8 +44,7 @@ class MLServiceClientImplTest {
             client.generateFeedback(feedbackRequest());
 
             assertThat(sent.get().method()).isEqualTo(HttpMethod.POST);
-            assertThat(sent.get().url().toString()).isEqualTo(ML_URL + "/api/feedback");
-        }
+            assertThat(sent.get().url()).hasToString(ML_URL + "/api/feedback");        }
 
         @Test
         @DisplayName("vraca odgovor ML servisa")
@@ -89,8 +88,7 @@ class MLServiceClientImplTest {
             MLServiceClientImpl client = clientReturning(HttpStatus.OK, "{\"status\":\"healthy\"}");
 
             assertThat(client.isHealthy()).isTrue();
-            assertThat(sent.get().url().toString()).isEqualTo(ML_URL + "/health");
-        }
+            assertThat(sent.get().url()).hasToString(ML_URL + "/health");        }
 
         @Test
         @DisplayName("drugi status znaci da servis nije dostupan")
@@ -129,15 +127,16 @@ class MLServiceClientImplTest {
             client.runAncova(MLAncovaRequest.builder().build());
 
             assertThat(sent.get().method()).isEqualTo(HttpMethod.POST);
-            assertThat(sent.get().url().toString()).isEqualTo(ML_URL + "/api/statistics/ancova");
-        }
+            assertThat(sent.get().url()).hasToString(ML_URL + "/api/statistics/ancova");        }
 
         @Test
         @DisplayName("greska se propusta pozivatelju")
         void propagatesFailure() {
             MLServiceClientImpl client = clientFailing("statsmodels pukao");
 
-            assertThatThrownBy(() -> client.runAncova(MLAncovaRequest.builder().build()))
+            var request = MLAncovaRequest.builder().build();
+
+            assertThatThrownBy(() -> client.runAncova(request))
                     .isInstanceOf(RuntimeException.class);
         }
     }
@@ -154,7 +153,7 @@ class MLServiceClientImplTest {
             client.updateBkt(MlBktRequest.builder().build());
 
             assertThat(sent.get().method()).isEqualTo(HttpMethod.POST);
-            assertThat(sent.get().url().toString()).isEqualTo(ML_URL + "/api/bkt/update");
+            assertThat(sent.get().url()).hasToString((ML_URL + "/api/bkt/update"));
         }
 
         @Test

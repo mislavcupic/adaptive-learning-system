@@ -2,7 +2,7 @@ package hr.algebra.adaptive.learning.backend.service;
 
 import hr.algebra.adaptive.learning.backend.dto.request.TaskRequest;
 import hr.algebra.adaptive.learning.backend.dto.response.TaskResponse;
-import java.time.LocalDateTime;
+
 import java.util.List;
 import java.util.UUID;
 

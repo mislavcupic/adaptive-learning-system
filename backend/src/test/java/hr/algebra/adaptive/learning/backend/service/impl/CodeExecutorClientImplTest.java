@@ -15,7 +15,6 @@ import org.springframework.web.reactive.function.client.ExchangeFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,8 +38,7 @@ class CodeExecutorClientImplTest {
             client.execute(request());
 
             assertThat(sent.get().method()).isEqualTo(HttpMethod.POST);
-            assertThat(sent.get().url().toString()).isEqualTo(BASE_URL + "/api/execute");
-        }
+            assertThat(sent.get().url()).hasToString(BASE_URL + "/api/execute");        }
 
         @Test
         @DisplayName("vraca odgovor izvrsitelja")
@@ -86,8 +84,7 @@ class CodeExecutorClientImplTest {
             CodeExecutorClientImpl client = clientReturning(HttpStatus.OK, "ok");
 
             assertThat(client.isHealthy()).isTrue();
-            assertThat(sent.get().url().toString()).isEqualTo(BASE_URL + "/health");
-        }
+            assertThat(sent.get().url()).hasToString(BASE_URL + "/health");        }
 
         @Test
         @DisplayName("greska na health znaci da nije dostupan")

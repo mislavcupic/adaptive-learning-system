@@ -1,5 +1,8 @@
 package hr.algebra.adaptive.learning.backend.service.impl;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import hr.algebra.adaptive.learning.backend.domain.entity.Submission;
 import hr.algebra.adaptive.learning.backend.domain.entity.Task;
 import hr.algebra.adaptive.learning.backend.domain.entity.User;
@@ -31,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -39,6 +43,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class SubmissionServiceImpl implements SubmissionService {
+
+    private static final int DEFAULT_TIMEOUT_SECONDS = 10;
+
+    // Toleriram visak kljuceva u JSON-u - nastavnik uz input i output
+    // zna upisati i opis test casea.
+    private static final ObjectMapper TEST_CASE_MAPPER = new ObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     private final SubmissionRepository submissionRepository;
     private final TaskRepository taskRepository;
@@ -183,16 +194,84 @@ public class SubmissionServiceImpl implements SubmissionService {
                 .code(code)
                 .language(task.getOutcome().getCourse().getLanguageType().name())
                 .testCases(buildTestCases(task))
-                .timeoutSeconds(10)
+                .timeoutSeconds(resolveTimeoutSeconds(task))
                 .build();
 
         return codeExecutorClient.execute(execRequest);
     }
 
+    private int resolveTimeoutSeconds(Task task) {
+        Integer limit = task.getTimeLimitSeconds();
+        return (limit != null && limit > 0) ? limit : DEFAULT_TIMEOUT_SECONDS;
+    }
+
+    /**
+     * Test caseovi se na zadatku cuvaju kao JSON tekst, ne kao zaseban entitet.
+     *
+     * Kod neispravnog zapisa vracam praznu listu umjesto iznimke - predaja
+     * tada prolazi bez provjere tocnosti, sto mi je bolje nego da student
+     * ostane bez ikakvog odgovora. Razlog zapisujem u log.
+     */
     private List<CodeExecutionRequest.TestCase> buildTestCases(Task task) {
-        // TODO: dohvati prave test caseove iz Task entiteta
-        // Za sad vraćamo praznu listu - treba dodati TestCase entitet
-        return List.of();
+        String raw = task.getTestCases();
+
+        if (raw == null || raw.isBlank()) {
+            log.warn("Zadatak {} nema definirane test caseove - kod se izvrsava bez provjere tocnosti",
+                    task.getId());
+            return List.of();
+        }
+
+        try {
+            JsonNode root = TEST_CASE_MAPPER.readTree(raw);
+
+            // Starije predaje iz sucelja znaju biti dvostruko enkodirane.
+            if (root.isTextual()) {
+                root = TEST_CASE_MAPPER.readTree(root.asText());
+            }
+
+            if (!root.isArray()) {
+                log.warn("Test caseovi zadatka {} nisu JSON polje nego {} - preskacem",
+                        task.getId(), root.getNodeType());
+                return List.of();
+            }
+
+            List<CodeExecutionRequest.TestCase> testCases = new ArrayList<>();
+
+            for (JsonNode node : root) {
+                String expected = firstText(node, "expectedOutput", "expected_output", "expected", "output");
+
+                if (expected == null) {
+                    log.warn("Test case zadatka {} nema ocekivani izlaz - preskacem: {}",
+                            task.getId(), node);
+                    continue;
+                }
+
+                String input = firstText(node, "input", "stdin", "in");
+
+                testCases.add(CodeExecutionRequest.TestCase.builder()
+                        .input(input != null ? input : "")
+                        .expectedOutput(expected)
+                        .build());
+            }
+
+            log.info("Zadatak {}: ucitano {} test caseova", task.getId(), testCases.size());
+            return testCases;
+
+        } catch (Exception e) {
+            log.error("Neispravan format test caseova za zadatak {}: {}", task.getId(), e.getMessage());
+            return List.of();
+        }
+    }
+
+    // Nazive kljuceva sam mijenjao kroz razvoj, pa gledam sve varijante.
+    private static String firstText(JsonNode node, String... keys) {
+        for (String key : keys) {
+            JsonNode value = node.get(key);
+            if (value != null && !value.isNull()) {
+                return value.asText();
+            }
+        }
+        return null;
     }
 
     private MLFeedbackResponse callMLService(Submission submission, CodeExecutionResponse execResult) {

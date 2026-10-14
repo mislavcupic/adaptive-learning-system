@@ -53,8 +53,7 @@ class OAuth2FailureHandlerTest {
                 error("Google račun nema e-mail adresu."));
 
         String url = response.getRedirectedUrl();
-        assertThat(url).doesNotContain(" ");
-        assertThat(url).contains("%");
+        assertThat(url).doesNotContain(" ").contains("%");
     }
 
     @Test

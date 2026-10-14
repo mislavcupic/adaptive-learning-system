@@ -38,8 +38,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -149,7 +148,9 @@ class AuthServiceImplTest {
             when(userRepository.findByEmail("ana@test.hr"))
                     .thenReturn(Optional.of(verifiedUser));
 
-            assertThatThrownBy(() -> authService.register(request("ana@test.hr")))
+            var request = request("ana@test.hr");
+
+            assertThatThrownBy(() -> authService.register(request))
                     .isInstanceOf(IllegalArgumentException.class);
 
             verify(userRepository, never()).save(any());
@@ -173,7 +174,9 @@ class AuthServiceImplTest {
             when(userRepository.findByEmail("google@test.hr"))
                     .thenReturn(Optional.of(googleUser));
 
-            assertThatThrownBy(() -> authService.register(request("google@test.hr")))
+            var request = request("google@test.hr");
+
+            assertThatThrownBy(() -> authService.register(request))
                     .isInstanceOf(IllegalArgumentException.class);
 
             verify(emailService, never()).sendVerificationEmail(any(), anyString());
@@ -240,10 +243,11 @@ class AuthServiceImplTest {
             when(userRepository.findByEmail("ana@test.hr"))
                     .thenReturn(Optional.of(verifiedUser));
 
-            assertThatThrownBy(() -> authService.login(loginRequest("ana@test.hr")))
+            var request = loginRequest("ana@test.hr");
+
+            assertThatThrownBy(() -> authService.login(request))
                     .isInstanceOf(UnauthorizedException.class)
                     .hasMessageContaining("nije potvrđena");
-
             verify(authenticationManager, never()).authenticate(any());
         }
 
@@ -254,7 +258,9 @@ class AuthServiceImplTest {
             when(userRepository.findByEmail("ana@test.hr"))
                     .thenReturn(Optional.of(verifiedUser));
 
-            assertThatThrownBy(() -> authService.login(loginRequest("ana@test.hr")))
+            var request = loginRequest("ana@test.hr");
+
+            assertThatThrownBy(() -> authService.login(request))
                     .isInstanceOf(UnauthorizedException.class)
                     .hasMessageContaining("odobrenje");
         }
@@ -266,8 +272,10 @@ class AuthServiceImplTest {
             when(authenticationManager.authenticate(any()))
                     .thenThrow(new BadCredentialsException("bad"));
 
-            assertThatThrownBy(() -> authService.login(loginRequest("nitko@test.hr")))
-                    .isInstanceOf(UnauthorizedException.class);
+            var request = loginRequest("nitko@test.hr");
+
+            assertThatExceptionOfType(UnauthorizedException.class)
+                    .isThrownBy(() -> authService.login(request));
         }
 
         @Test
@@ -278,8 +286,10 @@ class AuthServiceImplTest {
             when(authenticationManager.authenticate(any()))
                     .thenThrow(new BadCredentialsException("bad"));
 
-            assertThatThrownBy(() -> authService.login(loginRequest("ana@test.hr")))
-                    .isInstanceOf(UnauthorizedException.class);
+            var request = loginRequest("ana@test.hr");
+
+            assertThatExceptionOfType(UnauthorizedException.class)
+                    .isThrownBy(() -> authService.login(request));
         }
 
         @Test
@@ -319,8 +329,10 @@ class AuthServiceImplTest {
             when(refreshTokenRepository.findByTokenAndRevokedFalse("nepostoji"))
                     .thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> authService.refreshToken(refreshRequest("nepostoji")))
-                    .isInstanceOf(UnauthorizedException.class);
+            var request = refreshRequest("nepostoji");
+
+            assertThatExceptionOfType(UnauthorizedException.class)
+                    .isThrownBy(() -> authService.refreshToken(request));
         }
 
         @Test
@@ -331,8 +343,11 @@ class AuthServiceImplTest {
             when(refreshTokenRepository.findByTokenAndRevokedFalse("stari"))
                     .thenReturn(Optional.of(stored));
 
-            assertThatThrownBy(() -> authService.refreshToken(refreshRequest("stari")))
-                    .isInstanceOf(UnauthorizedException.class);
+
+            var request = refreshRequest("stari");
+
+            assertThatExceptionOfType(UnauthorizedException.class)
+                    .isThrownBy(() -> authService.refreshToken(request));
 
             assertThat(stored.isRevoked()).isTrue();
             verify(refreshTokenRepository).save(stored);
@@ -347,8 +362,10 @@ class AuthServiceImplTest {
                     .thenReturn(Optional.of(stored));
             when(jwtService.isTokenValid("refresh.token", verifiedUser)).thenReturn(false);
 
-            assertThatThrownBy(() -> authService.refreshToken(refreshRequest("refresh.token")))
-                    .isInstanceOf(UnauthorizedException.class);
+            var request = refreshRequest("refresh.token");
+
+            assertThatExceptionOfType(UnauthorizedException.class)
+                    .isThrownBy(() -> authService.refreshToken(request));
 
             verify(jwtService, never()).generateAccessToken(any());
         }

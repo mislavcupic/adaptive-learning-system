@@ -112,7 +112,9 @@ class CourseServiceImplTest {
             UUID unknown = UUID.randomUUID();
             when(userRepository.findById(unknown)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> courseService.create(request(), unknown))
+            var request = request();
+
+            assertThatThrownBy(() -> courseService.create(request, unknown))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
     }
@@ -207,7 +209,9 @@ class CourseServiceImplTest {
             UUID unknown = UUID.randomUUID();
             when(courseRepository.findById(unknown)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> courseService.update(unknown, request()))
+            var request = request();
+
+            assertThatThrownBy(() -> courseService.update(unknown, request))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
     }

@@ -61,7 +61,7 @@ public class TeacherController {
         return ResponseEntity.ok(ApiResponse.success(researchResultService.getResults()));
     }
 
-    // ANCOVA statistička analiza (posttest ~ group + pretest kovarijat)
+    // ANCOVA statistička analiza (posttest ~ group + pretest kovarijat) najbolje rješenje da uključim potencijalnu neujednačenost
     @GetMapping("/research-results/ancova")
     public ResponseEntity<ApiResponse<MLAncovaResponse>> getAncova() {
         return ResponseEntity.ok(ApiResponse.success(researchResultService.getAncova()));

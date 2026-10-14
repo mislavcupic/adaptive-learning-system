@@ -24,7 +24,6 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -142,7 +141,9 @@ class SchoolClassServiceImplTest {
             UUID unknown = UUID.randomUUID();
             when(userRepository.findById(unknown)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> classService.create(request(), unknown))
+            var request = request();
+
+            assertThatThrownBy(() -> classService.create(request, unknown))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
     }

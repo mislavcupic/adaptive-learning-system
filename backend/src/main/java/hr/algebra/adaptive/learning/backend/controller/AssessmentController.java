@@ -21,7 +21,7 @@ public class AssessmentController {
 
     private final AssessmentService assessmentService;
 
-    // ==================== TEACHER ENDPOINTS ====================
+    // endpointi - nastavnik
 
     @PostMapping
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
@@ -47,7 +47,7 @@ public class AssessmentController {
         return ResponseEntity.noContent().build();
     }
 
-    // ==================== COMMON ENDPOINTS ====================
+    // ostali endpointi
 
     @GetMapping("/{id}")
     public ResponseEntity<AssessmentResponse> getById(@PathVariable UUID id) {
@@ -59,7 +59,7 @@ public class AssessmentController {
         return ResponseEntity.ok(assessmentService.getByCourse(courseId));
     }
 
-    // ==================== STUDENT ENDPOINTS ====================
+    // studentovi endpointi
 
     @PostMapping("/{assessmentId}/start")
     @PreAuthorize("hasRole('STUDENT')")

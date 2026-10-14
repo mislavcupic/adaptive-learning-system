@@ -119,9 +119,10 @@ class OAuth2SuccessHandlerTest {
             handler.onAuthenticationSuccess(request, response, authentication);
 
             String url = response.getRedirectedUrl();
-            assertThat(url).startsWith(FRONTEND + "/oauth2/callback");
-            assertThat(url).contains("accessToken=access-token");
-            assertThat(url).contains("refreshToken=refresh-token");
+            assertThat(url)
+                    .startsWith(FRONTEND + "/oauth2/callback")
+                    .contains("accessToken=access-token")
+                    .contains("refreshToken=refresh-token");
         }
 
         @Test

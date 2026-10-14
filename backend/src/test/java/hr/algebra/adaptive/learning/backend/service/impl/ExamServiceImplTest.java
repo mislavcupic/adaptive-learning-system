@@ -29,14 +29,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
- * Testovi poslovnih pravila ispita.
+ * Testovi pravila ispita
  *
  * Repozitoriji su mockani, pa se testira logika servisa bez baze.
  * Naglasak je na pravilima koja stite ispit: jedan pokusaj po studentu,
@@ -135,9 +134,9 @@ class ExamServiceImplTest {
         });
     }
 
-    // ==================================================================
-    // NASTAVNIK
-    // ==================================================================
+
+    // nastavnik
+
 
     @Nested
     @DisplayName("Kreiranje ispita")
@@ -196,7 +195,9 @@ class ExamServiceImplTest {
         void missingCourse() {
             when(courseRepository.findById(courseId)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> examService.create(examRequest(null), teacherId))
+            var request = examRequest(null);
+
+            assertThatThrownBy(() -> examService.create(request, teacherId))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
 
@@ -206,7 +207,9 @@ class ExamServiceImplTest {
             when(courseRepository.findById(courseId)).thenReturn(Optional.of(course));
             when(userRepository.findById(teacherId)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> examService.create(examRequest(null), teacherId))
+            var request = examRequest(null);
+
+            assertThatThrownBy(() -> examService.create(request, teacherId))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
 
@@ -218,12 +221,13 @@ class ExamServiceImplTest {
             when(userRepository.findById(teacherId)).thenReturn(Optional.of(teacher));
             when(taskRepository.findById(strangerId)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> examService.create(examRequest(List.of(strangerId)), teacherId))
+            var request = examRequest(List.of(strangerId));
+
+            assertThatThrownBy(() -> examService.create(request, teacherId))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
     }
 
-    // ==================================================================
 
     @Nested
     @DisplayName("Dohvat ispita")
@@ -274,7 +278,6 @@ class ExamServiceImplTest {
         }
     }
 
-    // ==================================================================
 
     @Nested
     @DisplayName("Objava ispita")
@@ -334,7 +337,6 @@ class ExamServiceImplTest {
         }
     }
 
-    // ==================================================================
 
     @Nested
     @DisplayName("Izmjena ispita")
@@ -411,7 +413,7 @@ class ExamServiceImplTest {
         }
     }
 
-    // ==================================================================
+
 
     @Nested
     @DisplayName("Brisanje ispita")
@@ -444,7 +446,7 @@ class ExamServiceImplTest {
         }
     }
 
-    // ==================================================================
+
 
     @Nested
     @DisplayName("Pregled pokušaja")
@@ -508,7 +510,7 @@ class ExamServiceImplTest {
         }
     }
 
-    // ==================================================================
+
 
     @Nested
     @DisplayName("Dostupni ispiti studentu")
@@ -551,9 +553,7 @@ class ExamServiceImplTest {
         }
     }
 
-    // ==================================================================
-    // STUDENT
-    // ==================================================================
+    //student
 
     @Nested
     @DisplayName("Otvaranje pokušaja")
@@ -715,7 +715,7 @@ class ExamServiceImplTest {
         }
     }
 
-    // ==================================================================
+
 
     @Nested
     @DisplayName("Spremanje odgovora")
@@ -814,7 +814,6 @@ class ExamServiceImplTest {
         }
     }
 
-    // ==================================================================
 
     @Nested
     @DisplayName("Izvršavanje koda tijekom ispita")
@@ -918,7 +917,7 @@ class ExamServiceImplTest {
         }
     }
 
-    // ==================================================================
+
 
     @Nested
     @DisplayName("Predaja ispita")
@@ -1066,7 +1065,7 @@ class ExamServiceImplTest {
         }
     }
 
-    // ==================================================================
+
 
     @Nested
     @DisplayName("Ručno ocjenjivanje")
@@ -1152,8 +1151,11 @@ class ExamServiceImplTest {
             when(answerRepository.findByAttemptIdAndTaskId(open.getId(), choiceTask.getId()))
                     .thenReturn(Optional.of(answer));
 
+            var openId = open.getId();
+            var taskId = choiceTask.getId();
+
             assertThatThrownBy(() -> examService.gradeAnswer(
-                    open.getId(), choiceTask.getId(), 999, "previše", teacherId))
+                    openId, taskId, 999, "previše", teacherId))
                     .isInstanceOf(BadRequestException.class)
                     .hasMessageContaining("između");
         }
@@ -1167,9 +1169,12 @@ class ExamServiceImplTest {
             when(answerRepository.findByAttemptIdAndTaskId(open.getId(), choiceTask.getId()))
                     .thenReturn(Optional.of(answer));
 
-            assertThatThrownBy(() -> examService.gradeAnswer(
-                    open.getId(), choiceTask.getId(), -5, "greška", teacherId))
-                    .isInstanceOf(BadRequestException.class);
+            var openId = open.getId();
+            var taskId = choiceTask.getId();
+
+            assertThatExceptionOfType(BadRequestException.class)
+                    .isThrownBy(() -> examService.gradeAnswer(
+                            openId, taskId, -5, "greška", teacherId));
         }
 
         @Test
@@ -1179,13 +1184,15 @@ class ExamServiceImplTest {
             when(answerRepository.findByAttemptIdAndTaskId(attemptId, choiceTask.getId()))
                     .thenReturn(Optional.empty());
 
+            var taskId = choiceTask.getId();
+
             assertThatThrownBy(() -> examService.gradeAnswer(
-                    attemptId, choiceTask.getId(), 5, "x", teacherId))
+                    attemptId, taskId, 5, "x", teacherId))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
     }
 
-    // ==================================================================
+
 
     @Nested
     @DisplayName("Zaključivanje pregleda")
@@ -1220,18 +1227,20 @@ class ExamServiceImplTest {
         @Test
         @DisplayName("baca iznimku za nepostojećeg nastavnika")
         void missingTeacher() {
-            ExamAttempt a = attempt(ExamAttemptStatus.GRADED, null);
-            when(attemptRepository.findById(a.getId())).thenReturn(Optional.of(a));
+            ExamAttempt attempt = attempt(ExamAttemptStatus.GRADED, null);
+            when(attemptRepository.findById(attempt.getId())).thenReturn(Optional.of(attempt));
             when(userRepository.findById(teacherId)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> examService.finalizeReview(a.getId(), "x", teacherId))
+            var examId = attempt.getId();
+
+
+            assertThatThrownBy(() -> examService.finalizeReview(examId, "x", teacherId))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
     }
 
-    // ==================================================================
     // Pomocne metode
-    // ==================================================================
+
 
     private ExamRequest examRequest(List<UUID> taskIds) {
         ExamRequest r = new ExamRequest();

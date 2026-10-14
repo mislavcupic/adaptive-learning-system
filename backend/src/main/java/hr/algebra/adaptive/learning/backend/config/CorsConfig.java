@@ -30,10 +30,10 @@ public class CorsConfig {
         // Dozvoljeni headeri
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
 
-        // Credentials (cookies, authorization headers)
+        // Vjerodajnice (cookies, authorization headers)
         configuration.setAllowCredentials(true);
 
-        // Exposed headers
+        // exposeani headeri
         configuration.setExposedHeaders(List.of("Authorization"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

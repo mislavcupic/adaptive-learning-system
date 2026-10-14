@@ -71,6 +71,7 @@ public class User extends BaseEntity implements UserDetails {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "school_class_id")
+    @SuppressWarnings({"serial", "java:S1948"})
     private SchoolClass schoolClass;
 
     @Enumerated(EnumType.STRING)
