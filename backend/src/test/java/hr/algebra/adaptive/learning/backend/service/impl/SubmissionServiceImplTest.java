@@ -5,6 +5,7 @@ import hr.algebra.adaptive.learning.backend.domain.enums.LanguageType;
 import hr.algebra.adaptive.learning.backend.domain.enums.ResearchGroup;
 import hr.algebra.adaptive.learning.backend.domain.enums.SubmissionStatus;
 import hr.algebra.adaptive.learning.backend.domain.enums.TaskType;
+import hr.algebra.adaptive.learning.backend.dto.execution.CodeExecutionRequest;
 import hr.algebra.adaptive.learning.backend.dto.execution.CodeExecutionResponse;
 import hr.algebra.adaptive.learning.backend.dto.ml.MLFeedbackResponse;
 import hr.algebra.adaptive.learning.backend.dto.request.SubmissionRequest;
@@ -22,6 +23,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -31,6 +39,7 @@ import org.mockito.quality.Strictness;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -301,6 +310,85 @@ class SubmissionServiceImplTest {
     }
 
     @Nested
+    @DisplayName("Test caseovi")
+    class TestCaseReading {
+
+        @ParameterizedTest(name = "{0}")
+        @MethodSource("hr.algebra.adaptive.learning.backend.service.impl."
+                + "SubmissionServiceImplTest#oblici")
+        @DisplayName("čita test case iz svih oblika zapisa")
+        void readsTestCases(String opis, String zapis, String ulaz, String izlaz) {
+            codeTask.setTestCases(zapis);
+            submitCodeTask();
+
+            CodeExecutionRequest sent = captureExecutionRequest();
+
+            assertThat(sent.getTestCases()).hasSize(1);
+            assertThat(sent.getTestCases().get(0).getInput()).isEqualTo(ulaz);
+            assertThat(sent.getTestCases().get(0).getExpectedOutput()).isEqualTo(izlaz);
+        }
+
+        @ParameterizedTest(name = "zapis: {0}")
+        @NullSource
+        @ValueSource(strings = {
+                "   ",
+                "ovo nije json",
+                "{\"expectedOutput\":\"10\"}"
+        })
+        @DisplayName("šalje praznu listu kad zapis nije upotrebljiv")
+        void sendsEmptyListForUnusableInput(String zapis) {
+            codeTask.setTestCases(zapis);
+            submitCodeTask();
+
+            assertThat(captureExecutionRequest().getTestCases()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("čita sve test caseove iz polja, ne samo prvi")
+        void readsEveryEntry() {
+            codeTask.setTestCases("[\"cevoklej\", \"ratipmok\"]");
+            submitCodeTask();
+
+            CodeExecutionRequest sent = captureExecutionRequest();
+
+            assertThat(sent.getTestCases()).hasSize(2);
+            assertThat(sent.getTestCases().get(1).getExpectedOutput()).isEqualTo("ratipmok");
+        }
+
+        @Test
+        @DisplayName("preskače zapis bez očekivanog izlaza")
+        void skipsEntryWithoutExpectedOutput() {
+            codeTask.setTestCases("[{\"input\":\"5\"}, \"cevoklej\"]");
+            submitCodeTask();
+
+            CodeExecutionRequest sent = captureExecutionRequest();
+
+            assertThat(sent.getTestCases()).hasSize(1);
+            assertThat(sent.getTestCases().get(0).getExpectedOutput()).isEqualTo("cevoklej");
+        }
+    }
+
+    @Nested
+    @DisplayName("Vremensko ograničenje izvršavanja")
+    class ExecutionTimeLimit {
+
+        @ParameterizedTest(name = "zadatak: {0} sekundi -> executor: {1}")
+        @CsvSource(value = {
+                "45 : 45",
+                "0 : 10",
+                "-3 : 10",
+                "null : 10"
+        }, delimiter = ':', nullValues = "null")
+        @DisplayName("preuzima ograničenje sa zadatka, inače zadanih 10 sekundi")
+        void resolvesTimeLimit(Integer naZadatku, int ocekivano) {
+            codeTask.setTimeLimitSeconds(naZadatku);
+            submitCodeTask();
+
+            assertThat(captureExecutionRequest().getTimeoutSeconds()).isEqualTo(ocekivano);
+        }
+    }
+
+    @Nested
     @DisplayName("Povratna informacija nastavnika")
     class TeacherFeedback {
 
@@ -380,6 +468,16 @@ class SubmissionServiceImplTest {
         }
     }
 
+    /** Oblici zapisa test caseova na koje sam nailazio kroz razvoj sucelja. */
+    static Stream<Arguments> oblici() {
+        return Stream.of(
+                Arguments.of("obican tekst", "[\"cevoklej\"]", "", "cevoklej"),
+                Arguments.of("objekt s ulazom", "[{\"input\":\"5\",\"expectedOutput\":\"10\"}]", "5", "10"),
+                Arguments.of("snake_case kljucevi", "[{\"input\":\"3\",\"expected_output\":\"6\"}]", "3", "6"),
+                Arguments.of("dvostruko enkodiran", "\"[\\\"cevoklej\\\"]\"", "", "cevoklej")
+        );
+    }
+
     private Task task(TaskType type, int maxScore) {
         Task t = new Task();
         t.setId(UUID.randomUUID());
@@ -394,6 +492,23 @@ class SubmissionServiceImplTest {
         r.setTaskId(task.getId());
         r.setCode(code);
         return r;
+    }
+
+    /** Predaje programski zadatak uz uspjesno izvrsavanje i ML odgovor. */
+    private void submitCodeTask() {
+        when(taskRepository.findById(codeTask.getId())).thenReturn(Optional.of(codeTask));
+        when(codeExecutorClient.execute(any())).thenReturn(successfulExecution());
+        when(mlServiceClient.generateFeedback(any())).thenReturn(feedback(18));
+
+        submissionService.submit(request(codeTask, "kod"), studentId);
+    }
+
+    /** Hvata zahtjev koji je otisao prema code-executoru. */
+    private CodeExecutionRequest captureExecutionRequest() {
+        ArgumentCaptor<CodeExecutionRequest> captor =
+                ArgumentCaptor.forClass(CodeExecutionRequest.class);
+        verify(codeExecutorClient).execute(captor.capture());
+        return captor.getValue();
     }
 
     private CodeExecutionResponse successfulExecution() {

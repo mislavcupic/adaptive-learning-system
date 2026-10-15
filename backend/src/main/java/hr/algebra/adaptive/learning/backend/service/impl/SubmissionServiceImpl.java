@@ -224,7 +224,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         try {
             JsonNode root = TEST_CASE_MAPPER.readTree(raw);
 
-            // Starije predaje iz sucelja znaju biti dvostruko enkodirane.
+            // Starije zapise iz sucelja znam naci dvostruko enkodirane.
             if (root.isTextual()) {
                 root = TEST_CASE_MAPPER.readTree(root.asText());
             }
@@ -238,20 +238,11 @@ public class SubmissionServiceImpl implements SubmissionService {
             List<CodeExecutionRequest.TestCase> testCases = new ArrayList<>();
 
             for (JsonNode node : root) {
-                String expected = firstText(node, "expectedOutput", "expected_output", "expected", "output");
+                CodeExecutionRequest.TestCase testCase = toTestCase(node, task.getId());
 
-                if (expected == null) {
-                    log.warn("Test case zadatka {} nema ocekivani izlaz - preskacem: {}",
-                            task.getId(), node);
-                    continue;
+                if (testCase != null) {
+                    testCases.add(testCase);
                 }
-
-                String input = firstText(node, "input", "stdin", "in");
-
-                testCases.add(CodeExecutionRequest.TestCase.builder()
-                        .input(input != null ? input : "")
-                        .expectedOutput(expected)
-                        .build());
             }
 
             log.info("Zadatak {}: ucitano {} test caseova", task.getId(), testCases.size());
@@ -261,6 +252,36 @@ public class SubmissionServiceImpl implements SubmissionService {
             log.error("Neispravan format test caseova za zadatak {}: {}", task.getId(), e.getMessage());
             return List.of();
         }
+    }
+
+    /**
+     * Sucelje test case sprema kao obican tekst - samo ocekivani izlaz, bez
+     * ulaza, jer takvi zadaci nista ne citaju. Objektni oblik s ulazom citam
+     * jednako, da forma kasnije moze prijeci na parove bez diranja backenda.
+     *
+     * Vracam null za zapis iz kojeg ne mogu procitati ocekivani izlaz.
+     */
+    private CodeExecutionRequest.TestCase toTestCase(JsonNode node, UUID taskId) {
+        if (node.isTextual()) {
+            return CodeExecutionRequest.TestCase.builder()
+                    .input("")
+                    .expectedOutput(node.asText())
+                    .build();
+        }
+
+        String expected = firstText(node, "expectedOutput", "expected_output", "expected", "output");
+
+        if (expected == null) {
+            log.warn("Test case zadatka {} nema ocekivani izlaz - preskacem: {}", taskId, node);
+            return null;
+        }
+
+        String input = firstText(node, "input", "stdin", "in");
+
+        return CodeExecutionRequest.TestCase.builder()
+                .input(input != null ? input : "")
+                .expectedOutput(expected)
+                .build();
     }
 
     // Nazive kljuceva sam mijenjao kroz razvoj, pa gledam sve varijante.

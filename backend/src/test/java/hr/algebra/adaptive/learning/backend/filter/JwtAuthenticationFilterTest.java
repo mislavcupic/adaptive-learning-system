@@ -8,6 +8,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -22,12 +25,12 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.security.web.authentication.WebAuthenticationDetails;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -38,6 +41,8 @@ class JwtAuthenticationFilterTest {
 
     private static final String TOKEN = "eyJhbGciOiJIUzI1NiJ9.payload.potpis";
     private static final String EMAIL = "ines@test.hr";
+    private static final String AUTH_HEADER = "Authorization";
+    private static final String TEACHER_ROLE = "ROLE_TEACHER";
 
     @Mock private JwtService jwtService;
     @Mock private UserDetailsService userDetailsService;
@@ -56,7 +61,7 @@ class JwtAuthenticationFilterTest {
 
         userDetails = User.withUsername(EMAIL)
                 .password("hash")
-                .authorities(List.of(new SimpleGrantedAuthority("ROLE_TEACHER")))
+                .authorities(List.of(new SimpleGrantedAuthority(TEACHER_ROLE)))
                 .build();
     }
 
@@ -69,37 +74,20 @@ class JwtAuthenticationFilterTest {
     @DisplayName("Zahtjevi bez upotrebljivog zaglavlja")
     class NoUsableHeader {
 
-        @Test
-        @DisplayName("bez Authorization zaglavlja zahtjev prolazi dalje")
-        void missingHeader() throws Exception {
+        @ParameterizedTest(name = "zaglavlje: {0}")
+        @NullSource
+        @ValueSource(strings = {"", "Basic dXNlcjpwYXNz", "Token abc", "bearer malo-slovo"})
+        @DisplayName("zahtjev bez Bearer zaglavlja prolazi dalje netaknut")
+        void passesThrough(String header) throws Exception {
+            if (header != null) {
+                request.addHeader(AUTH_HEADER, header);
+            }
+
             filter.doFilterInternal(request, response, filterChain);
 
             verify(filterChain).doFilter(request, response);
             verifyNoInteractions(jwtService, userDetailsService);
             assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
-        }
-
-        @Test
-        @DisplayName("zaglavlje bez Bearer prefiksa se ignorira")
-        void wrongScheme() throws Exception {
-            request.addHeader("Authorization", "Basic dXNlcjpwYXNz");
-
-            filter.doFilterInternal(request, response, filterChain);
-
-            verify(filterChain).doFilter(request, response);
-            verifyNoInteractions(jwtService);
-            assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
-        }
-
-        @Test
-        @DisplayName("prazno zaglavlje se ignorira")
-        void emptyHeader() throws Exception {
-            request.addHeader("Authorization", "");
-
-            filter.doFilterInternal(request, response, filterChain);
-
-            verify(filterChain).doFilter(request, response);
-            verifyNoInteractions(jwtService);
         }
     }
 
@@ -107,14 +95,17 @@ class JwtAuthenticationFilterTest {
     @DisplayName("Valjani token")
     class ValidToken {
 
-        @Test
-        @DisplayName("postavlja autentikaciju u kontekst")
-        void setsAuthentication() throws Exception {
+        @BeforeEach
+        void stubValidToken() {
             bearer();
             when(jwtService.extractUsername(TOKEN)).thenReturn(EMAIL);
             when(userDetailsService.loadUserByUsername(EMAIL)).thenReturn(userDetails);
             when(jwtService.isTokenValid(TOKEN, userDetails)).thenReturn(true);
+        }
 
+        @Test
+        @DisplayName("postavlja autentikaciju u kontekst")
+        void setsAuthentication() throws Exception {
             filter.doFilterInternal(request, response, filterChain);
 
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -126,26 +117,16 @@ class JwtAuthenticationFilterTest {
         @Test
         @DisplayName("prenosi ovlasti korisnika")
         void copiesAuthorities() throws Exception {
-            bearer();
-            when(jwtService.extractUsername(TOKEN)).thenReturn(EMAIL);
-            when(userDetailsService.loadUserByUsername(EMAIL)).thenReturn(userDetails);
-            when(jwtService.isTokenValid(TOKEN, userDetails)).thenReturn(true);
-
             filter.doFilterInternal(request, response, filterChain);
 
             assertThat(SecurityContextHolder.getContext().getAuthentication().getAuthorities())
                     .extracting("authority")
-                    .containsExactly("ROLE_TEACHER");
+                    .containsExactly(TEACHER_ROLE);
         }
 
         @Test
         @DisplayName("biljezi podatke o zahtjevu")
         void setsRequestDetails() throws Exception {
-            bearer();
-            when(jwtService.extractUsername(TOKEN)).thenReturn(EMAIL);
-            when(userDetailsService.loadUserByUsername(EMAIL)).thenReturn(userDetails);
-            when(jwtService.isTokenValid(TOKEN, userDetails)).thenReturn(true);
-
             filter.doFilterInternal(request, response, filterChain);
 
             assertThat(SecurityContextHolder.getContext().getAuthentication().getDetails())
@@ -155,14 +136,17 @@ class JwtAuthenticationFilterTest {
         @Test
         @DisplayName("token se cita bez Bearer prefiksa")
         void stripsPrefix() throws Exception {
-            bearer();
-            when(jwtService.extractUsername(TOKEN)).thenReturn(EMAIL);
-            when(userDetailsService.loadUserByUsername(EMAIL)).thenReturn(userDetails);
-            when(jwtService.isTokenValid(TOKEN, userDetails)).thenReturn(true);
-
             filter.doFilterInternal(request, response, filterChain);
 
             verify(jwtService).extractUsername(TOKEN);
+        }
+
+        @Test
+        @DisplayName("lanac se nastavlja tocno jednom")
+        void continuesChainOnce() throws Exception {
+            filter.doFilterInternal(request, response, filterChain);
+
+            verify(filterChain, times(1)).doFilter(request, response);
         }
     }
 
@@ -197,7 +181,7 @@ class JwtAuthenticationFilterTest {
         }
 
         @Test
-        @DisplayName("neispravan potpis ne rusi lanac")
+        @DisplayName("ostecen token ne rusi lanac")
         void malformedToken() throws Exception {
             bearer();
             when(jwtService.extractUsername(TOKEN))
@@ -224,10 +208,10 @@ class JwtAuthenticationFilterTest {
         }
 
         @Test
-        @DisplayName("greska ne mijenja status odgovora")
+        @DisplayName("odbijen token ne mijenja status odgovora")
         void keepsResponseUntouched() throws Exception {
             bearer();
-            when(jwtService.extractUsername(TOKEN)).thenThrow(new RuntimeException("pukao parser"));
+            when(jwtService.extractUsername(TOKEN)).thenThrow(new JwtException("neispravan token"));
 
             filter.doFilterInternal(request, response, filterChain);
 
@@ -236,41 +220,59 @@ class JwtAuthenticationFilterTest {
     }
 
     @Nested
-    @DisplayName("Vec prijavljen korisnik")
-    class AlreadyAuthenticated {
+    @DisplayName("Postojeca sesija")
+    class ExistingSession {
+
+        @BeforeEach
+        void putStaleAuthenticationInContext() {
+            Authentication stale = new UsernamePasswordAuthenticationToken(
+                    "ana@test.hr", null, List.of(new SimpleGrantedAuthority("ROLE_STUDENT")));
+            SecurityContextHolder.getContext().setAuthentication(stale);
+        }
 
         @Test
-        @DisplayName("postojeca autentikacija se ne pregazuje")
-        void keepsExistingAuthentication() throws Exception {
-            Authentication existing = new UsernamePasswordAuthenticationToken(
-                    "ana@test.hr", null, List.of(new SimpleGrantedAuthority("ROLE_STUDENT")));
-            SecurityContextHolder.getContext().setAuthentication(existing);
-
+        @DisplayName("valjan token pregazuje autentikaciju iz sesije")
+        void tokenOverridesSession() throws Exception {
             bearer();
             when(jwtService.extractUsername(TOKEN)).thenReturn(EMAIL);
+            when(userDetailsService.loadUserByUsername(EMAIL)).thenReturn(userDetails);
+            when(jwtService.isTokenValid(TOKEN, userDetails)).thenReturn(true);
 
             filter.doFilterInternal(request, response, filterChain);
 
-            assertThat(SecurityContextHolder.getContext().getAuthentication()).isSameAs(existing);
-            verify(userDetailsService, never()).loadUserByUsername(anyString());
-            verify(jwtService, never()).isTokenValid(anyString(), any());
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            assertThat(auth.getName()).isEqualTo(EMAIL);
+            assertThat(auth.getAuthorities())
+                    .extracting("authority")
+                    .containsExactly(TEACHER_ROLE);
+        }
+
+        @Test
+        @DisplayName("nevazeci token ostavlja sesiju kakva jest")
+        void invalidTokenLeavesSession() throws Exception {
+            bearer();
+            when(jwtService.extractUsername(TOKEN)).thenReturn(EMAIL);
+            when(userDetailsService.loadUserByUsername(EMAIL)).thenReturn(userDetails);
+            when(jwtService.isTokenValid(TOKEN, userDetails)).thenReturn(false);
+
+            filter.doFilterInternal(request, response, filterChain);
+
+            assertThat(SecurityContextHolder.getContext().getAuthentication().getName())
+                    .isEqualTo("ana@test.hr");
+        }
+
+        @Test
+        @DisplayName("zahtjev bez tokena ne dira sesiju")
+        void noTokenLeavesSession() throws Exception {
+            filter.doFilterInternal(request, response, filterChain);
+
+            assertThat(SecurityContextHolder.getContext().getAuthentication().getName())
+                    .isEqualTo("ana@test.hr");
+            verifyNoInteractions(jwtService, userDetailsService);
         }
     }
 
-    @Test
-    @DisplayName("lanac se nastavlja u svakom slucaju")
-    void chainAlwaysContinues() throws Exception {
-        bearer();
-        when(jwtService.extractUsername(TOKEN)).thenReturn(EMAIL);
-        when(userDetailsService.loadUserByUsername(EMAIL)).thenReturn(userDetails);
-        when(jwtService.isTokenValid(TOKEN, userDetails)).thenReturn(true);
-
-        filter.doFilterInternal(request, response, filterChain);
-
-        verify(filterChain, times(1)).doFilter(request, response);
-    }
-
     private void bearer() {
-        request.addHeader("Authorization", "Bearer " + TOKEN);
+        request.addHeader(AUTH_HEADER, "Bearer " + TOKEN);
     }
 }

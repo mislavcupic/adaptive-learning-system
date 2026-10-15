@@ -16,6 +16,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -46,6 +49,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("AuthController")
 class AuthControllerTest {
 
+    private static final String REGISTER_URL = "/api/auth/register";
+    private static final String LOGIN_URL = "/api/auth/login";
+    private static final String LOGOUT_URL = "/api/auth/logout";
+
+    private static final String ANA_EMAIL = "ana@test.hr";
+    private static final String ACCESS_TOKEN = "access.token";
+    private static final String PASSWORD = "Lozinka123";
+
+    private static final String ACCESS_TOKEN_PATH = "$.data.accessToken";
+
     @Autowired
     private MockMvc mockMvc;
     @Autowired
@@ -66,7 +79,7 @@ class AuthControllerTest {
     @BeforeEach
     void setUp() {
         studentUser = User.builder()
-                .email("ana@test.hr")
+                .email(ANA_EMAIL)
                 .password("hash")
                 .firstName("Ana")
                 .lastName("Anić")
@@ -84,24 +97,26 @@ class AuthControllerTest {
     class Registration {
 
         @Test
-        @DisplayName("prihvaća ispravan zahtjev")
+        @DisplayName("prihvaća ispravan zahtjev i vraća tokene")
         void acceptsValidRequest() throws Exception {
-            var request = registerRequest();
             when(authService.register(any())).thenReturn(authResponse());
 
-            mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
+            mockMvc.perform(post(REGISTER_URL)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(registerRequest())))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.token").exists());
+                    .andExpect(jsonPath(ACCESS_TOKEN_PATH).value(ACCESS_TOKEN));
         }
 
-        @Test
-        @DisplayName("odbija zahtjev bez e-mail adrese")
-        void rejectsMissingEmail() throws Exception {
+        @ParameterizedTest(name = "adresa: {0}")
+        @NullSource
+        @ValueSource(strings = {"", "   ", "nije-email", "ana@", "@test.hr"})
+        @DisplayName("odbija zahtjev s neispravnom e-mail adresom")
+        void rejectsInvalidEmail(String email) throws Exception {
             RegisterRequest invalid = registerRequest();
-            invalid.setEmail(null);
+            invalid.setEmail(email);
 
-            mockMvc.perform(post("/api/auth/register")
+            mockMvc.perform(post(REGISTER_URL)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(invalid)))
                     .andExpect(status().isBadRequest());
@@ -110,187 +125,172 @@ class AuthControllerTest {
         }
 
         @Test
-        @DisplayName("odbija neispravan oblik adrese")
-        void rejectsMalformedEmail() throws Exception {
-            RegisterRequest invalid = registerRequest();
-            invalid.setEmail("nije-email");
-
-            mockMvc.perform(post("/api/auth/register")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(invalid)))
-                    .andExpect(status().isBadRequest());
-        }
-
-        @Test
         @DisplayName("registracija ne traži prijavu")
         void worksWithoutAuthentication() throws Exception {
-
-            var request = registerRequest();
             when(authService.register(any())).thenReturn(authResponse());
 
-
-            mockMvc.perform(post("/api/auth/register")
+            mockMvc.perform(post(REGISTER_URL)
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
+                            .content(objectMapper.writeValueAsString(registerRequest())))
                     .andExpect(status().isOk());
 
             verify(authService).register(any());
         }
+    }
 
-        @Nested
-        @DisplayName("Prijava")
-        class Login {
+    @Nested
+    @DisplayName("Prijava")
+    class Login {
 
-            @Test
-            @DisplayName("vraća tokene za ispravne podatke")
-            void returnsTokens() throws Exception {
-                when(authService.login(any())).thenReturn(authResponse());
+        @Test
+        @DisplayName("vraća tokene za ispravne podatke")
+        void returnsTokens() throws Exception {
+            when(authService.login(any())).thenReturn(authResponse());
 
-                mockMvc.perform(post("/api/auth/login")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(loginRequest())))
-                        .andExpect(status().isOk())
-                        .andExpect(jsonPath("$.data.accessToken").value("access.token"));
-            }
-
-            @Test
-            @DisplayName("vraća 401 za neispravne podatke")
-            void returnsUnauthorized() throws Exception {
-                when(authService.login(any()))
-                        .thenThrow(new UnauthorizedException("Neispravni podaci"));
-
-                mockMvc.perform(post("/api/auth/login")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(loginRequest())))
-                        .andExpect(status().isUnauthorized());
-            }
-
-            @Test
-            @DisplayName("odbija prijavu bez lozinke")
-            void rejectsMissingPassword() throws Exception {
-                LoginRequest invalid = loginRequest();
-                invalid.setPassword(null);
-
-                mockMvc.perform(post("/api/auth/login")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(invalid)))
-                        .andExpect(status().isBadRequest());
-
-                verify(authService, never()).login(any());
-            }
+            mockMvc.perform(post(LOGIN_URL)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(loginRequest())))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath(ACCESS_TOKEN_PATH).value(ACCESS_TOKEN));
         }
 
-        @Nested
-        @DisplayName("Potvrda e-pošte")
-        class Verification {
+        @Test
+        @DisplayName("vraća 401 za neispravne podatke")
+        void returnsUnauthorized() throws Exception {
+            when(authService.login(any()))
+                    .thenThrow(new UnauthorizedException("Neispravni podaci"));
 
-            @Test
-            @DisplayName("potvrđuje adresu putem tokena")
-            void verifiesWithToken() throws Exception {
-                mockMvc.perform(get("/api/auth/verify").param("token", "abc123"))
-                        .andExpect(status().isOk());
-
-                verify(authService).verifyEmail("abc123");
-            }
-
-            @Test
-            @DisplayName("traži token kao parametar")
-            void requiresToken() throws Exception {
-                mockMvc.perform(get("/api/auth/verify"))
-                        .andExpect(status().isBadRequest());
-            }
-
-            @Test
-            @DisplayName("ponovno šalje poveznicu")
-            void resendsLink() throws Exception {
-                mockMvc.perform(post("/api/auth/resend-verification")
-                                .param("email", "ana@test.hr"))
-                        .andExpect(status().isOk());
-
-                verify(authService).resendVerification("ana@test.hr");
-            }
+            mockMvc.perform(post(LOGIN_URL)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(loginRequest())))
+                    .andExpect(status().isUnauthorized());
         }
 
-        @Nested
-        @DisplayName("Odjava i trenutni korisnik")
-        class Session {
+        @Test
+        @DisplayName("odbija prijavu bez lozinke")
+        void rejectsMissingPassword() throws Exception {
+            LoginRequest invalid = loginRequest();
+            invalid.setPassword(null);
 
-            @Test
-            @DisplayName("odjava uklanja token")
-            void logoutRevokesToken() throws Exception {
-                mockMvc.perform(post("/api/auth/logout")
-                                .with(user(studentUser))
-                                .header("Authorization", "Bearer access.token")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content("{\"refreshToken\":\"refresh.token\"}"))
-                        .andExpect(status().isOk());
+            mockMvc.perform(post(LOGIN_URL)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(invalid)))
+                    .andExpect(status().isBadRequest());
 
-                verify(authService).logout(anyString(), anyString());
-            }
+            verify(authService, never()).login(any());
+        }
+    }
 
-            @Test
-            @DisplayName("odjava radi i bez tijela zahtjeva")
-            void logoutWorksWithoutBody() throws Exception {
-                mockMvc.perform(post("/api/auth/logout")
-                                .with(user(studentUser))
-                                .header("Authorization", "Bearer access.token"))
-                        .andExpect(status().isOk());
-            }
+    @Nested
+    @DisplayName("Potvrda e-pošte")
+    class Verification {
 
-            @Test
-            @DisplayName("vraća podatke prijavljenog korisnika")
-            void returnsCurrentUser() throws Exception {
-                when(authService.getCurrentUser(studentUser.getId()))
-                        .thenReturn(userResponse());
+        @Test
+        @DisplayName("potvrđuje adresu putem tokena")
+        void verifiesWithToken() throws Exception {
+            mockMvc.perform(get("/api/auth/verify").param("token", "abc123"))
+                    .andExpect(status().isOk());
 
-                mockMvc.perform(get("/api/auth/me").with(user(studentUser)))
-                        .andExpect(status().isOk())
-                        .andExpect(jsonPath("$.data.email").value("ana@test.hr"));
-            }
-
-            @Test
-            @DisplayName("odjava sa svih uređaja poziva servis")
-            void logoutAllDevices() throws Exception {
-                mockMvc.perform(post("/api/auth/logout-all").with(user(studentUser)))
-                        .andExpect(status().isOk());
-
-                verify(authService).logoutAllDevices(any(User.class));
-            }
+            verify(authService).verifyEmail("abc123");
         }
 
-        private RegisterRequest registerRequest() {
-            RegisterRequest r = new RegisterRequest();
-            r.setEmail("novi@test.hr");
-            r.setPassword("Lozinka123");
-            r.setFirstName("Ivo");
-            r.setLastName("Ivić");
-            return r;
+        @Test
+        @DisplayName("traži token kao parametar")
+        void requiresToken() throws Exception {
+            mockMvc.perform(get("/api/auth/verify"))
+                    .andExpect(status().isBadRequest());
         }
 
-        private LoginRequest loginRequest() {
-            LoginRequest r = new LoginRequest();
-            r.setEmail("ana@test.hr");
-            r.setPassword("Lozinka123");
-            return r;
+        @Test
+        @DisplayName("ponovno šalje poveznicu")
+        void resendsLink() throws Exception {
+            mockMvc.perform(post("/api/auth/resend-verification")
+                            .param("email", ANA_EMAIL))
+                    .andExpect(status().isOk());
+
+            verify(authService).resendVerification(ANA_EMAIL);
+        }
+    }
+
+    @Nested
+    @DisplayName("Odjava i trenutni korisnik")
+    class Session {
+
+        @Test
+        @DisplayName("odjava uklanja token")
+        void logoutRevokesToken() throws Exception {
+            mockMvc.perform(post(LOGOUT_URL)
+                            .with(user(studentUser))
+                            .header("Authorization", "Bearer " + ACCESS_TOKEN)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"refreshToken\":\"refresh.token\"}"))
+                    .andExpect(status().isOk());
+
+            verify(authService).logout(anyString(), anyString());
         }
 
-        private AuthResponse authResponse() {
-            return AuthResponse.builder()
-                    .accessToken("access.token")
-                    .refreshToken("refresh.token")
-                    .user(userResponse())
-                    .build();
+        @Test
+        @DisplayName("odjava radi i bez tijela zahtjeva")
+        void logoutWorksWithoutBody() throws Exception {
+            mockMvc.perform(post(LOGOUT_URL)
+                            .with(user(studentUser))
+                            .header("Authorization", "Bearer " + ACCESS_TOKEN))
+                    .andExpect(status().isOk());
         }
 
-        private UserResponse userResponse() {
-            return UserResponse.builder()
-                    .id(studentUser.getId())
-                    .email("ana@test.hr")
-                    .firstName("Ana")
-                    .lastName("Anić")
-                    .role(UserRole.STUDENT)
-                    .isActive(true)
-                    .build();
+        @Test
+        @DisplayName("vraća podatke prijavljenog korisnika")
+        void returnsCurrentUser() throws Exception {
+            when(authService.getCurrentUser(studentUser.getId()))
+                    .thenReturn(userResponse());
+
+            mockMvc.perform(get("/api/auth/me").with(user(studentUser)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.email").value(ANA_EMAIL));
         }
+
+        @Test
+        @DisplayName("odjava sa svih uređaja poziva servis")
+        void logoutAllDevices() throws Exception {
+            mockMvc.perform(post("/api/auth/logout-all").with(user(studentUser)))
+                    .andExpect(status().isOk());
+
+            verify(authService).logoutAllDevices(any(User.class));
+        }
+    }
+
+    private RegisterRequest registerRequest() {
+        RegisterRequest r = new RegisterRequest();
+        r.setEmail("novi@test.hr");
+        r.setPassword(PASSWORD);
+        r.setFirstName("Ivo");
+        r.setLastName("Ivić");
+        return r;
+    }
+
+    private LoginRequest loginRequest() {
+        LoginRequest r = new LoginRequest();
+        r.setEmail(ANA_EMAIL);
+        r.setPassword(PASSWORD);
+        return r;
+    }
+
+    private AuthResponse authResponse() {
+        return AuthResponse.builder()
+                .accessToken(ACCESS_TOKEN)
+                .refreshToken("refresh.token")
+                .user(userResponse())
+                .build();
+    }
+
+    private UserResponse userResponse() {
+        return UserResponse.builder()
+                .id(studentUser.getId())
+                .email(ANA_EMAIL)
+                .firstName("Ana")
+                .lastName("Anić")
+                .role(UserRole.STUDENT)
+                .isActive(true)
+                .build();
     }
 }
