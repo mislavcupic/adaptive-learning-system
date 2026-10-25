@@ -219,9 +219,6 @@ Prolaznost: {request.tests_passed}/{request.tests_total}
 
         context += "\n## Tvoj zadatak\nNapiši personalizirani feedback za ovog studenta na hrvatskom jeziku. Ako postoje prethodne bilješke, usporedi trenutni rad s njima i istakni napredak ili ponavljajuće greške. Razinu objašnjenja prilagodi procjeni usvojenosti vještine. VAŽNO: ne daj gotovo rješenje ni ispravljeni kod — vodi studenta smjernicama i pitanjima da sam dođe do rješenja."
 
-        # PRIVREMENO za provjeru - ukloniti nakon testa
-        logger.info("PROMPT KONTEKST:\n" + context)
-
         return context
 
     def _calculate_score(self, request: FeedbackRequest) -> int:
