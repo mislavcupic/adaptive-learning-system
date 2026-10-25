@@ -122,7 +122,7 @@ Bilješka služi kao dugoročna memorija za praćenje napretka — piši je tako
         self.rag_service.save_note(
             student_id=request.student_id,
             insight=insight,
-            submission_id=request.submission_id
+            submission_id=None
         )
 
         # 6. Identificiraj skills za BKT update
