@@ -37,6 +37,9 @@ public class MLFeedbackRequest {
     @JsonProperty("test_results")
     private String testResults;
 
+    @JsonProperty("valgrind_output")
+    private String valgrindOutput;
+
     @JsonProperty("tests_passed")
     private Integer testsPassed;
 

@@ -210,7 +210,7 @@ export function SubmissionDetailPage() {
             )}
 
             {/* Valgrind Output */}
-            {submission.valgrindOutput && (
+            {isTeacherOrAdmin && submission.valgrindOutput && (
                 <Card className="overflow-hidden">
                     <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
                         <h2 className="font-medium text-zinc-900 dark:text-white flex items-center gap-2">

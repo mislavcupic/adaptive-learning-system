@@ -3,6 +3,7 @@ Feedback Service - Glavni servis za generiranje personaliziranog feedbacka.
 """
 
 import logging
+import re
 from openai import OpenAI
 
 from ..config import get_settings
@@ -42,6 +43,11 @@ Pravila:
    - Procjena iznad 0.8: student dobro vlada vještinom. Budi sažet, a ako je rješenje točno, potakni ga na rubne slučajeve ili bolji stil.
    - Procjenu ne navodi kao broj u odgovoru; koristi je samo za odabir razine objašnjenja.
 
+10. MEMORIJSKE GREŠKE (VALGRIND):
+   - Ako kontekst sadrži Valgrind izvještaj s greškama (curenje memorije, čitanje ili pisanje izvan granica polja, korištenje neinicijalizirane vrijednosti, pristup oslobođenoj memoriji, rušenje programa), objasni studentu jednostavnim riječima što ta vrsta greške znači i zašto je važna, i kada su svi testovi prošli.
+   - I ovdje vrijedi pravilo 8: opiši GDJE i ZAŠTO, ali ne piši ispravljeni kod.
+   - Ne prepisuj sirovi izvještaj i ne navodi memorijske adrese ni tehničke oznake iz njega.
+
 Format odgovora:
 1. Kratki pregled (što je dobro)
 2. Identificirane greške (GDJE i ZAŠTO, bez gotovog ispravka)
@@ -54,6 +60,19 @@ Format odgovora:
 - koncepte s kojima se student muči ili ih dobro vlada
 
 Bilješka služi kao dugoročna memorija za praćenje napretka — piši je tako da bude korisna za usporedbu s budućim predajama. NE piši samo status "riješeno/nije riješeno". Fokusiraj se na SADRŽAJ učenja. Odgovori na hrvatskom, bez uvoda i bez markdown formatiranja."""
+
+    NO_MEMORY_ERRORS = "Nema memorijskih grešaka."
+
+    # Vrste Valgrind grešaka opisane jednostavnim riječima, da ih model ne preskoči
+    VALGRIND_KINDS = [
+        (r"Invalid write", "pisanje izvan granica zauzete memorije"),
+        (r"Invalid read", "čitanje izvan granica zauzete memorije"),
+        (r"uninitialised", "korištenje neinicijalizirane vrijednosti (varijabla ili element niza bez početne vrijednosti)"),
+        (r"are (definitely|indirectly|possibly) lost", "curenje memorije (zauzeta memorija nije oslobođena)"),
+        (r"Invalid free", "neispravno oslobađanje memorije"),
+        (r"free'd", "pristup već oslobođenoj memoriji"),
+        (r"Process terminating with default action of signal", "program se srušio tijekom izvođenja"),
+    ]
 
     def __init__(self):
         self.settings = get_settings()
@@ -202,6 +221,12 @@ Prolaznost: {request.tests_passed}/{request.tests_total}
         if request.test_results:
             context += f"\n## Detalji testova\n{request.test_results}\n"
 
+        valgrind = self._summarize_valgrind(request.valgrind_output)
+        if valgrind:
+            context += f"\n## Valgrind izvještaj (provjera memorije, ulaz prvog testa)\n```\n{valgrind}\n```\n"
+            if valgrind != self.NO_MEMORY_ERRORS:
+                context += "Valgrind je pronašao memorijske greške: obavezno ih objasni studentu (pravilo 10), i kada su svi testovi prošli.\n"
+
         if previous_notes:
             context += "\n## Prethodne bilješke o ovom studentu (kronološki, najnovije prvo)\n"
             for note in previous_notes:
@@ -220,6 +245,43 @@ Prolaznost: {request.tests_passed}/{request.tests_total}
         context += "\n## Tvoj zadatak\nNapiši personalizirani feedback za ovog studenta na hrvatskom jeziku. Ako postoje prethodne bilješke, usporedi trenutni rad s njima i istakni napredak ili ponavljajuće greške. Razinu objašnjenja prilagodi procjeni usvojenosti vještine. VAŽNO: ne daj gotovo rješenje ni ispravljeni kod — vodi studenta smjernicama i pitanjima da sam dođe do rješenja."
 
         return context
+
+    def _summarize_valgrind(self, raw: str | None) -> str | None:
+        """
+        Skraćuje Valgrind izvještaj prije slanja modelu.
+
+        Uklanja oznaku procesa (==1234==) i uvodno zaglavlje. Ako nema
+        grešaka, vraća kratku poruku umjesto cijelog izvještaja.
+        """
+        if not raw or raw.startswith("Valgrind error"):
+            return None
+
+        if re.search(r"ERROR SUMMARY: 0 errors", raw):
+            return self.NO_MEMORY_ERRORS
+
+        skip = ("Memcheck, a memory error detector", "Copyright (C)", "Using Valgrind-",
+                "Command:", "For lists of detected", "For counts of detected", "rerun with")
+        lines = []
+        for line in raw.splitlines():
+            line = re.sub(r"^\s*==\d+==\s?", "", line).rstrip()
+            if not line or line.startswith(skip):
+                continue
+            lines.append(line)
+
+        if not lines:
+            return None
+
+        kinds = []
+        for pattern, label in self.VALGRIND_KINDS:
+            if re.search(pattern, raw) and label not in kinds:
+                kinds.append(label)
+
+        total = re.search(r"ERROR SUMMARY: (\d+) errors", raw)
+        summary = "Valgrind je pronašao memorijske greške"
+        summary += f" (ukupno {total.group(1)})" if total else ""
+        summary += ":\n" + "\n".join(f"- {k}" for k in kinds) if kinds else "."
+
+        return summary + "\n\nIzvještaj:\n" + "\n".join(lines)[:1500]
 
     def _calculate_score(self, request: FeedbackRequest) -> int:
         """Izračunava score na temelju rezultata."""
@@ -251,6 +313,10 @@ Kod studenta:
 Generirani feedback:
 {ai_feedback}
 """
+
+        valgrind = self._summarize_valgrind(request.valgrind_output)
+        if valgrind and valgrind != self.NO_MEMORY_ERRORS:
+            context += f"\nValgrind izvještaj:\n{valgrind}\n"
 
         try:
             response = self.client.chat.completions.create(

@@ -103,6 +103,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         saved.setCompilerOutput(execResult.getCompilerOutput());
         saved.setTestsPassed(execResult.getTestsPassed());
         saved.setTestsTotal(execResult.getTestsTotal());
+        saved.setValgrindOutput(execResult.getValgrindOutput());
 
         if (!execResult.isSuccess()) {
             saved.setStatus(SubmissionStatus.COMPILE_ERROR);
@@ -309,6 +310,7 @@ public class SubmissionServiceImpl implements SubmissionService {
                     .compilerOutput(execResult.getCompilerOutput())
                     .executionOutput(execResult.getExecutionOutput())
                     .testResults(execResult.getTestResults())
+                    .valgrindOutput(execResult.getValgrindOutput())
                     .testsPassed(execResult.getTestsPassed())
                     .testsTotal(execResult.getTestsTotal())
                     .researchGroup(submission.getStudent().getResearchGroup().name())

@@ -27,6 +27,7 @@ class FeedbackRequest(BaseModel):
     compiler_output: Optional[str] = None
     execution_output: Optional[str] = None
     test_results: Optional[str] = None
+    valgrind_output: Optional[str] = None
     tests_passed: int = 0
     tests_total: int = 0
     research_group: ResearchGroup = ResearchGroup.NOT_ASSIGNED
