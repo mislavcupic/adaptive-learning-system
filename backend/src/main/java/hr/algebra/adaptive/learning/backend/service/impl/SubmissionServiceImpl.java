@@ -302,6 +302,8 @@ public class SubmissionServiceImpl implements SubmissionService {
                     .studentId(submission.getStudent().getId().toString())
                     .taskId(submission.getTask().getId().toString())
                     .taskTitle(submission.getTask().getTitle())
+                    .skillName(submission.getTask().getOutcome() != null
+                            ? submission.getTask().getOutcome().getName() : null)
                     .languageType(submission.getTask().getOutcome().getCourse().getLanguageType().name())
                     .submittedCode(submission.getSubmittedCode())
                     .compilerOutput(execResult.getCompilerOutput())

@@ -9,6 +9,7 @@ from ..config import get_settings
 from ..models.schemas import FeedbackRequest, FeedbackResponse, ResearchGroup
 from .bkt_service import BKTService
 from .rag_service import RAGService
+from .mastery_repository import MasteryRepository
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,12 @@ Pravila:
    - Smiješ pokazati opći princip ili sintaksu na NEUTRALNOM, nepovezanom primjeru (npr. kako općenito radi petlja), ali ne na studentovom konkretnom zadatku.
    - Cilj je da student sam dođe do rješenja. Ako bi tvoj odgovor omogućio studentu da prekopira ispravak bez razmišljanja, preformuliraj ga u smjernicu ili pitanje.
 
+9. PRILAGODI RAZINU OBJAŠNJENJA PROCJENI USVOJENOSTI (BKT):
+   - Procjena ispod 0.4: student je početnik u toj vještini. Objasni osnovni koncept korak po korak, jednostavnim riječima i na neutralnom primjeru.
+   - Procjena 0.4 do 0.8: student djelomično vlada vještinom. Usmjeri ga izravno na konkretnu grešku i postavi pitanje koje ga vodi do uvida.
+   - Procjena iznad 0.8: student dobro vlada vještinom. Budi sažet, a ako je rješenje točno, potakni ga na rubne slučajeve ili bolji stil.
+   - Procjenu ne navodi kao broj u odgovoru; koristi je samo za odabir razine objašnjenja.
+
 Format odgovora:
 1. Kratki pregled (što je dobro)
 2. Identificirane greške (GDJE i ZAŠTO, bez gotovog ispravka)
@@ -53,6 +60,7 @@ Bilješka služi kao dugoročna memorija za praćenje napretka — piši je tako
         self.client = OpenAI(api_key=self.settings.openai_api_key) if self.settings.openai_api_key else None
         self.bkt_service = BKTService()
         self.rag_service = RAGService()
+        self.mastery_repository = MasteryRepository()
 
     def generate_feedback(self, request: FeedbackRequest) -> FeedbackResponse:
         """
@@ -93,10 +101,13 @@ Bilješka služi kao dugoročna memorija za praćenje napretka — piši je tako
             limit=3
         )
 
-        # 2. Pripremi kontekst za LLM
-        context = self._build_context(request, previous_notes)
+        # 2. Procjena usvojenosti vještine prije ove predaje (BKT)
+        mastery = self._get_mastery(request)
 
-        # 3. Generiraj feedback pomoću GPT-4o-mini
+        # 3. Pripremi kontekst za LLM
+        context = self._build_context(request, previous_notes, mastery)
+
+        # 4. Generiraj feedback pomoću GPT-4o-mini
         try:
             response = self.client.chat.completions.create(
                 model=self.settings.openai_model,
@@ -114,10 +125,12 @@ Bilješka služi kao dugoročna memorija za praćenje napretka — piši je tako
             logger.error(f"OpenAI API error: {e}")
             return self._generate_control_feedback(request)
 
-        # 4. Izračunaj score
+        # 5. Izračunaj score
         score = self._calculate_score(request)
 
-        # 5. Spremi novu bilješku (Agentic Memory)
+        # 6. Spremi novu bilješku (Agentic Memory)
+        # Predaja u trenutku ovog poziva jos nije potvrdena u bazi,
+        # pa veza na submission_id ne bi prosla strani kljuc.
         insight = self._generate_insight(request, ai_feedback)
         self.rag_service.save_note(
             student_id=request.student_id,
@@ -125,7 +138,7 @@ Bilješka služi kao dugoročna memorija za praćenje napretka — piši je tako
             submission_id=None
         )
 
-        # 6. Identificiraj skills za BKT update
+        # 7. Identificiraj skills
         skills = self._identify_skills(request)
 
         logger.info(f"Generated EXPERIMENTAL feedback for submission {request.submission_id}")
@@ -137,7 +150,34 @@ Bilješka služi kao dugoročna memorija za praćenje napretka — piši je tako
             skills_updated=skills
         )
 
-    def _build_context(self, request: FeedbackRequest, previous_notes: list[dict]) -> str:
+    def _get_mastery(self, request: FeedbackRequest) -> dict | None:
+        """Trenutna BKT procjena za vjestinu zadatka (stanje prije ove predaje)."""
+        if not request.skill_name:
+            return None
+
+        row = self.mastery_repository.get_mastery(request.student_id, request.skill_name)
+
+        if row:
+            level = float(row["mastery_level"])
+            return {
+                "skill_name": request.skill_name,
+                "level": level,
+                "interpretation": self.bkt_service.interpret_mastery(level),
+                "attempts": row["attempts_count"],
+                "correct": row["correct_count"],
+                "initial": False,
+            }
+
+        return {
+            "skill_name": request.skill_name,
+            "level": self.bkt_service.get_initial_mastery(),
+            "interpretation": "",
+            "attempts": 0,
+            "correct": 0,
+            "initial": True,
+        }
+
+    def _build_context(self, request: FeedbackRequest, previous_notes: list[dict], mastery: dict | None = None) -> str:
         """Gradi kontekst za LLM prompt."""
 
         context = f"""## Informacije o zadatku
@@ -168,7 +208,19 @@ Prolaznost: {request.tests_passed}/{request.tests_total}
                 created = note.get('created_at', '')
                 context += f"- ({created}) {note.get('insight', '')}\n"
 
-        context += "\n## Tvoj zadatak\nNapiši personalizirani feedback za ovog studenta na hrvatskom jeziku. Ako postoje prethodne bilješke, usporedi trenutni rad s njima i istakni napredak ili ponavljajuće greške. VAŽNO: ne daj gotovo rješenje ni ispravljeni kod — vodi studenta smjernicama i pitanjima da sam dođe do rješenja."
+        if mastery:
+            context += "\n## Procjena usvojenosti vještine (BKT)\n"
+            context += f"Vještina: {mastery['skill_name']}\n"
+            if mastery['initial']:
+                context += f"Procjena: {mastery['level']:.2f} (početna procjena, student još nema pokušaja za ovu vještinu)\n"
+            else:
+                context += (f"Procjena: {mastery['level']:.2f} ({mastery['interpretation']}), "
+                            f"pokušaja: {mastery['attempts']}, točnih: {mastery['correct']}\n")
+
+        context += "\n## Tvoj zadatak\nNapiši personalizirani feedback za ovog studenta na hrvatskom jeziku. Ako postoje prethodne bilješke, usporedi trenutni rad s njima i istakni napredak ili ponavljajuće greške. Razinu objašnjenja prilagodi procjeni usvojenosti vještine. VAŽNO: ne daj gotovo rješenje ni ispravljeni kod — vodi studenta smjernicama i pitanjima da sam dođe do rješenja."
+
+        # PRIVREMENO za provjeru - ukloniti nakon testa
+        logger.info("PROMPT KONTEKST:\n" + context)
 
         return context
 
