@@ -111,6 +111,20 @@ public class SubmissionServiceImpl implements SubmissionService {
             saved.setStatus(SubmissionStatus.COMPILE_ERROR);
             saved.setExecutionOutput(execResult.getError());
 
+            // I kod greske kompilacije trazi se povratna informacija: eksperimentalna
+            // skupina dobiva objasnjenje poruke kompajlera i biljesku za RAG, a
+            // kontrolna od ML servisa dobiva prazan tekst, kao i inace.
+            // Ako executor nije odgovorio, nema poruke kompajlera pa se ML ne zove.
+            String compilerOutput = execResult.getCompilerOutput();
+            if (compilerOutput != null && !compilerOutput.isBlank()) {
+                MLFeedbackResponse mlResponse = callMLService(saved, execResult);
+                if (mlResponse != null) {
+                    saved.setAiFeedback(mlResponse.getAiFeedback());
+                    saved.setAiScore(mlResponse.getAiScore());
+                    saved.setFinalScore(mlResponse.getAiScore());
+                }
+            }
+
             Submission failed = submissionRepository.save(saved);
             scheduleAfterCommit(failed.getId());
             return SubmissionResponse.fromEntity(failed);

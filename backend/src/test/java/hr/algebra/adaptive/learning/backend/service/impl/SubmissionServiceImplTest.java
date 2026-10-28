@@ -7,6 +7,7 @@ import hr.algebra.adaptive.learning.backend.domain.enums.SubmissionStatus;
 import hr.algebra.adaptive.learning.backend.domain.enums.TaskType;
 import hr.algebra.adaptive.learning.backend.dto.execution.CodeExecutionRequest;
 import hr.algebra.adaptive.learning.backend.dto.execution.CodeExecutionResponse;
+import hr.algebra.adaptive.learning.backend.dto.ml.MLFeedbackRequest;
 import hr.algebra.adaptive.learning.backend.dto.ml.MLFeedbackResponse;
 import hr.algebra.adaptive.learning.backend.dto.request.SubmissionRequest;
 import hr.algebra.adaptive.learning.backend.dto.response.SubmissionResponse;
@@ -281,15 +282,39 @@ class SubmissionServiceImplTest {
         }
 
         @Test
-        @DisplayName("zaustavlja se na grešci prevođenja")
-        void stopsOnCompileError() {
+        @DisplayName("kod greške prevođenja traži povratnu informaciju o poruci kompajlera")
+        void requestsFeedbackOnCompileError() {
             when(taskRepository.findById(codeTask.getId())).thenReturn(Optional.of(codeTask));
             when(codeExecutorClient.execute(any())).thenReturn(failedExecution());
+            when(mlServiceClient.generateFeedback(any())).thenReturn(feedback(0));
 
             SubmissionResponse result =
                     submissionService.submit(request(codeTask, "neispravan kod"), studentId);
 
+            ArgumentCaptor<MLFeedbackRequest> captor = ArgumentCaptor.forClass(MLFeedbackRequest.class);
+            verify(mlServiceClient).generateFeedback(captor.capture());
+
+            assertThat(captor.getValue().getCompilerOutput()).isEqualTo("error: expected ';'");
             assertThat(result.getStatus()).isEqualTo(SubmissionStatus.COMPILE_ERROR);
+            assertThat(result.getAiFeedback()).isEqualTo("Dobro rješenje.");
+            assertThat(result.getFinalScore()).isZero();
+        }
+
+        @Test
+        @DisplayName("ne zove ML servis kad executor nije odgovorio")
+        void skipsFeedbackWhenExecutorUnavailable() {
+            CodeExecutionResponse unavailable = new CodeExecutionResponse();
+            unavailable.setSuccess(false);
+            unavailable.setError("Code Executor nedostupan: connection refused");
+
+            when(taskRepository.findById(codeTask.getId())).thenReturn(Optional.of(codeTask));
+            when(codeExecutorClient.execute(any())).thenReturn(unavailable);
+
+            SubmissionResponse result =
+                    submissionService.submit(request(codeTask, "kod"), studentId);
+
+            assertThat(result.getStatus()).isEqualTo(SubmissionStatus.COMPILE_ERROR);
+            assertThat(result.getAiFeedback()).isNull();
             verify(mlServiceClient, never()).generateFeedback(any());
         }
 
