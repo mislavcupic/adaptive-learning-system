@@ -36,7 +36,7 @@ export interface PaginatedResponse<T> {
 export interface LoginCredentials {
     email: string;
     password: string;
-    [key: string]: unknown; // Dodaj ovo
+    [key: string]: unknown;
 }
 
 export interface RegisterRequest {
@@ -46,7 +46,7 @@ export interface RegisterRequest {
     lastName: string;
     role?: UserRole;
     groupType?: GroupType;
-    [key: string]: unknown; // I ovo
+    [key: string]: unknown;
 }
 export interface AuthResponse {
     accessToken: string;

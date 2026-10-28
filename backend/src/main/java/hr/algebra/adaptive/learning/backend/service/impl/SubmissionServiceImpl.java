@@ -99,11 +99,13 @@ public class SubmissionServiceImpl implements SubmissionService {
 
         CodeExecutionResponse execResult = executeCode(request.getCode(), task);
 
-        // 4. Spremi rezultate izvršavanja
         saved.setCompilerOutput(execResult.getCompilerOutput());
         saved.setTestsPassed(execResult.getTestsPassed());
         saved.setTestsTotal(execResult.getTestsTotal());
         saved.setValgrindOutput(execResult.getValgrindOutput());
+        saved.setTestResults(execResult.getTestResults());
+        saved.setExecutionTimeMs(execResult.getExecutionTimeMs() != null
+                ? execResult.getExecutionTimeMs().longValue() : null);
 
         if (!execResult.isSuccess()) {
             saved.setStatus(SubmissionStatus.COMPILE_ERROR);
