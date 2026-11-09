@@ -18,6 +18,12 @@ public interface TaskService {
 
     List<TaskResponse> getByTeacher(UUID teacherId);
 
+    List<TaskResponse> getByCourseOwner(UUID teacherId);
+
+    List<TaskResponse> getByOutcomeForCourseOwner(UUID outcomeId, UUID teacherId);
+
+    boolean isInOwnCourse(UUID taskId, UUID teacherId);
+
     List<TaskResponse> getPendingForStudent(UUID studentId);
 
     TaskResponse update(UUID id, TaskRequest request);

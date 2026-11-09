@@ -1,6 +1,8 @@
 package hr.algebra.adaptive.learning.backend.controller;
 
 import hr.algebra.adaptive.learning.backend.domain.entity.User;
+import hr.algebra.adaptive.learning.backend.domain.enums.UserRole;
+import hr.algebra.adaptive.learning.backend.exception.ResourceNotFoundException;
 import hr.algebra.adaptive.learning.backend.dto.request.TaskRequest;
 import hr.algebra.adaptive.learning.backend.dto.response.ApiResponse;
 import hr.algebra.adaptive.learning.backend.dto.response.TaskResponse;
@@ -38,16 +40,26 @@ public class TaskController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<TaskResponse>> getById(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<TaskResponse>> getById(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal User user) {
         log.info("Getting task: {}", id);
+        checkTeacherAccess(id, user);
         TaskResponse response = taskService.getById(id);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<TaskResponse>>> getAll(
-            @RequestParam(required = false) UUID outcomeId) {
+            @RequestParam(required = false) UUID outcomeId,
+            @AuthenticationPrincipal User user) {
         log.info("Getting tasks, outcomeId filter: {}", outcomeId);
+        if (isTeacher(user)) {
+            List<TaskResponse> own = outcomeId != null
+                    ? taskService.getByOutcomeForCourseOwner(outcomeId, user.getId())
+                    : taskService.getByCourseOwner(user.getId());
+            return ResponseEntity.ok(ApiResponse.success(own));
+        }
         List<TaskResponse> response = outcomeId != null
                 ? taskService.getByOutcome(outcomeId)
                 : taskService.getAll();
@@ -74,9 +86,12 @@ public class TaskController {
 
     @GetMapping("/outcome/{outcomeId}")
     public ResponseEntity<ApiResponse<List<TaskResponse>>> getByOutcome(
-            @PathVariable UUID outcomeId) {
+            @PathVariable UUID outcomeId,
+            @AuthenticationPrincipal User user) {
         log.info("Getting tasks for outcome: {}", outcomeId);
-        List<TaskResponse> response = taskService.getByOutcome(outcomeId);
+        List<TaskResponse> response = isTeacher(user)
+                ? taskService.getByOutcomeForCourseOwner(outcomeId, user.getId())
+                : taskService.getByOutcome(outcomeId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -84,16 +99,21 @@ public class TaskController {
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     public ResponseEntity<ApiResponse<TaskResponse>> update(
             @PathVariable UUID id,
-            @Valid @RequestBody TaskRequest request) {
+            @Valid @RequestBody TaskRequest request,
+            @AuthenticationPrincipal User user) {
         log.info("Updating task: {}", id);
+        checkTeacherAccess(id, user);
         TaskResponse response = taskService.update(id, request);
         return ResponseEntity.ok(ApiResponse.success("task.updated", response));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+    public ResponseEntity<Void> delete(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal User user) {
         log.info("Deleting task: {}", id);
+        checkTeacherAccess(id, user);
         taskService.delete(id);
         return ResponseEntity.noContent().build();
     }
@@ -104,9 +124,20 @@ public class TaskController {
             @PathVariable UUID id,
             @AuthenticationPrincipal User user) {
         log.info("Duplicating task: {} by user: {}", id, user.getEmail());
+        checkTeacherAccess(id, user);
         TaskResponse response = taskService.duplicate(id, user.getId());
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(ApiResponse.success("task.duplicated", response));
+    }
+
+    private boolean isTeacher(User user) {
+        return user != null && user.getRole() == UserRole.TEACHER;
+    }
+
+    private void checkTeacherAccess(UUID taskId, User user) {
+        if (isTeacher(user) && !taskService.isInOwnCourse(taskId, user.getId())) {
+            throw new ResourceNotFoundException("Task", "id", taskId);
+        }
     }
 }

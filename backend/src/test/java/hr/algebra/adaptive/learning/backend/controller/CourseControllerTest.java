@@ -97,7 +97,7 @@ class CourseControllerTest {
 
             mockMvc.perform(get("/api/courses")
                             .param("languageType", "PYTHON")
-                            .with(user(teacher)))
+                            .with(user(admin)))
                     .andExpect(status().isOk());
 
             verify(courseService).getByLanguageType(LanguageType.PYTHON);
@@ -132,6 +132,89 @@ class CourseControllerTest {
                     .andExpect(status().isOk());
 
             verify(courseService).getByTeacher(teacher.getId());
+        }
+
+        @Test
+        @DisplayName("nastavniku popis vraća samo njegove kolegije")
+        void teacherListReturnsOwnCourses() throws Exception {
+            when(courseService.getByTeacher(teacher.getId())).thenReturn(List.of(course));
+
+            mockMvc.perform(get("/api/courses").with(user(teacher)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data[0].name").value("Uvod u programiranje"));
+
+            verify(courseService, never()).getAll();
+        }
+
+        @Test
+        @DisplayName("nastavniku filtar po jeziku vraća samo njegove kolegije")
+        void teacherFiltersOwnCoursesByLanguage() throws Exception {
+            when(courseService.getByTeacherAndLanguageType(teacher.getId(), LanguageType.PYTHON))
+                    .thenReturn(List.of());
+
+            mockMvc.perform(get("/api/courses")
+                            .param("languageType", "PYTHON")
+                            .with(user(teacher)))
+                    .andExpect(status().isOk());
+
+            verify(courseService).getByTeacherAndLanguageType(teacher.getId(), LanguageType.PYTHON);
+            verify(courseService, never()).getByLanguageType(any());
+        }
+
+        @Test
+        @DisplayName("nastavnik vidi svoj kolegij")
+        void teacherSeesOwnCourse() throws Exception {
+            when(courseService.isOwner(courseId, teacher.getId())).thenReturn(true);
+            when(courseService.getById(courseId)).thenReturn(course);
+
+            mockMvc.perform(get("/api/courses/{id}", courseId).with(user(teacher)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.id").value(courseId.toString()));
+        }
+
+        @Test
+        @DisplayName("nastavnik ne vidi tuđi kolegij")
+        void teacherCannotSeeForeignCourse() throws Exception {
+            when(courseService.isOwner(courseId, teacher.getId())).thenReturn(false);
+
+            mockMvc.perform(get("/api/courses/{id}", courseId).with(user(teacher)))
+                    .andExpect(status().isNotFound());
+
+            verify(courseService, never()).getById(any());
+        }
+
+        @Test
+        @DisplayName("nastavnik vidi ishode svog kolegija")
+        void teacherSeesOwnCourseOutcomes() throws Exception {
+            when(courseService.isOwner(courseId, teacher.getId())).thenReturn(true);
+            when(outcomeService.getByCourse(courseId)).thenReturn(List.of());
+
+            mockMvc.perform(get("/api/courses/{id}/outcomes", courseId).with(user(teacher)))
+                    .andExpect(status().isOk());
+
+            verify(outcomeService).getByCourse(courseId);
+        }
+
+        @Test
+        @DisplayName("nastavnik ne vidi ishode tuđeg kolegija")
+        void teacherCannotSeeForeignCourseOutcomes() throws Exception {
+            when(courseService.isOwner(courseId, teacher.getId())).thenReturn(false);
+
+            mockMvc.perform(get("/api/courses/{id}/outcomes", courseId).with(user(teacher)))
+                    .andExpect(status().isNotFound());
+
+            verify(outcomeService, never()).getByCourse(any());
+        }
+
+        @Test
+        @DisplayName("ishodi kolegija dostupni su studentu")
+        void outcomesAvailableToStudent() throws Exception {
+            when(outcomeService.getByCourse(courseId)).thenReturn(List.of());
+
+            mockMvc.perform(get("/api/courses/{id}/outcomes", courseId).with(user(studentUser)))
+                    .andExpect(status().isOk());
+
+            verify(courseService, never()).isOwner(any(), any());
         }
     }
 
@@ -186,6 +269,7 @@ class CourseControllerTest {
         @Test
         @DisplayName("nastavnik smije mijenjati kolegij")
         void teacherCanUpdate() throws Exception {
+            when(courseService.isOwner(courseId, teacher.getId())).thenReturn(true);
             when(courseService.update(any(), any())).thenReturn(course);
 
             mockMvc.perform(put("/api/courses/{id}", courseId)
@@ -226,6 +310,8 @@ class CourseControllerTest {
         @Test
         @DisplayName("nastavnik smije deaktivirati kolegij")
         void teacherCanDeactivate() throws Exception {
+            when(courseService.isOwner(courseId, teacher.getId())).thenReturn(true);
+
             mockMvc.perform(patch("/api/courses/{id}/deactivate", courseId)
                             .with(user(teacher)))
                     .andExpect(status().isOk());
@@ -239,6 +325,70 @@ class CourseControllerTest {
             mockMvc.perform(patch("/api/courses/{id}/deactivate", courseId)
                             .with(user(studentUser)))
                     .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("nastavnik ne smije mijenjati tuđi kolegij")
+        void teacherCannotUpdateForeignCourse() throws Exception {
+            when(courseService.isOwner(courseId, teacher.getId())).thenReturn(false);
+
+            mockMvc.perform(put("/api/courses/{id}", courseId)
+                            .with(user(teacher))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request())))
+                    .andExpect(status().isNotFound());
+
+            verify(courseService, never()).update(any(), any());
+        }
+
+        @Test
+        @DisplayName("nastavnik smije aktivirati svoj kolegij")
+        void teacherCanActivateOwnCourse() throws Exception {
+            when(courseService.isOwner(courseId, teacher.getId())).thenReturn(true);
+
+            mockMvc.perform(patch("/api/courses/{id}/activate", courseId)
+                            .with(user(teacher)))
+                    .andExpect(status().isOk());
+
+            verify(courseService).activate(courseId);
+        }
+
+        @Test
+        @DisplayName("nastavnik ne smije aktivirati tuđi kolegij")
+        void teacherCannotActivateForeignCourse() throws Exception {
+            when(courseService.isOwner(courseId, teacher.getId())).thenReturn(false);
+
+            mockMvc.perform(patch("/api/courses/{id}/activate", courseId)
+                            .with(user(teacher)))
+                    .andExpect(status().isNotFound());
+
+            verify(courseService, never()).activate(any());
+        }
+
+        @Test
+        @DisplayName("nastavnik ne smije deaktivirati tuđi kolegij")
+        void teacherCannotDeactivateForeignCourse() throws Exception {
+            when(courseService.isOwner(courseId, teacher.getId())).thenReturn(false);
+
+            mockMvc.perform(patch("/api/courses/{id}/deactivate", courseId)
+                            .with(user(teacher)))
+                    .andExpect(status().isNotFound());
+
+            verify(courseService, never()).deactivate(any());
+        }
+
+        @Test
+        @DisplayName("administrator smije mijenjati bilo koji kolegij")
+        void adminCanUpdateAnyCourse() throws Exception {
+            when(courseService.update(any(), any())).thenReturn(course);
+
+            mockMvc.perform(put("/api/courses/{id}", courseId)
+                            .with(user(admin))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request())))
+                    .andExpect(status().isOk());
+
+            verify(courseService, never()).isOwner(any(), any());
         }
     }
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, Search, Play, Clock, Award, Pencil } from 'lucide-react';
 import { useAuth } from '../context';
@@ -22,16 +22,22 @@ export function TasksPage() {
     const { t } = useTranslation();
     const { user } = useAuth();
     const [search, setSearch] = useState('');
+    const [searchParams] = useSearchParams();
+    const outcomeId = searchParams.get('outcomeId');
 
     const { data: tasks, loading, error, refetch } = useFetch<Task[]>(
         () => taskService.getAll(),
         []
     );
 
-    const filteredTasks = tasks?.filter(task =>
+    const outcomeTasks = outcomeId
+        ? tasks?.filter(task => task.outcomeId === outcomeId) ?? []
+        : tasks ?? [];
+
+    const filteredTasks = outcomeTasks.filter(task =>
         task.title.toLowerCase().includes(search.toLowerCase()) ||
         task.description?.toLowerCase().includes(search.toLowerCase())
-    ) ?? [];
+    );
 
     const isTeacherOrAdmin = user?.role === 'TEACHER' || user?.role === 'ADMIN';
 
@@ -47,8 +53,16 @@ export function TasksPage() {
                         {t('tasks.title')}
                     </h1>
                     <p className="text-zinc-500 dark:text-zinc-400 mt-1">
-                        {tasks?.length || 0} {t('exams.tasks')}
+                        {outcomeTasks.length} {t('exams.tasks')}
                     </p>
+                    {outcomeId && (
+                        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                            {t('tasks.filteredByOutcome', 'Prikazani su zadaci odabranog ishoda učenja.')}{' '}
+                            <Link to="/tasks" className="underline">
+                                {t('tasks.showAll', 'Prikaži sve')}
+                            </Link>
+                        </p>
+                    )}
                 </div>
                 {isTeacherOrAdmin && (
                     <Link to="/tasks/new">

@@ -145,7 +145,7 @@ class TaskControllerTest {
 
             mockMvc.perform(get("/api/tasks")
                             .param("outcomeId", outcomeId.toString())
-                            .with(user(teacher)))
+                            .with(user(admin)))
                     .andExpect(status().isOk());
 
             verify(taskService).getByOutcome(outcomeId);
@@ -193,6 +193,78 @@ class TaskControllerTest {
             mockMvc.perform(get("/api/tasks/my").with(user(studentUser)))
                     .andExpect(status().isForbidden());
         }
+
+        @Test
+        @DisplayName("nastavniku popis vraća samo zadatke iz njegovih kolegija")
+        void teacherListReturnsTasksFromOwnCourses() throws Exception {
+            when(taskService.getByCourseOwner(teacher.getId())).thenReturn(List.of(task()));
+
+            mockMvc.perform(get("/api/tasks").with(user(teacher)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data[0].title").value("Zbroj niza"));
+
+            verify(taskService, never()).getAll();
+        }
+
+        @Test
+        @DisplayName("nastavniku filtar po ishodu vraća samo zadatke iz njegovih kolegija")
+        void teacherFiltersOwnTasksByOutcome() throws Exception {
+            when(taskService.getByOutcomeForCourseOwner(outcomeId, teacher.getId()))
+                    .thenReturn(List.of());
+
+            mockMvc.perform(get("/api/tasks")
+                            .param("outcomeId", outcomeId.toString())
+                            .with(user(teacher)))
+                    .andExpect(status().isOk());
+
+            verify(taskService).getByOutcomeForCourseOwner(outcomeId, teacher.getId());
+            verify(taskService, never()).getByOutcome(any());
+        }
+
+        @Test
+        @DisplayName("nastavnik vidi zadatak iz svog kolegija")
+        void teacherSeesOwnTask() throws Exception {
+            when(taskService.isInOwnCourse(taskId, teacher.getId())).thenReturn(true);
+            when(taskService.getById(taskId)).thenReturn(task());
+
+            mockMvc.perform(get("/api/tasks/{id}", taskId).with(user(teacher)))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("nastavnik ne vidi zadatak iz tuđeg kolegija")
+        void teacherCannotSeeForeignTask() throws Exception {
+            when(taskService.isInOwnCourse(taskId, teacher.getId())).thenReturn(false);
+
+            mockMvc.perform(get("/api/tasks/{id}", taskId).with(user(teacher)))
+                    .andExpect(status().isNotFound());
+
+            verify(taskService, never()).getById(any());
+        }
+
+        @Test
+        @DisplayName("ruta po ishodu studentu vraća zadatke ishoda")
+        void outcomeRouteForStudent() throws Exception {
+            when(taskService.getByOutcome(outcomeId)).thenReturn(List.of(task()));
+
+            mockMvc.perform(get("/api/tasks/outcome/{outcomeId}", outcomeId).with(user(studentUser)))
+                    .andExpect(status().isOk());
+
+            verify(taskService).getByOutcome(outcomeId);
+        }
+
+        @Test
+        @DisplayName("ruta po ishodu nastavniku vraća samo zadatke iz njegovih kolegija")
+        void outcomeRouteForTeacher() throws Exception {
+            when(taskService.getByOutcomeForCourseOwner(outcomeId, teacher.getId()))
+                    .thenReturn(List.of());
+
+            mockMvc.perform(get("/api/tasks/outcome/{outcomeId}", outcomeId).with(user(teacher)))
+                    .andExpect(status().isOk());
+
+            verify(taskService).getByOutcomeForCourseOwner(outcomeId, teacher.getId());
+            verify(taskService, never()).getByOutcome(any());
+        }
     }
 
     @Nested
@@ -202,6 +274,7 @@ class TaskControllerTest {
         @Test
         @DisplayName("nastavnik smije mijenjati zadatak")
         void teacherCanUpdate() throws Exception {
+            when(taskService.isInOwnCourse(taskId, teacher.getId())).thenReturn(true);
             when(taskService.update(any(), any())).thenReturn(task());
 
             mockMvc.perform(put("/api/tasks/{id}", taskId)
@@ -224,6 +297,8 @@ class TaskControllerTest {
         @Test
         @DisplayName("nastavnik smije obrisati zadatak")
         void teacherCanDelete() throws Exception {
+            when(taskService.isInOwnCourse(taskId, teacher.getId())).thenReturn(true);
+
             mockMvc.perform(delete("/api/tasks/{id}", taskId).with(user(teacher)))
                     .andExpect(status().isNoContent());
 
@@ -253,6 +328,54 @@ class TaskControllerTest {
         void studentCannotDuplicate() throws Exception {
             mockMvc.perform(post("/api/tasks/{id}/duplicate", taskId).with(user(studentUser)))
                     .andExpect(status().isForbidden());
+
+            verify(taskService, never()).duplicate(any(), any());
+        }
+
+        @Test
+        @DisplayName("nastavnik ne smije mijenjati zadatak iz tuđeg kolegija")
+        void teacherCannotUpdateForeignTask() throws Exception {
+            when(taskService.isInOwnCourse(taskId, teacher.getId())).thenReturn(false);
+
+            mockMvc.perform(put("/api/tasks/{id}", taskId)
+                            .with(user(teacher))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request())))
+                    .andExpect(status().isNotFound());
+
+            verify(taskService, never()).update(any(), any());
+        }
+
+        @Test
+        @DisplayName("nastavnik ne smije obrisati zadatak iz tuđeg kolegija")
+        void teacherCannotDeleteForeignTask() throws Exception {
+            when(taskService.isInOwnCourse(taskId, teacher.getId())).thenReturn(false);
+
+            mockMvc.perform(delete("/api/tasks/{id}", taskId).with(user(teacher)))
+                    .andExpect(status().isNotFound());
+
+            verify(taskService, never()).delete(any());
+        }
+
+        @Test
+        @DisplayName("nastavnik smije umnožiti zadatak iz svog kolegija")
+        void teacherCanDuplicateOwnTask() throws Exception {
+            when(taskService.isInOwnCourse(taskId, teacher.getId())).thenReturn(true);
+            when(taskService.duplicate(any(), any())).thenReturn(task());
+
+            mockMvc.perform(post("/api/tasks/{id}/duplicate", taskId).with(user(teacher)))
+                    .andExpect(status().isCreated());
+
+            verify(taskService).duplicate(taskId, teacher.getId());
+        }
+
+        @Test
+        @DisplayName("nastavnik ne smije umnožiti zadatak iz tuđeg kolegija")
+        void teacherCannotDuplicateForeignTask() throws Exception {
+            when(taskService.isInOwnCourse(taskId, teacher.getId())).thenReturn(false);
+
+            mockMvc.perform(post("/api/tasks/{id}/duplicate", taskId).with(user(teacher)))
+                    .andExpect(status().isNotFound());
 
             verify(taskService, never()).duplicate(any(), any());
         }

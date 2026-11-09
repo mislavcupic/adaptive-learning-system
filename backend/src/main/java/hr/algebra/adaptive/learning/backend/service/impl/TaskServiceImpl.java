@@ -96,6 +96,25 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
+    public List<TaskResponse> getByCourseOwner(UUID teacherId) {
+        return taskRepository.findByOutcomeCourseCreatedByIdAndIsActiveTrue(teacherId).stream()
+                .map(TaskResponse::fromEntity)
+                .toList();
+    }
+
+    @Override
+    public List<TaskResponse> getByOutcomeForCourseOwner(UUID outcomeId, UUID teacherId) {
+        return taskRepository.findByOutcomeIdAndOutcomeCourseCreatedByIdOrderByOrderIndexAsc(outcomeId, teacherId).stream()
+                .map(TaskResponse::fromEntity)
+                .toList();
+    }
+
+    @Override
+    public boolean isInOwnCourse(UUID taskId, UUID teacherId) {
+        return taskRepository.existsByIdAndOutcomeCourseCreatedById(taskId, teacherId);
+    }
+
+    @Override
     public List<TaskResponse> getPendingForStudent(UUID studentId) {
         return taskRepository.findByDueDateAfterAndIsActiveTrue(LocalDateTime.now()).stream()
                 .map(TaskResponse::fromEntity)

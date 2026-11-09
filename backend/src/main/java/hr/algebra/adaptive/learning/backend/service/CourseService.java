@@ -19,6 +19,10 @@ public interface CourseService {
 
     List<CourseResponse> getByTeacher(UUID teacherId);
 
+    List<CourseResponse> getByTeacherAndLanguageType(UUID teacherId, LanguageType languageType);
+
+    boolean isOwner(UUID courseId, UUID userId);
+
     CourseResponse update(UUID id, CourseRequest request);
 
     boolean delete(UUID id);

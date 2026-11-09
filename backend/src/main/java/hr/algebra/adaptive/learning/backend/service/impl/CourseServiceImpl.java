@@ -76,6 +76,18 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
+    public List<CourseResponse> getByTeacherAndLanguageType(UUID teacherId, LanguageType languageType) {
+        return courseRepository.findByCreatedByIdAndLanguageType(teacherId, languageType).stream()
+                .map(CourseResponse::fromEntity)
+                .toList();
+    }
+
+    @Override
+    public boolean isOwner(UUID courseId, UUID userId) {
+        return courseRepository.existsByIdAndCreatedById(courseId, userId);
+    }
+
+    @Override
     @Transactional
     public CourseResponse update(UUID id, CourseRequest request) {
         log.info("Updating course: {}", id);
