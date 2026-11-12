@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Editor from '@monaco-editor/react';
 import { ArrowLeft, Save, Trash2, Edit2, X } from 'lucide-react';
 import { useTheme } from '../context';
+import { defineEditorThemes, editorThemeName } from '../utils/monacoTheme';
 import { taskService, outcomeService } from '../services';
 import {
     Card, CardHeader, CardTitle, CardContent,
@@ -283,7 +284,8 @@ export function TaskDetailPage() {
                             language={getMonacoLanguage()}
                             value={editing ? form.starterCode : (task.starterCode || '')}
                             onChange={v => editing && set('starterCode', v || '')}
-                            theme={theme === 'dark' ? 'vs-dark' : 'light'}
+                            beforeMount={defineEditorThemes}
+                            theme={editorThemeName(theme)}
                             options={editorOptions}
                         />
                     </div>

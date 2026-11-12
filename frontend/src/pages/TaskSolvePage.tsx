@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Editor from '@monaco-editor/react';
 import { Play, Clock, Award, ArrowLeft, Loader2, AlertTriangle } from 'lucide-react';
 import { useTheme } from '../context';
+import { defineEditorThemes, editorThemeName, editorBaseOptions } from '../utils/monacoTheme';
 import { taskService, submissionService } from '../services';
 import {
     Card,
@@ -131,6 +132,9 @@ export function TaskSolvePage() {
     const language = task.languageType === 'CSHARP' ? 'csharp'
         : task.languageType === 'PYTHON' ? 'python'
             : 'c';
+    const fileName = language === 'csharp' ? 'Program.cs'
+        : language === 'python' ? 'main.py'
+            : 'main.c';
 
     return (
         <div className="space-y-6 animate-fade-in">
@@ -191,9 +195,9 @@ export function TaskSolvePage() {
                 </Card>
             )}
 
-            <div className="grid lg:grid-cols-2 gap-6">
+            <div className="grid lg:grid-cols-5 gap-6">
                 {/* Instructions */}
-                <Card>
+                <Card className="lg:col-span-2">
                     <CardHeader>
                         <CardTitle>{t('tasks.instructions')}</CardTitle>
                     </CardHeader>
@@ -211,35 +215,35 @@ export function TaskSolvePage() {
                     </CardContent>
                 </Card>
 
-                {/* Answer Area - depends on task type */}
-                <Card className="overflow-hidden">
-                    <CardHeader>
-                        <CardTitle>
-                            {taskType === 'CODE' ? t('tasks.code') : t('assessments.questionForm.correctAnswer')}
-                        </CardTitle>
-                    </CardHeader>
-
-                    {/* CODE type */}
-                    {taskType === 'CODE' && (
-                        <div className="h-[400px] border-t border-zinc-100 dark:border-zinc-800">
+                {/* CODE type */}
+                {taskType === 'CODE' && (
+                    <div className="lg:col-span-3 overflow-hidden rounded-2xl bg-[#17201e] dark:bg-[#0a0f0e] border border-transparent dark:border-zinc-800">
+                        <div className="flex items-center justify-between px-5 py-3 border-b border-white/10">
+                            <span className="font-mono text-sm font-medium text-zinc-100">{fileName}</span>
+                            <span className="text-xs text-zinc-400">{formatLanguageType(task.languageType || 'C')}</span>
+                        </div>
+                        <div className="h-[460px]">
                             <Editor
                                 height="100%"
                                 language={language}
                                 value={code}
                                 onChange={(value) => setCode(value || '')}
-                                theme={theme === 'dark' ? 'vs-dark' : 'light'}
-                                options={{
-                                    minimap: { enabled: false },
-                                    fontSize: 14,
-                                    lineNumbers: 'on',
-                                    scrollBeyondLastLine: false,
-                                    automaticLayout: true,
-                                    tabSize: 4,
-                                    wordWrap: 'on',
-                                }}
+                                beforeMount={defineEditorThemes}
+                                theme={editorThemeName(theme)}
+                                options={{ ...editorBaseOptions, wordWrap: 'on' }}
                             />
                         </div>
-                    )}
+                    </div>
+                )}
+
+                {/* Answer Area - depends on task type */}
+                {taskType !== 'CODE' && (
+                <Card className="lg:col-span-3 overflow-hidden">
+                    <CardHeader>
+                        <CardTitle>
+                            {t('assessments.questionForm.correctAnswer')}
+                        </CardTitle>
+                    </CardHeader>
 
                     {/* TEXT type */}
                     {taskType === 'TEXT' && (
@@ -262,7 +266,7 @@ export function TaskSolvePage() {
                                     key={index}
                                     className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-colors ${
                                         selectedOption === option
-                                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                            ? 'border-teal-600 bg-teal-50 dark:border-teal-300 dark:bg-teal-900/20'
                                             : 'border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800'
                                     }`}
                                 >
@@ -272,7 +276,7 @@ export function TaskSolvePage() {
                                         value={option}
                                         checked={selectedOption === option}
                                         onChange={(e) => setSelectedOption(e.target.value)}
-                                        className="w-4 h-4 text-blue-600"
+                                        className="w-4 h-4 accent-teal-700"
                                     />
                                     <span className="text-zinc-700 dark:text-zinc-300">{option}</span>
                                 </label>
@@ -291,7 +295,7 @@ export function TaskSolvePage() {
                                     key={index}
                                     className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-colors ${
                                         checkedOptions.includes(option)
-                                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                            ? 'border-teal-600 bg-teal-50 dark:border-teal-300 dark:bg-teal-900/20'
                                             : 'border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800'
                                     }`}
                                 >
@@ -299,7 +303,7 @@ export function TaskSolvePage() {
                                         type="checkbox"
                                         checked={checkedOptions.includes(option)}
                                         onChange={() => handleCheckboxChange(option)}
-                                        className="w-4 h-4 text-blue-600 rounded"
+                                        className="w-4 h-4 accent-teal-700 rounded"
                                     />
                                     <span className="text-zinc-700 dark:text-zinc-300">{option}</span>
                                 </label>
@@ -307,6 +311,7 @@ export function TaskSolvePage() {
                         </CardContent>
                     )}
                 </Card>
+                )}
             </div>
 
             {/* Submission Result */}
@@ -414,11 +419,11 @@ export function TaskSolvePage() {
 
                         {/* AI Feedback */}
                         {submission.aiFeedback && (
-                            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
-                                <p className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">
+                            <div className="p-5 bg-teal-50 dark:bg-teal-900/30 rounded-2xl border border-teal-100 dark:border-teal-800">
+                                <p className="text-sm font-bold text-teal-800 dark:text-teal-200 mb-2">
                                     {t('submissions.aiFeedback')}
                                 </p>
-                                <p className="text-sm text-blue-600 dark:text-blue-400 whitespace-pre-wrap">
+                                <p className="text-sm text-zinc-800 dark:text-zinc-100 whitespace-pre-wrap">
                                     {submission.aiFeedback}
                                 </p>
                             </div>

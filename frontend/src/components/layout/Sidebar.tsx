@@ -125,11 +125,11 @@ export function Sidebar() {
     });
 
     return (
-        <aside className="fixed left-0 top-0 h-screen w-64 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 z-30">
+        <aside className="fixed left-0 top-0 h-screen w-64 bg-zinc-50 dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-800 z-30">
             <div className="flex flex-col h-full">
-                <div className="h-16 flex items-center px-6 border-b border-zinc-100 dark:border-zinc-800">
-                    <span className="text-xl font-bold text-zinc-900 dark:text-white">
-                        Adaptive<span className="text-zinc-400">Learn</span>
+                <div className="h-16 flex items-center px-6">
+                    <span className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+                        Adaptive<span className="text-teal-700 dark:text-teal-300">Learn</span>
                     </span>
                 </div>
 
@@ -140,10 +140,10 @@ export function Sidebar() {
                             to={item.href}
                             className={({ isActive }) =>
                                 cn(
-                                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                                    'flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors',
                                     isActive
-                                        ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white'
-                                        : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-white'
+                                        ? 'bg-teal-700 text-white font-semibold dark:bg-teal-300 dark:text-teal-950'
+                                        : 'text-zinc-600 dark:text-zinc-400 hover:bg-white dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-white'
                                 )
                             }
                         >
@@ -159,10 +159,10 @@ export function Sidebar() {
                 </nav>
 
                 {user && (
-                    <div className="p-4 border-t border-zinc-100 dark:border-zinc-800">
+                    <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
                         <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center">
-                                <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
+                            <div className="w-9 h-9 rounded-full bg-teal-100 dark:bg-teal-900/50 flex items-center justify-center">
+                                <span className="text-sm font-semibold text-teal-800 dark:text-teal-200">
                                     {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
                                 </span>
                             </div>
