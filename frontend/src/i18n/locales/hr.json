@@ -321,6 +321,15 @@
       "backToLogin": "Povratak na prijavu"
     }
   },
+  "approvals": {
+    "title": "Zahtjevi za registraciju",
+    "pending": "na čekanju",
+    "noPending": "Nema zahtjeva na čekanju",
+    "noPendingDesc": "Novi zahtjevi za registraciju pojavit će se ovdje.",
+    "newRegistrations": "Nove registracije",
+    "registeredAt": "Datum registracije",
+    "confirmReject": "Jeste li sigurni da želite odbiti ovaj zahtjev za registraciju?"
+  },
   "mastery": {
     "title": "Razina usvojenosti",
     "noData": "Još nema procjene. Riješite nekoliko zadataka da bi se pojavila.",

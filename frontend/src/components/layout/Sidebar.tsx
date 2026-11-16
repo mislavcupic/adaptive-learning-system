@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -29,11 +30,16 @@ interface NavItem {
     badge?: number;
 }
 
-export function Sidebar() {
+interface SidebarProps {
+    isOpen?: boolean;
+    onClose?: () => void;
+}
+
+export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     const { t } = useTranslation();
     const { user } = useAuth();
 
-    const { data: pendingCount } = useFetch<number>(
+    const { data: pendingCount, refetch: refetchPendingCount } = useFetch<number>(
         async () => {
             if (!user || !['TEACHER', 'ADMIN'].includes(user.role)) return 0;
             const res = await apiClient.get('/teacher/pending-registrations/count');
@@ -41,6 +47,24 @@ export function Sidebar() {
         },
         [user?.role]
     );
+
+    const refetchPendingRef = useRef(refetchPendingCount);
+    refetchPendingRef.current = refetchPendingCount;
+
+    useEffect(() => {
+        if (!user || !['TEACHER', 'ADMIN'].includes(user.role)) return;
+
+        const refresh = () => refetchPendingRef.current();
+        const interval = window.setInterval(refresh, 5000);
+        window.addEventListener('focus', refresh);
+        window.addEventListener('pending-registrations-changed', refresh);
+
+        return () => {
+            window.clearInterval(interval);
+            window.removeEventListener('focus', refresh);
+            window.removeEventListener('pending-registrations-changed', refresh);
+        };
+    }, [user?.role]);
 
     const navItems: NavItem[] = [
         {
@@ -125,59 +149,75 @@ export function Sidebar() {
     });
 
     return (
-        <aside className="fixed left-0 top-0 h-screen w-64 bg-zinc-50 dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-800 z-30">
-            <div className="flex flex-col h-full">
-                <div className="h-16 flex items-center px-6">
+        <>
+            {isOpen && (
+                <div
+                    className="fixed inset-0 bg-black/40 z-20 lg:hidden"
+                    onClick={onClose}
+                    aria-hidden="true"
+                />
+            )}
+            <aside
+                className={cn(
+                    'fixed left-0 top-0 h-screen w-64 bg-zinc-50 dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-800 z-30',
+                    'transform transition-transform duration-200 lg:translate-x-0',
+                    isOpen ? 'translate-x-0' : '-translate-x-full'
+                )}
+            >
+                <div className="flex flex-col h-full">
+                    <div className="h-16 flex items-center px-6">
                     <span className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
                         Adaptive<span className="text-teal-700 dark:text-teal-300">Learn</span>
                     </span>
-                </div>
+                    </div>
 
-                <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-                    {filteredItems.map((item) => (
-                        <NavLink
-                            key={item.href}
-                            to={item.href}
-                            className={({ isActive }) =>
-                                cn(
-                                    'flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors',
-                                    isActive
-                                        ? 'bg-teal-700 text-white font-semibold dark:bg-teal-300 dark:text-teal-950'
-                                        : 'text-zinc-600 dark:text-zinc-400 hover:bg-white dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-white'
-                                )
-                            }
-                        >
-                            {item.icon}
-                            <span className="flex-1">{item.label}</span>
-                            {item.badge !== undefined && item.badge > 0 && (
-                                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full min-w-[20px] text-center">
+                    <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+                        {filteredItems.map((item) => (
+                            <NavLink
+                                key={item.href}
+                                to={item.href}
+                                onClick={onClose}
+                                className={({ isActive }) =>
+                                    cn(
+                                        'flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors',
+                                        isActive
+                                            ? 'bg-teal-700 text-white font-semibold dark:bg-teal-300 dark:text-teal-950'
+                                            : 'text-zinc-600 dark:text-zinc-400 hover:bg-white dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-white'
+                                    )
+                                }
+                            >
+                                {item.icon}
+                                <span className="flex-1">{item.label}</span>
+                                {item.badge !== undefined && item.badge > 0 && (
+                                    <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full min-w-[20px] text-center">
                                     {item.badge}
                                 </span>
-                            )}
-                        </NavLink>
-                    ))}
-                </nav>
+                                )}
+                            </NavLink>
+                        ))}
+                    </nav>
 
-                {user && (
-                    <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
-                        <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-teal-100 dark:bg-teal-900/50 flex items-center justify-center">
+                    {user && (
+                        <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-full bg-teal-100 dark:bg-teal-900/50 flex items-center justify-center">
                                 <span className="text-sm font-semibold text-teal-800 dark:text-teal-200">
                                     {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
                                 </span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-zinc-900 dark:text-white truncate">
-                                    {user.firstName} {user.lastName}
-                                </p>
-                                <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
-                                    {user.email}
-                                </p>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-zinc-900 dark:text-white truncate">
+                                        {user.firstName} {user.lastName}
+                                    </p>
+                                    <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                                        {user.email}
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
-            </div>
-        </aside>
+                    )}
+                </div>
+            </aside>
+        </>
     );
 }

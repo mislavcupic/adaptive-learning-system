@@ -321,6 +321,15 @@
       "backToLogin": "Back to login"
     }
   },
+  "approvals": {
+    "title": "Registration requests",
+    "pending": "pending",
+    "noPending": "No pending requests",
+    "noPendingDesc": "New registration requests will appear here.",
+    "newRegistrations": "New registrations",
+    "registeredAt": "Registered on",
+    "confirmReject": "Are you sure you want to reject this registration request?"
+  },
   "mastery": {
     "title": "Skill mastery",
     "noData": "No estimate yet. Solve a few tasks for it to appear.",
