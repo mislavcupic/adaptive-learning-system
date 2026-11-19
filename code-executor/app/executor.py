@@ -40,16 +40,18 @@ class CodeExecutor:
     TOLERANCE = 0.01
 
     def _outputs_match(self, actual: str, expected: str) -> bool:
+        alternatives = [alt.strip() for alt in expected.split("|")] if "|" in expected else [expected]
+        return any(self._matches_one(actual, alt) for alt in alternatives if alt)
+
+    def _matches_one(self, actual: str, expected: str) -> bool:
         if actual == expected:
             return True
-
-        if not expected:
-            return False
 
         if not self.ONLY_NUMBERS.match(expected):
             normalized_actual = " ".join(actual.lower().split())
             normalized_expected = " ".join(expected.lower().split())
-            return normalized_expected in normalized_actual
+            pattern = r"(?<!\w)" + re.escape(normalized_expected) + r"(?!\w)"
+            return re.search(pattern, normalized_actual) is not None
 
         expected_numbers = [float(n.replace(",", ".")) for n in self.NUMBER.findall(expected)]
         actual_numbers = [float(n.replace(",", ".")) for n in self.NUMBER.findall(actual)]

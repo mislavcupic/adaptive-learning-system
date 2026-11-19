@@ -22,6 +22,12 @@ def executor(tmp_path, monkeypatch):
     ("Unesi broj: Dobili ste  odličan!", "Dobili ste odličan!"),
     ("DULJINA STRANICE MORA BITI VECA OD 0.", "Duljina stranice mora biti veca od 0."),
     ("6,5", "6.5"),
+    ("Broj je paran", "paran"),
+    ("PARAN", "paran"),
+    ("Paran je!", "paran"),
+    ("Broj 7 je neparan.", "neparan"),
+    ("Broj nije paran", "neparan|nije paran"),
+    ("7 je neparan broj", "neparan|nije paran"),
 ])
 def test_accepts_equivalent_output(executor, actual, expected):
     assert executor._outputs_match(actual, expected)
@@ -36,6 +42,9 @@ def test_accepts_equivalent_output(executor, actual, expected):
     ("Dobili ste vrlo dobar!", "Dobili ste dobar!"),
     ("bilo sto", ""),
     ("nema broja", "6"),
+    ("Broj je neparan", "paran"),
+    ("Broj je paran", "neparan|nije paran"),
+    ("bilo sto", "|"),
 ])
 def test_rejects_different_output(executor, actual, expected):
     assert not executor._outputs_match(actual, expected)
