@@ -736,6 +736,32 @@ class AssessmentServiceImplTest {
     }
 
     @Test
+    @DisplayName("točno/netočno priznaje odgovor na hrvatskom i engleskom")
+    void trueFalseAcceptsBothLanguages() {
+        AssessmentQuestion tf = question(QuestionType.TRUE_FALSE, 1, "Netočno");
+        assessment.getQuestions().add(tf);
+
+        assertThat(scoreFor(tf, "False")).isEqualTo(1);
+        assertThat(scoreFor(tf, "netocno")).isEqualTo(1);
+        assertThat(scoreFor(tf, "True")).isZero();
+        assertThat(scoreFor(tf, "Točno")).isZero();
+        assertThat(scoreFor(tf, "  ")).isZero();
+        assertThat(scoreFor(tf, "možda")).isZero();
+
+        tf.setCorrectAnswer(null);
+        assertThat(scoreFor(tf, "False")).isZero();
+    }
+
+    private int scoreFor(AssessmentQuestion q, String answer) {
+        AssessmentAttempt open = attempt(false, 0);
+        stubOpenAttempt(open);
+        Map<String, String> answers = new HashMap<>();
+        answers.put(q.getId().toString(), answer);
+        assessmentService.submitAttempt(requestWith(answers), studentId);
+        return open.getScore();
+    }
+
+    @Test
     @DisplayName("predaja bez mape odgovora daje nula bodova")
     void submitWithoutAnswersMap() {
         AssessmentAttempt open = attempt(false, 0);

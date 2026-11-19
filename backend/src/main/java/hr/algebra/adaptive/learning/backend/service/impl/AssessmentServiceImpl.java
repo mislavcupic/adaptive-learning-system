@@ -375,6 +375,10 @@ public class AssessmentServiceImpl implements AssessmentService {
     private int gradeQuestion(AssessmentQuestion question, String studentAnswer) {
         if (question.getQuestionType() == QuestionType.CODE) {
             return gradeCodeQuestion(question, studentAnswer);
+        } else if (question.getQuestionType() == QuestionType.TRUE_FALSE) {
+            String expected = normalizeTrueFalse(question.getCorrectAnswer());
+            return expected != null && expected.equals(normalizeTrueFalse(studentAnswer))
+                    ? question.getPoints() : 0;
         } else {
             if (question.getCorrectAnswer() != null &&
                     question.getCorrectAnswer().trim().equalsIgnoreCase(studentAnswer.trim())) {
@@ -382,6 +386,18 @@ public class AssessmentServiceImpl implements AssessmentService {
             }
             return 0;
         }
+    }
+
+    private static String normalizeTrueFalse(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String normalized = value.trim().toLowerCase();
+        return switch (normalized) {
+            case "točno", "tocno", "true" -> "TRUE";
+            case "netočno", "netocno", "false" -> "FALSE";
+            default -> normalized;
+        };
     }
 
     private int gradeCodeQuestion(AssessmentQuestion question, String code) {
