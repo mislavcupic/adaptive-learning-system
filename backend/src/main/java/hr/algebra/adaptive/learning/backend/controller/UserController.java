@@ -101,6 +101,16 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("group.updated", response));
     }
 
+    @PatchMapping("/{id}/research-exclusion")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    public ResponseEntity<ApiResponse<UserResponse>> setResearchExclusion(
+            @PathVariable UUID id,
+            @RequestBody ResearchExclusionRequest request) {
+        log.info("Setting research exclusion for student: {} to {}", id, request.excluded());
+        UserResponse response = userService.setExcludedFromResearch(id, request.excluded());
+        return ResponseEntity.ok(ApiResponse.success("research.exclusion.updated", response));
+    }
+
     @PatchMapping("/{id}/activate")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> activateUser(@PathVariable UUID id) {
@@ -137,4 +147,5 @@ public class UserController {
     public record UpdateUserRequest(String firstName, String lastName) {}
     public record UpdateRoleRequest(UserRole role) {}
     public record UpdateGroupRequest(GroupType groupType) {}
+    public record ResearchExclusionRequest(boolean excluded) {}
 }

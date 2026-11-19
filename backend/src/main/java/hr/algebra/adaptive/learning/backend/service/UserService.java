@@ -29,6 +29,8 @@ public interface UserService {
 
     UserResponse updateGroup(UUID id, GroupType groupType);
 
+    UserResponse setExcludedFromResearch(UUID id, boolean excluded);
+
     void activate(UUID id);
 
     void deactivate(UUID id);

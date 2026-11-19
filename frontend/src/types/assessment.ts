@@ -22,6 +22,9 @@ export interface Question {
     codeTemplate?: string;
     points: number;
     orderIndex: number;
+    correctAnswer?: string;
+    testCases?: string;
+    published?: boolean;
 }
 
 export interface AssessmentAttempt {

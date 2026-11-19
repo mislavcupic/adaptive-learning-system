@@ -22,6 +22,7 @@ export const ENDPOINTS = {
         TEACHERS: '/users/teachers',
         ACTIVATE: (id: string) => `/users/${id}/activate`,
         DEACTIVATE: (id: string) => `/users/${id}/deactivate`,
+        RESEARCH_EXCLUSION: (id: string) => `/users/${id}/research-exclusion`,
     },
     CLASSES: {
         BASE: '/classes',
@@ -64,6 +65,10 @@ export const ENDPOINTS = {
         BY_COURSE: (courseId: string) => `/assessments/course/${courseId}`,
         QUESTIONS: '/assessments/questions',
         DELETE_QUESTION: (questionId: string) => `/assessments/questions/${questionId}`,
+        QUESTION_BY_ID: (questionId: string) => `/assessments/questions/${questionId}`,
+        QUESTION_PUBLISHED: (questionId: string, value: boolean) =>
+            `/assessments/questions/${questionId}/published?value=${value}`,
+        MANAGE: (id: string) => `/assessments/${id}/manage`,
         START: (assessmentId: string) => `/assessments/${assessmentId}/start`,
         SUBMIT: '/assessments/submit',
         MY_ATTEMPTS: '/assessments/attempts/my',

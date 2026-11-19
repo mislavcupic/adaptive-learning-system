@@ -312,6 +312,19 @@ public class SubmissionServiceImpl implements SubmissionService {
         return null;
     }
 
+    private static String taskText(Task task) {
+        StringBuilder text = new StringBuilder();
+        for (String part : new String[]{task.getDescription(), task.getInstructions()}) {
+            if (part != null && !part.isBlank()) {
+                if (!text.isEmpty()) {
+                    text.append("\n\n");
+                }
+                text.append(part.trim());
+            }
+        }
+        return text.isEmpty() ? null : text.toString();
+    }
+
     private MLFeedbackResponse callMLService(Submission submission, CodeExecutionResponse execResult) {
         try {
             MLFeedbackRequest mlRequest = MLFeedbackRequest.builder()
@@ -319,6 +332,7 @@ public class SubmissionServiceImpl implements SubmissionService {
                     .studentId(submission.getStudent().getId().toString())
                     .taskId(submission.getTask().getId().toString())
                     .taskTitle(submission.getTask().getTitle())
+                    .taskText(taskText(submission.getTask()))
                     .skillName(submission.getTask().getOutcome() != null
                             ? submission.getTask().getOutcome().getName() : null)
                     .languageType(submission.getTask().getOutcome().getCourse().getLanguageType().name())

@@ -39,6 +39,39 @@ public class AssessmentController {
         return ResponseEntity.ok(assessmentService.addQuestion(request));
     }
 
+    @PutMapping("/questions/{questionId}")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    public ResponseEntity<AssessmentResponse> updateQuestion(
+            @PathVariable UUID questionId,
+            @RequestBody QuestionRequest request) {
+        log.info("Updating question: {}", questionId);
+        return ResponseEntity.ok(assessmentService.updateQuestion(questionId, request));
+    }
+
+    @PatchMapping("/questions/{questionId}/published")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    public ResponseEntity<AssessmentResponse> setQuestionPublished(
+            @PathVariable UUID questionId,
+            @RequestParam boolean value) {
+        log.info("Setting question {} published to {}", questionId, value);
+        return ResponseEntity.ok(assessmentService.setQuestionPublished(questionId, value));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    public ResponseEntity<AssessmentResponse> update(
+            @PathVariable UUID id,
+            @RequestBody AssessmentRequest request) {
+        log.info("Updating assessment: {}", id);
+        return ResponseEntity.ok(assessmentService.update(id, request));
+    }
+
+    @GetMapping("/{id}/manage")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    public ResponseEntity<AssessmentResponse> getForTeacher(@PathVariable UUID id) {
+        return ResponseEntity.ok(assessmentService.getByIdForTeacher(id));
+    }
+
     @DeleteMapping("/questions/{questionId}")
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public ResponseEntity<Void> deleteQuestion(@PathVariable UUID questionId) {

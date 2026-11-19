@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -120,6 +121,104 @@ class AssessmentControllerTest {
                     .andExpect(status().isNoContent());
 
             verify(assessmentService).deleteQuestion(questionId);
+        }
+
+        @Test
+        @DisplayName("nastavnik smije urediti test")
+        void teacherCanUpdate() throws Exception {
+            when(assessmentService.update(eq(assessmentId), any())).thenReturn(assessment());
+
+            mockMvc.perform(put("/api/assessments/{id}", assessmentId)
+                            .with(user(teacher))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request())))
+                    .andExpect(status().isOk());
+
+            verify(assessmentService).update(eq(assessmentId), any());
+        }
+
+        @Test
+        @DisplayName("student ne smije urediti test")
+        void studentCannotUpdate() throws Exception {
+            mockMvc.perform(put("/api/assessments/{id}", assessmentId)
+                            .with(user(studentUser))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request())))
+                    .andExpect(status().isForbidden());
+
+            verify(assessmentService, never()).update(any(), any());
+        }
+
+        @Test
+        @DisplayName("nastavnik dohvaća test s točnim odgovorima")
+        void teacherCanGetManageView() throws Exception {
+            when(assessmentService.getByIdForTeacher(assessmentId)).thenReturn(assessment());
+
+            mockMvc.perform(get("/api/assessments/{id}/manage", assessmentId)
+                            .with(user(teacher)))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("student ne vidi test s točnim odgovorima")
+        void studentCannotGetManageView() throws Exception {
+            mockMvc.perform(get("/api/assessments/{id}/manage", assessmentId)
+                            .with(user(studentUser)))
+                    .andExpect(status().isForbidden());
+
+            verify(assessmentService, never()).getByIdForTeacher(any());
+        }
+
+        @Test
+        @DisplayName("nastavnik smije urediti pitanje")
+        void teacherCanUpdateQuestion() throws Exception {
+            UUID questionId = UUID.randomUUID();
+            when(assessmentService.updateQuestion(eq(questionId), any())).thenReturn(assessment());
+
+            mockMvc.perform(put("/api/assessments/questions/{id}", questionId)
+                            .with(user(teacher))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"questionText\":\"Pitanje\",\"correctAnswer\":\"4\"}"))
+                    .andExpect(status().isOk());
+
+            verify(assessmentService).updateQuestion(eq(questionId), any());
+        }
+
+        @Test
+        @DisplayName("student ne smije urediti pitanje")
+        void studentCannotUpdateQuestion() throws Exception {
+            mockMvc.perform(put("/api/assessments/questions/{id}", UUID.randomUUID())
+                            .with(user(studentUser))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"questionText\":\"Pitanje\"}"))
+                    .andExpect(status().isForbidden());
+
+            verify(assessmentService, never()).updateQuestion(any(), any());
+        }
+
+        @Test
+        @DisplayName("nastavnik smije sakriti pitanje")
+        void teacherCanHideQuestion() throws Exception {
+            UUID questionId = UUID.randomUUID();
+            when(assessmentService.setQuestionPublished(questionId, false)).thenReturn(assessment());
+
+            mockMvc.perform(patch("/api/assessments/questions/{id}/published", questionId)
+                            .param("value", "false")
+                            .with(user(teacher)))
+                    .andExpect(status().isOk());
+
+            verify(assessmentService).setQuestionPublished(questionId, false);
+        }
+
+        @Test
+        @DisplayName("student ne smije sakriti pitanje")
+        void studentCannotHideQuestion() throws Exception {
+            mockMvc.perform(patch("/api/assessments/questions/{id}/published", UUID.randomUUID())
+                            .param("value", "false")
+                            .with(user(studentUser)))
+                    .andExpect(status().isForbidden());
+
+            verify(assessmentService, never()).setQuestionPublished(any(), anyBoolean());
         }
     }
 

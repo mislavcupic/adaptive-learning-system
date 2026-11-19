@@ -233,7 +233,12 @@
     "noStudentsDesc": "Još nema registriranih studenata",
     "groupType": "Tip grupe",
     "experimental": "Eksperimentalna",
-    "control": "Kontrolna"
+    "control": "Kontrolna",
+    "excluded": "Isključen iz istraživanja",
+    "exclude": "Isključi iz istraživanja",
+    "include": "Vrati u istraživanje",
+    "excludeConfirm": "Isključiti učenika {{name}} iz istraživanja? Njegovi podaci ostaju spremljeni, ali se ne broje u rezultatima istraživanja.",
+    "includeConfirm": "Vratiti učenika {{name}} u istraživanje?"
   },
   "classes": {
     "title": "Razredi",
@@ -389,7 +394,10 @@
       "timeLimitPlaceholder": "npr. 30",
       "passingScore": "Prolaz (%)",
       "saveAndContinue": "Spremi i nastavi",
-      "enterNameAndCourse": "Unesite naziv i odaberite kolegij"
+      "enterNameAndCourse": "Unesite naziv i odaberite kolegij",
+      "saveChanges": "Spremi promjene",
+      "saved": "Promjene su spremljene.",
+      "lockedFields": "Kolegij i vrsta testa ne mogu se mijenjati jer bi to poremetilo već predane rezultate."
     },
     "questionForm": {
       "title": "Pitanja",
@@ -411,7 +419,16 @@
       "true": "Točno",
       "false": "Netočno",
       "select": "Odaberi",
-      "shortAnswer": "Kratki odgovor"
+      "shortAnswer": "Kratki odgovor",
+      "published": "Objavljeno",
+      "hidden": "Skriveno",
+      "publish": "Objavi pitanje",
+      "hide": "Sakrij pitanje",
+      "testCases": "Test primjeri (JSON)",
+      "testCasesHelp": "Format: JSON lista objekata s poljima \"input\" i \"expectedOutput\". Nakon spremanja bodovi već predanih testova automatski se preračunavaju.",
+      "regradeNote": "Promjena točnog odgovora, bodova ili test primjera preračunava bodove svih učenika koji su već predali test.",
+      "hideConfirm": "Skriveno pitanje učenici ne vide, a izbacuje se iz bodova i maksimuma svih već predanih testova. Nastaviti?",
+      "deleteConfirm": "Obrisati pitanje? Bodovi već predanih testova bit će preračunati. Ako ga samo ne želite prikazivati, radije ga sakrijte."
     },
     "research": {
       "title": "Rezultati istraživanja",

@@ -68,6 +68,7 @@ export interface User {
     updatedAt?: string;
     schoolClassName?: string;
     researchGroup?: 'NOT_ASSIGNED' | 'EXPERIMENTAL' | 'CONTROL';
+    excludedFromResearch?: boolean;
 }
 
 

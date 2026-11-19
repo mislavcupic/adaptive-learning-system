@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, Eye } from 'lucide-react';
+import { Search, Eye, UserX, UserCheck } from 'lucide-react';
 import { useFetch } from '../hooks';
 import { userService } from '../services';
 import {
@@ -31,6 +31,25 @@ export function StudentsPage() {
         () => userService.getStudents(),
         []
     );
+
+    const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+    const toggleResearch = async (student: User) => {
+        const name = `${student.firstName} ${student.lastName}`;
+        const exclude = !student.excludedFromResearch;
+        const question = exclude
+            ? t('students.excludeConfirm', { name })
+            : t('students.includeConfirm', { name });
+        if (!window.confirm(question)) return;
+
+        setUpdatingId(student.id);
+        try {
+            await userService.setResearchExclusion(student.id, exclude);
+            await refetch();
+        } finally {
+            setUpdatingId(null);
+        }
+    };
 
     const filteredStudents = students?.filter(student =>
         student.firstName.toLowerCase().includes(search.toLowerCase()) ||
@@ -103,7 +122,9 @@ export function StudentsPage() {
                                         {student.schoolClassName || '—'}
                                     </TableCell>
                                     <TableCell>
-                                        {student.researchGroup && student.researchGroup !== 'NOT_ASSIGNED' ? (
+                                        {student.excludedFromResearch ? (
+                                            <Badge variant="warning">{t('students.excluded')}</Badge>
+                                        ) : student.researchGroup && student.researchGroup !== 'NOT_ASSIGNED' ? (
                                             <Badge variant={student.researchGroup === 'EXPERIMENTAL' ? 'info' : 'default'}>
                                                 {student.researchGroup === 'EXPERIMENTAL'
                                                     ? t('students.experimental')
@@ -122,12 +143,28 @@ export function StudentsPage() {
                                         {formatDate(student.createdAt)}
                                     </TableCell>
                                     <TableCell>
-                                        <Link to={`/students/${student.id}`}>
-                                            <Button variant="ghost" size="sm" className="gap-2">
-                                                <Eye className="w-4 h-4" />
-                                                Pregledaj
+                                        <div className="flex items-center gap-1">
+                                            <Link to={`/students/${student.id}`}>
+                                                <Button variant="ghost" size="sm" className="gap-2">
+                                                    <Eye className="w-4 h-4" />
+                                                    Pregledaj
+                                                </Button>
+                                            </Link>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="gap-2"
+                                                isLoading={updatingId === student.id}
+                                                onClick={() => toggleResearch(student)}
+                                            >
+                                                {student.excludedFromResearch
+                                                    ? <UserCheck className="w-4 h-4" />
+                                                    : <UserX className="w-4 h-4" />}
+                                                {student.excludedFromResearch
+                                                    ? t('students.include')
+                                                    : t('students.exclude')}
                                             </Button>
-                                        </Link>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))}

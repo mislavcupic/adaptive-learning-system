@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Plus, Trash2, Save, GripVertical } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, GripVertical, Eye, EyeOff } from 'lucide-react';
 import { assessmentService, courseService } from '../services';
 import {
     Card,
@@ -10,7 +10,8 @@ import {
     CardContent,
     Button,
     Badge,
-    LoadingScreen
+    LoadingScreen,
+    FormattedText
 } from '../components/ui';
 import type { Assessment, Course, QuestionType } from '../types';
 
@@ -23,6 +24,7 @@ interface QuestionForm {
     codeTemplate: string;
     testCases: string;
     points: number;
+    published: boolean;
 }
 
 const emptyQuestion: QuestionForm = {
@@ -32,7 +34,8 @@ const emptyQuestion: QuestionForm = {
     correctAnswer: '',
     codeTemplate: '',
     testCases: '',
-    points: 1
+    points: 1,
+    published: true
 };
 
 export function AssessmentFormPage() {
@@ -45,6 +48,7 @@ export function AssessmentFormPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [notice, setNotice] = useState<string | null>(null);
 
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -68,7 +72,7 @@ export function AssessmentFormPage() {
             setCourses(coursesData);
 
             if (id) {
-                const assessmentData = await assessmentService.getById(id);
+                const assessmentData = await assessmentService.getForTeacher(id);
                 setAssessment(assessmentData);
                 setTitle(assessmentData.title);
                 setDescription(assessmentData.description || '');
@@ -83,10 +87,11 @@ export function AssessmentFormPage() {
                         questionText: q.questionText,
                         questionType: q.questionType,
                         options: q.options ? JSON.parse(q.options) : ['', '', '', ''],
-                        correctAnswer: '',
+                        correctAnswer: q.correctAnswer || '',
                         codeTemplate: q.codeTemplate || '',
-                        testCases: '',
-                        points: q.points
+                        testCases: q.testCases || '',
+                        points: q.points,
+                        published: q.published !== false
                     })));
                 }
             }
@@ -126,6 +131,54 @@ export function AssessmentFormPage() {
         }
     };
 
+    const handleUpdateAssessment = async () => {
+        if (!assessment) return;
+        if (!title.trim()) {
+            setError(t('assessments.form.enterNameAndCourse'));
+            return;
+        }
+
+        setSaving(true);
+        setError(null);
+        setNotice(null);
+
+        try {
+            await assessmentService.update(assessment.id, {
+                title: title.trim(),
+                description: description.trim() || undefined,
+                assessmentType,
+                courseId,
+                timeLimitMinutes: timeLimitMinutes || undefined,
+                passingScore
+            });
+            setNotice(t('assessments.form.saved'));
+            await loadData();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : t('errors.generic'));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleTogglePublished = async (index: number) => {
+        const question = questions[index];
+        if (!question.id) return;
+
+        const next = !question.published;
+        if (!next && !window.confirm(t('assessments.questionForm.hideConfirm'))) return;
+
+        setSaving(true);
+        setError(null);
+        try {
+            await assessmentService.setQuestionPublished(question.id, next);
+            await loadData();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : t('errors.generic'));
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const handleAddQuestion = () => {
         setQuestions([...questions, { ...emptyQuestion }]);
         setActiveQuestion(questions.length);
@@ -135,6 +188,7 @@ export function AssessmentFormPage() {
         const question = questions[index];
 
         if (question.id) {
+            if (!window.confirm(t('assessments.questionForm.deleteConfirm'))) return;
             try {
                 await assessmentService.deleteQuestion(question.id);
             } catch (err) {
@@ -195,7 +249,11 @@ export function AssessmentFormPage() {
                 orderIndex: index
             };
 
-            await assessmentService.addQuestion(data);
+            if (question.id) {
+                await assessmentService.updateQuestion(question.id, data);
+            } else {
+                await assessmentService.addQuestion(data);
+            }
             await loadData();
             setActiveQuestion(null);
         } catch (err) {
@@ -232,6 +290,12 @@ export function AssessmentFormPage() {
                 </div>
             )}
 
+            {notice && (
+                <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+                    <p className="text-emerald-700 dark:text-emerald-300">{notice}</p>
+                </div>
+            )}
+
             <Card>
                 <CardHeader>
                     <CardTitle>{t('assessments.form.title')}</CardTitle>
@@ -248,7 +312,6 @@ export function AssessmentFormPage() {
                                 onChange={(e) => setTitle(e.target.value)}
                                 placeholder={t('assessments.form.testNamePlaceholder')}
                                 className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
-                                disabled={Boolean(assessment)}
                             />
                         </div>
                         <div>
@@ -281,7 +344,6 @@ export function AssessmentFormPage() {
                             rows={2}
                             placeholder={t('assessments.form.descriptionPlaceholder')}
                             className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
-                            disabled={Boolean(assessment)}
                         />
                     </div>
 
@@ -311,7 +373,6 @@ export function AssessmentFormPage() {
                                 placeholder={t('assessments.form.timeLimitPlaceholder')}
                                 min={1}
                                 className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
-                                disabled={Boolean(assessment)}
                             />
                         </div>
                         <div>
@@ -325,16 +386,23 @@ export function AssessmentFormPage() {
                                 min={0}
                                 max={100}
                                 className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
-                                disabled={Boolean(assessment)}
                             />
                         </div>
                     </div>
 
-                    {!assessment && (
+                    {!assessment ? (
                         <div className="flex justify-end pt-4">
                             <Button onClick={handleSaveAssessment} isLoading={saving} className="gap-2">
                                 <Save className="w-4 h-4" />
                                 {t('assessments.form.saveAndContinue')}
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
+                            <p className="text-xs text-zinc-500">{t('assessments.form.lockedFields')}</p>
+                            <Button onClick={handleUpdateAssessment} isLoading={saving} className="gap-2">
+                                <Save className="w-4 h-4" />
+                                {t('assessments.form.saveChanges')}
                             </Button>
                         </div>
                     )}
@@ -368,6 +436,7 @@ export function AssessmentFormPage() {
                                         saving={saving}
                                         onToggle={() => setActiveQuestion(activeQuestion === index ? null : index)}
                                         onRemove={() => handleRemoveQuestion(index)}
+                                        onTogglePublished={() => handleTogglePublished(index)}
                                         onChange={(field, value) => handleQuestionChange(index, field, value)}
                                         onOptionChange={(optIndex, value) => handleOptionChange(index, optIndex, value)}
                                         onSave={() => handleSaveQuestion(index)}
@@ -390,28 +459,51 @@ interface QuestionItemProps {
     saving: boolean;
     onToggle: () => void;
     onRemove: () => void;
+    onTogglePublished: () => void;
     onChange: (field: keyof QuestionForm, value: unknown) => void;
     onOptionChange: (optIndex: number, value: string) => void;
     onSave: () => void;
     t: (key: string) => string;
 }
 
-function QuestionItem({ question, index, isActive, saving, onToggle, onRemove, onChange, onOptionChange, onSave, t }: QuestionItemProps) {
+function QuestionItem({ question, index, isActive, saving, onToggle, onRemove, onTogglePublished, onChange, onOptionChange, onSave, t }: QuestionItemProps) {
     return (
-        <div className={`border rounded-lg ${isActive ? 'border-blue-500' : 'border-zinc-200 dark:border-zinc-700'}`}>
-            <div className="flex items-center justify-between p-4 cursor-pointer" onClick={onToggle}>
-                <div className="flex items-center gap-3">
-                    <GripVertical className="w-5 h-5 text-zinc-400" />
-                    <span className="font-medium text-zinc-900 dark:text-white">
-                        {index + 1}. {question.questionText || t('assessments.questionForm.newQuestion')}
-                    </span>
+        <div className={`border rounded-lg ${isActive ? 'border-blue-500' : 'border-zinc-200 dark:border-zinc-700'} ${question.published ? '' : 'opacity-60'}`}>
+            <div className="flex items-start justify-between gap-4 p-4 cursor-pointer" onClick={onToggle}>
+                <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <GripVertical className="w-5 h-5 mt-0.5 shrink-0 text-zinc-400" />
+                    <div className="flex min-w-0 flex-1 gap-1 font-medium text-zinc-900 dark:text-white">
+                        <span>{index + 1}.</span>
+                        {question.questionText
+                            ? <FormattedText text={question.questionText} className="min-w-0 flex-1" />
+                            : <span>{t('assessments.questionForm.newQuestion')}</span>}
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 items-center gap-2">
                     <Badge variant="default">
                         {question.questionType === 'MULTIPLE_CHOICE' ? t('assessments.questionForm.multipleChoice') :
                             question.questionType === 'TRUE_FALSE' ? t('assessments.questionForm.trueFalse') : t('assessments.questionForm.code')}
                     </Badge>
                     <Badge variant="info">{question.points} {t('assessments.point')}</Badge>
+                    {question.id && (
+                        <>
+                            <Badge variant={question.published ? 'success' : 'warning'}>
+                                {question.published
+                                    ? t('assessments.questionForm.published')
+                                    : t('assessments.questionForm.hidden')}
+                            </Badge>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onTogglePublished(); }}
+                                disabled={saving}
+                                title={question.published
+                                    ? t('assessments.questionForm.hide')
+                                    : t('assessments.questionForm.publish')}
+                                className="p-1 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded"
+                            >
+                                {question.published ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                        </>
+                    )}
                     <button
                         onClick={(e) => { e.stopPropagation(); onRemove(); }}
                         className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
@@ -430,7 +522,7 @@ function QuestionItem({ question, index, isActive, saving, onToggle, onRemove, o
                         <textarea
                             value={question.questionText}
                             onChange={(e) => onChange('questionText', e.target.value)}
-                            rows={2}
+                            rows={6}
                             className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
                         />
                     </div>
@@ -539,7 +631,7 @@ function QuestionItem({ question, index, isActive, saving, onToggle, onRemove, o
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                                    Test primjeri (JSON)
+                                    {t('assessments.questionForm.testCases')}
                                 </label>
                                 <textarea
                                     value={question.testCases}
@@ -549,13 +641,16 @@ function QuestionItem({ question, index, isActive, saving, onToggle, onRemove, o
                                     className="w-full px-3 py-2 font-mono text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
                                 />
                                 <p className="text-xs text-zinc-500 mt-1">
-                                    Format: JSON lista objekata s poljima "input" i "expectedOutput". Bez test primjera pitanje se ne može automatski ocijeniti.
+                                    {t('assessments.questionForm.testCasesHelp')}
                                 </p>
                             </div>
                         </>
                     )}
 
-                    <div className="flex justify-end pt-2">
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                        <p className="text-xs text-zinc-500">
+                            {question.id ? t('assessments.questionForm.regradeNote') : ''}
+                        </p>
                         <Button onClick={onSave} isLoading={saving}>
                             {t('assessments.questionForm.saveQuestion')}
                         </Button>

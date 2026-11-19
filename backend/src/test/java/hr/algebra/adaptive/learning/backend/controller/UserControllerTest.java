@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -192,6 +193,33 @@ class UserControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("{\"groupType\":\"EXPERIMENTAL\"}"))
                     .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("nastavnik smije isključiti studenta iz istraživanja")
+        void teacherCanExcludeFromResearch() throws Exception {
+            when(userService.setExcludedFromResearch(any(), anyBoolean()))
+                    .thenReturn(response(UserRole.STUDENT));
+
+            mockMvc.perform(patch("/api/users/{id}/research-exclusion", targetId)
+                            .with(user(teacher))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"excluded\":true}"))
+                    .andExpect(status().isOk());
+
+            verify(userService).setExcludedFromResearch(targetId, true);
+        }
+
+        @Test
+        @DisplayName("student ne smije isključivati iz istraživanja")
+        void studentCannotExcludeFromResearch() throws Exception {
+            mockMvc.perform(patch("/api/users/{id}/research-exclusion", targetId)
+                            .with(user(studentUser))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"excluded\":true}"))
+                    .andExpect(status().isForbidden());
+
+            verify(userService, never()).setExcludedFromResearch(any(), anyBoolean());
         }
 
         @Test

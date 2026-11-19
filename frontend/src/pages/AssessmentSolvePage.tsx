@@ -13,7 +13,8 @@ import {
     Button,
     Badge,
     LoadingScreen,
-    ErrorState
+    ErrorState,
+    FormattedText
 } from '../components/ui';
 import type { Assessment, Question, AssessmentAttempt } from '../types';
 
@@ -324,12 +325,12 @@ function QuestionCard({ question, index, answer, onAnswerChange, theme, parseOpt
     return (
         <Card>
             <CardHeader>
-                <div className="flex items-start justify-between">
-                    <CardTitle className="text-base">
-                        <span className="text-zinc-400 mr-2">{index + 1}.</span>
-                        {question.questionText}
-                    </CardTitle>
-                    <Badge variant="default">{question.points} {t('assessments.point')}</Badge>
+                <div className="flex items-start justify-between gap-4">
+                    <div className="flex min-w-0 flex-1 gap-2 text-base font-semibold text-zinc-900 dark:text-white">
+                        <span className="text-zinc-400">{index + 1}.</span>
+                        <FormattedText text={question.questionText} className="min-w-0 flex-1" />
+                    </div>
+                    <Badge variant="default" className="shrink-0">{question.points} {t('assessments.point')}</Badge>
                 </div>
             </CardHeader>
             <CardContent>

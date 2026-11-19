@@ -21,6 +21,7 @@ class FeedbackRequest(BaseModel):
     student_id: str
     task_id: str
     task_title: str
+    task_text: Optional[str] = None
     skill_name: Optional[str] = None
     language_type: str
     submitted_code: str

@@ -20,6 +20,32 @@ export const assessmentService = {
         );
     },
 
+    getForTeacher: async (id: string): Promise<Assessment> => {
+        return await apiClient.get<Assessment>(
+            ENDPOINTS.ASSESSMENTS.MANAGE(id)
+        );
+    },
+
+    update: async (id: string, data: AssessmentRequest): Promise<Assessment> => {
+        return await apiClient.put<Assessment>(
+            ENDPOINTS.ASSESSMENTS.BY_ID(id),
+            data
+        );
+    },
+
+    updateQuestion: async (questionId: string, data: QuestionRequest): Promise<Assessment> => {
+        return await apiClient.put<Assessment>(
+            ENDPOINTS.ASSESSMENTS.QUESTION_BY_ID(questionId),
+            data
+        );
+    },
+
+    setQuestionPublished: async (questionId: string, value: boolean): Promise<Assessment> => {
+        return await apiClient.patch<Assessment>(
+            ENDPOINTS.ASSESSMENTS.QUESTION_PUBLISHED(questionId, value)
+        );
+    },
+
     create: async (data: AssessmentRequest): Promise<Assessment> => {
         return await apiClient.post<Assessment>(
             ENDPOINTS.ASSESSMENTS.BASE,

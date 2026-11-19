@@ -43,4 +43,12 @@ public class AssessmentQuestion extends BaseEntity {
     @Column(name = "order_index")
     @Builder.Default
     private Integer orderIndex = 0;
+
+    @Column(name = "is_published", columnDefinition = "boolean default true")
+    @Builder.Default
+    private Boolean published = true;
+
+    public boolean isVisible() {
+        return !Boolean.FALSE.equals(published);
+    }
 }

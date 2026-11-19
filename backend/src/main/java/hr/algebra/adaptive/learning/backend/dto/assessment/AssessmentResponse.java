@@ -1,6 +1,7 @@
 package hr.algebra.adaptive.learning.backend.dto.assessment;
 
 import hr.algebra.adaptive.learning.backend.domain.entity.Assessment;
+import hr.algebra.adaptive.learning.backend.domain.entity.AssessmentQuestion;
 import hr.algebra.adaptive.learning.backend.domain.enums.AssessmentType;
 import lombok.Builder;
 import lombok.Data;
@@ -32,7 +33,7 @@ public class AssessmentResponse {
                 .courseName(entity.getCourse().getName())
                 .timeLimitMinutes(entity.getTimeLimitMinutes())
                 .passingScore(entity.getPassingScore())
-                .questionCount(entity.getQuestions().size())
+                .questionCount(visibleQuestions(entity).size())
                 .build();
     }
 
@@ -46,10 +47,33 @@ public class AssessmentResponse {
                 .courseName(entity.getCourse().getName())
                 .timeLimitMinutes(entity.getTimeLimitMinutes())
                 .passingScore(entity.getPassingScore())
-                .questionCount(entity.getQuestions().size())
-                .questions(entity.getQuestions().stream()
+                .questionCount(visibleQuestions(entity).size())
+                .questions(visibleQuestions(entity).stream()
                         .map(QuestionResponse::fromEntity)
                         .toList())
                 .build();
+    }
+
+    public static AssessmentResponse fromEntityForTeacher(Assessment entity) {
+        return AssessmentResponse.builder()
+                .id(entity.getId())
+                .title(entity.getTitle())
+                .description(entity.getDescription())
+                .assessmentType(entity.getAssessmentType())
+                .courseId(entity.getCourse().getId())
+                .courseName(entity.getCourse().getName())
+                .timeLimitMinutes(entity.getTimeLimitMinutes())
+                .passingScore(entity.getPassingScore())
+                .questionCount(entity.getQuestions().size())
+                .questions(entity.getQuestions().stream()
+                        .map(QuestionResponse::fromEntityForTeacher)
+                        .toList())
+                .build();
+    }
+
+    private static List<AssessmentQuestion> visibleQuestions(Assessment entity) {
+        return entity.getQuestions().stream()
+                .filter(AssessmentQuestion::isVisible)
+                .toList();
     }
 }

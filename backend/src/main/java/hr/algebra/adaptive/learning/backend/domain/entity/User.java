@@ -78,6 +78,10 @@ public class User extends BaseEntity implements UserDetails {
     @Column(name = "research_group")
     private ResearchGroup researchGroup = ResearchGroup.NOT_ASSIGNED;
 
+    @Column(name = "excluded_from_research", columnDefinition = "boolean default false")
+    @Builder.Default
+    private Boolean excludedFromResearch = false;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));

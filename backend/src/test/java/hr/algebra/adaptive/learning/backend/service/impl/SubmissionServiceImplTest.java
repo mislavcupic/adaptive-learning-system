@@ -282,6 +282,54 @@ class SubmissionServiceImplTest {
         }
 
         @Test
+        @DisplayName("ML servisu šalje opis i upute zadatka")
+        void sendsTaskTextToMl() {
+            codeTask.setDescription("Učitaj dva broja.");
+            codeTask.setInstructions("  Ispiši veći.  ");
+            when(taskRepository.findById(codeTask.getId())).thenReturn(Optional.of(codeTask));
+            when(codeExecutorClient.execute(any())).thenReturn(successfulExecution());
+            when(mlServiceClient.generateFeedback(any())).thenReturn(feedback(18));
+
+            submissionService.submit(request(codeTask, "kod"), studentId);
+
+            ArgumentCaptor<MLFeedbackRequest> captor = ArgumentCaptor.forClass(MLFeedbackRequest.class);
+            verify(mlServiceClient).generateFeedback(captor.capture());
+            assertThat(captor.getValue().getTaskText()).isEqualTo("Učitaj dva broja.\n\nIspiši veći.");
+        }
+
+        @Test
+        @DisplayName("bez opisa i uputa ML servis ne dobiva tekst zadatka")
+        void sendsNoTaskTextWhenMissing() {
+            codeTask.setDescription(null);
+            codeTask.setInstructions("   ");
+            when(taskRepository.findById(codeTask.getId())).thenReturn(Optional.of(codeTask));
+            when(codeExecutorClient.execute(any())).thenReturn(successfulExecution());
+            when(mlServiceClient.generateFeedback(any())).thenReturn(feedback(18));
+
+            submissionService.submit(request(codeTask, "kod"), studentId);
+
+            ArgumentCaptor<MLFeedbackRequest> captor = ArgumentCaptor.forClass(MLFeedbackRequest.class);
+            verify(mlServiceClient).generateFeedback(captor.capture());
+            assertThat(captor.getValue().getTaskText()).isNull();
+        }
+
+        @Test
+        @DisplayName("ML servisu šalje samo upute kad opisa nema")
+        void sendsOnlyInstructions() {
+            codeTask.setDescription("");
+            codeTask.setInstructions("Ispiši veći.");
+            when(taskRepository.findById(codeTask.getId())).thenReturn(Optional.of(codeTask));
+            when(codeExecutorClient.execute(any())).thenReturn(successfulExecution());
+            when(mlServiceClient.generateFeedback(any())).thenReturn(feedback(18));
+
+            submissionService.submit(request(codeTask, "kod"), studentId);
+
+            ArgumentCaptor<MLFeedbackRequest> captor = ArgumentCaptor.forClass(MLFeedbackRequest.class);
+            verify(mlServiceClient).generateFeedback(captor.capture());
+            assertThat(captor.getValue().getTaskText()).isEqualTo("Ispiši veći.");
+        }
+
+        @Test
         @DisplayName("kod greške prevođenja traži povratnu informaciju o poruci kompajlera")
         void requestsFeedbackOnCompileError() {
             when(taskRepository.findById(codeTask.getId())).thenReturn(Optional.of(codeTask));

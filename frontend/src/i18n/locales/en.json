@@ -233,7 +233,12 @@
     "noStudentsDesc": "No registered students yet",
     "groupType": "Group type",
     "experimental": "Experimental",
-    "control": "Control"
+    "control": "Control",
+    "excluded": "Excluded from research",
+    "exclude": "Exclude from research",
+    "include": "Return to research",
+    "excludeConfirm": "Exclude {{name}} from the research? Their data stays saved but is not counted in the research results.",
+    "includeConfirm": "Return {{name}} to the research?"
   },
   "classes": {
     "title": "Classes",
@@ -389,7 +394,10 @@
       "timeLimitPlaceholder": "e.g. 30",
       "passingScore": "Passing score (%)",
       "saveAndContinue": "Save and continue",
-      "enterNameAndCourse": "Enter name and select course"
+      "enterNameAndCourse": "Enter name and select course",
+      "saveChanges": "Save changes",
+      "saved": "Changes saved.",
+      "lockedFields": "Course and test type cannot be changed because that would disturb results already submitted."
     },
     "questionForm": {
       "title": "Questions",
@@ -411,7 +419,16 @@
       "true": "True",
       "false": "False",
       "select": "Select",
-      "shortAnswer": "Short answer"
+      "shortAnswer": "Short answer",
+      "published": "Published",
+      "hidden": "Hidden",
+      "publish": "Publish question",
+      "hide": "Hide question",
+      "testCases": "Test cases (JSON)",
+      "testCasesHelp": "Format: a JSON list of objects with \"input\" and \"expectedOutput\" fields. After saving, scores of tests already submitted are recalculated automatically.",
+      "regradeNote": "Changing the correct answer, points or test cases recalculates the scores of all students who have already submitted the test.",
+      "hideConfirm": "Students do not see a hidden question, and it is removed from the score and maximum of all submitted tests. Continue?",
+      "deleteConfirm": "Delete the question? Scores of submitted tests will be recalculated. If you only want to stop showing it, hide it instead."
     },
     "research": {
       "title": "Research results",

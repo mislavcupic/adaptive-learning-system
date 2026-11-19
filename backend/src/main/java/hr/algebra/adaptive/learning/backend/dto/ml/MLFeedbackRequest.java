@@ -19,6 +19,9 @@ public class MLFeedbackRequest {
     @JsonProperty("task_title")
     private String taskTitle;
 
+    @JsonProperty("task_text")
+    private String taskText;
+
     @JsonProperty("skill_name")
     private String skillName;
 

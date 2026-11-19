@@ -107,7 +107,83 @@ public class AssessmentServiceImpl implements AssessmentService {
     @Override
     @Transactional
     public void deleteQuestion(UUID questionId) {
-        questionRepository.deleteById(questionId);
+        questionRepository.findById(questionId).ifPresent(question -> {
+            Assessment assessment = question.getAssessment();
+            assessment.getQuestions().remove(question);
+            questionRepository.delete(question);
+            regrade(assessment, null);
+        });
+    }
+
+    @Override
+    public AssessmentResponse getByIdForTeacher(UUID id) {
+        return AssessmentResponse.fromEntityForTeacher(findAssessmentOrThrow(id));
+    }
+
+    @Override
+    @Transactional
+    public AssessmentResponse update(UUID id, AssessmentRequest request) {
+        Assessment assessment = findAssessmentOrThrow(id);
+
+        if (request.getTitle() != null && !request.getTitle().isBlank()) {
+            assessment.setTitle(request.getTitle());
+        }
+        assessment.setDescription(request.getDescription());
+        assessment.setTimeLimitMinutes(request.getTimeLimitMinutes());
+        if (request.getPassingScore() != null) {
+            assessment.setPassingScore(request.getPassingScore());
+        }
+
+        return AssessmentResponse.fromEntityForTeacher(assessmentRepository.save(assessment));
+    }
+
+    @Override
+    @Transactional
+    public AssessmentResponse updateQuestion(UUID questionId, QuestionRequest request) {
+        AssessmentQuestion question = findQuestionOrThrow(questionId);
+
+        QuestionType newType = request.getQuestionType() != null
+                ? request.getQuestionType() : question.getQuestionType();
+        Integer newPoints = request.getPoints() != null ? request.getPoints() : question.getPoints();
+
+        boolean gradingChanged = newType != question.getQuestionType()
+                || !Objects.equals(newPoints, question.getPoints())
+                || !Objects.equals(request.getOptions(), question.getOptions())
+                || !Objects.equals(request.getCorrectAnswer(), question.getCorrectAnswer())
+                || !Objects.equals(request.getTestCases(), question.getTestCases());
+
+        if (request.getQuestionText() != null && !request.getQuestionText().isBlank()) {
+            question.setQuestionText(request.getQuestionText());
+        }
+        question.setQuestionType(newType);
+        question.setPoints(newPoints);
+        question.setOptions(request.getOptions());
+        question.setCorrectAnswer(request.getCorrectAnswer());
+        question.setCodeTemplate(request.getCodeTemplate());
+        question.setTestCases(request.getTestCases());
+        if (request.getOrderIndex() != null) {
+            question.setOrderIndex(request.getOrderIndex());
+        }
+
+        questionRepository.save(question);
+
+        Assessment assessment = question.getAssessment();
+        if (gradingChanged) {
+            regrade(assessment, question.getId());
+        }
+        return AssessmentResponse.fromEntityForTeacher(assessment);
+    }
+
+    @Override
+    @Transactional
+    public AssessmentResponse setQuestionPublished(UUID questionId, boolean published) {
+        AssessmentQuestion question = findQuestionOrThrow(questionId);
+        question.setPublished(published);
+        questionRepository.save(question);
+
+        Assessment assessment = question.getAssessment();
+        regrade(assessment, null);
+        return AssessmentResponse.fromEntityForTeacher(assessment);
     }
 
     @Override
@@ -129,6 +205,7 @@ public class AssessmentServiceImpl implements AssessmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", studentId));
 
         int maxScore = assessment.getQuestions().stream()
+                .filter(AssessmentQuestion::isVisible)
                 .mapToInt(AssessmentQuestion::getPoints)
                 .sum();
 
@@ -158,23 +235,16 @@ public class AssessmentServiceImpl implements AssessmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("AssessmentAttempt", "assessmentId", request.getAssessmentId()));
 
         Assessment assessment = attempt.getAssessment();
-        int totalScore = 0;
+        Map<String, String> answers = request.getAnswers() != null ? request.getAnswers() : Map.of();
 
-        for (AssessmentQuestion question : assessment.getQuestions()) {
-            String studentAnswer = request.getAnswers().get(question.getId().toString());
-            if (studentAnswer == null) continue;
-
-            int points = gradeQuestion(question, studentAnswer);
-            totalScore += points;
-        }
+        applyScores(attempt, assessment, answers, null);
 
         try {
-            attempt.setAnswers(objectMapper.writeValueAsString(request.getAnswers()));
+            attempt.setAnswers(objectMapper.writeValueAsString(answers));
         } catch (JsonProcessingException e) {
             log.error("Error serializing answers: {}", e.getMessage());
         }
 
-        attempt.setScore(totalScore);
         attempt.setCompletedAt(LocalDateTime.now());
         attempt.setCompleted(true);
 
@@ -208,6 +278,80 @@ public class AssessmentServiceImpl implements AssessmentService {
         return attemptRepository
                 .findCompletedByStudentTypeAndCourse(studentId, AssessmentType.POSTTEST, courseId)
                 .isPresent();
+    }
+
+    private void regrade(Assessment assessment, UUID changedQuestionId) {
+        List<AssessmentAttempt> attempts =
+                attemptRepository.findByAssessmentIdAndIsCompletedTrue(assessment.getId());
+
+        for (AssessmentAttempt attempt : attempts) {
+            if (attempt.getAnswers() == null) {
+                continue;
+            }
+            applyScores(attempt, assessment, readMap(attempt.getAnswers(), new TypeReference<Map<String, String>>() {}),
+                    changedQuestionId);
+            attemptRepository.save(attempt);
+        }
+        log.info("Preracunati bodovi za {} pokusaja testa {}", attempts.size(), assessment.getId());
+    }
+
+    private void applyScores(AssessmentAttempt attempt, Assessment assessment,
+                             Map<String, String> answers, UUID changedQuestionId) {
+        Map<String, Integer> cached = readMap(attempt.getQuestionScores(),
+                new TypeReference<Map<String, Integer>>() {});
+        Map<String, Integer> scores = new LinkedHashMap<>();
+        int total = 0;
+        int max = 0;
+
+        for (AssessmentQuestion question : assessment.getQuestions()) {
+            if (!countsFor(question, attempt)) {
+                continue;
+            }
+            max += question.getPoints();
+
+            String key = question.getId().toString();
+            String studentAnswer = answers.get(key);
+            if (studentAnswer == null) {
+                continue;
+            }
+
+            Integer points = cached.get(key);
+            if (points == null || question.getId().equals(changedQuestionId)) {
+                points = gradeQuestion(question, studentAnswer);
+            }
+            scores.put(key, points);
+            total += points;
+        }
+
+        attempt.setScore(total);
+        attempt.setMaxScore(max);
+        try {
+            attempt.setQuestionScores(objectMapper.writeValueAsString(scores));
+        } catch (JsonProcessingException e) {
+            log.error("Error serializing question scores: {}", e.getMessage());
+        }
+    }
+
+    private boolean countsFor(AssessmentQuestion question, AssessmentAttempt attempt) {
+        if (!question.isVisible()) {
+            return false;
+        }
+        LocalDateTime created = question.getCreatedAt();
+        LocalDateTime started = attempt.getStartedAt();
+        return created == null || started == null || !created.isAfter(started);
+    }
+
+    private <T> Map<String, T> readMap(String json, TypeReference<Map<String, T>> type) {
+        if (json == null || json.isBlank()) {
+            return new HashMap<>();
+        }
+        try {
+            Map<String, T> parsed = objectMapper.readValue(json, type);
+            return parsed != null ? parsed : new HashMap<>();
+        } catch (Exception e) {
+            log.error("Error parsing stored JSON: {}", e.getMessage());
+            return new HashMap<>();
+        }
     }
 
     private int gradeQuestion(AssessmentQuestion question, String studentAnswer) {
@@ -275,6 +419,11 @@ public class AssessmentServiceImpl implements AssessmentService {
             log.error("Error parsing test cases: {}", e.getMessage());
             return List.of();
         }
+    }
+
+    private AssessmentQuestion findQuestionOrThrow(UUID id) {
+        return questionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("AssessmentQuestion", "id", id));
     }
 
     private Assessment findAssessmentOrThrow(UUID id) {

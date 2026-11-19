@@ -440,6 +440,16 @@ class UserServiceImplTest {
         }
 
         @Test
+        @DisplayName("isključuje studenta iz istraživanja i vraća ga")
+        void togglesResearchExclusion() {
+            userService.setExcludedFromResearch(guestId, true);
+            assertThat(guest.getExcludedFromResearch()).isTrue();
+
+            userService.setExcludedFromResearch(guestId, false);
+            assertThat(guest.getExcludedFromResearch()).isFalse();
+        }
+
+        @Test
         @DisplayName("deaktivira račun")
         void deactivates() {
             guest.setActive(true);
@@ -495,6 +505,13 @@ class UserServiceImplTest {
         @DisplayName("izmjena skupine baca iznimku")
         void updateGroupThrows() {
             assertThatThrownBy(() -> userService.updateGroup(unknownId, GroupType.EXPERIMENTAL))
+                    .isInstanceOf(ResourceNotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("isključivanje iz istraživanja baca iznimku")
+        void researchExclusionThrows() {
+            assertThatThrownBy(() -> userService.setExcludedFromResearch(unknownId, true))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
 

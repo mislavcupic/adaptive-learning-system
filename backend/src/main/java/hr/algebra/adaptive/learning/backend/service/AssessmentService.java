@@ -19,6 +19,14 @@ public interface AssessmentService {
 
     void deleteQuestion(UUID questionId);
 
+    AssessmentResponse getByIdForTeacher(UUID id);
+
+    AssessmentResponse update(UUID id, AssessmentRequest request);
+
+    AssessmentResponse updateQuestion(UUID questionId, QuestionRequest request);
+
+    AssessmentResponse setQuestionPublished(UUID questionId, boolean published);
+
     AssessmentAttemptResponse startAttempt(UUID assessmentId, UUID studentId);
 
     AssessmentAttemptResponse submitAttempt(AssessmentAttemptRequest request, UUID studentId);

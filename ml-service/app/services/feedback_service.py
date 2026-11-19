@@ -50,7 +50,7 @@ Pravila:
 
 Format odgovora:
 1. Kratki pregled (što je dobro)
-2. Identificirane greške (GDJE i ZAŠTO, bez gotovog ispravka)
+2. Identificirane greške (GDJE i ZAŠTO, bez gotovog ispravka; ako ih u kodu nema, napiši da ih nema i ne izmišljaj ih)
 3. Smjernice i pitanja koja navode na rješenje (bez gotovog koda)
 4. Ohrabrenje za dalje
 """
@@ -62,6 +62,14 @@ Format odgovora:
 Bilješka služi kao dugoročna memorija za praćenje napretka — piši je tako da bude korisna za usporedbu s budućim predajama. NE piši samo status "riješeno/nije riješeno". Fokusiraj se na SADRŽAJ učenja. Odgovori na hrvatskom, bez uvoda i bez markdown formatiranja."""
 
     NO_MEMORY_ERRORS = "Nema memorijskih grešaka."
+
+    NO_TESTS_NOTE = ("Zadatak nema testnih primjera, pa prolaznost testova nije poznata. "
+                     "Ispravnost procijeni isključivo iz koda i teksta zadatka.")
+
+    SCORE_PROMPT = """Ti si ocjenjivač rješenja zadataka iz programiranja.
+Iz teksta zadatka i koda procijeni koliko kod ispravno rješava zadatak.
+Odgovori samo jednim cijelim brojem od 0 do 100, bez ikakvog drugog teksta.
+100 znači da je rješenje potpuno ispravno, 0 da ne rješava zadatak."""
 
     # Vrste Valgrind grešaka opisane jednostavnim riječima, da ih model ne preskoči
     VALGRIND_KINDS = [
@@ -135,7 +143,7 @@ Bilješka služi kao dugoročna memorija za praćenje napretka — piši je tako
                     {"role": "user", "content": context}
                 ],
                 max_tokens=1000,
-                temperature=0.7
+                temperature=0.2
             )
 
             ai_feedback = response.choices[0].message.content
@@ -202,14 +210,19 @@ Bilješka služi kao dugoročna memorija za praćenje napretka — piši je tako
         context = f"""## Informacije o zadatku
 Naziv: {request.task_title}
 Programski jezik: {request.language_type}
+"""
 
+        if request.task_text:
+            context += f"\n## Tekst zadatka\n{request.task_text}\n"
+
+        context += f"""
 ## Kod studenta
 ```{request.language_type.lower()}
 {request.submitted_code}
 ```
 
 ## Rezultati testova
-Prolaznost: {request.tests_passed}/{request.tests_total}
+{self._tests_line(request)}
 """
 
         if request.compiler_output:
@@ -242,7 +255,7 @@ Prolaznost: {request.tests_passed}/{request.tests_total}
                 context += (f"Procjena: {mastery['level']:.2f} ({mastery['interpretation']}), "
                             f"pokušaja: {mastery['attempts']}, točnih: {mastery['correct']}\n")
 
-        context += "\n## Tvoj zadatak\nNapiši personalizirani feedback za ovog studenta na hrvatskom jeziku. Ako postoje prethodne bilješke, usporedi trenutni rad s njima i istakni napredak ili ponavljajuće greške. Razinu objašnjenja prilagodi procjeni usvojenosti vještine. VAŽNO: ne daj gotovo rješenje ni ispravljeni kod — vodi studenta smjernicama i pitanjima da sam dođe do rješenja."
+        context += "\n## Tvoj zadatak\nProsudbu o ispravnosti temelji na samom kodu i tekstu zadatka; ako u kodu nema grešaka, jasno to reci i ne izmišljaj greške. Napiši personalizirani feedback za ovog studenta na hrvatskom jeziku. Ako postoje prethodne bilješke, usporedi trenutni rad s njima i istakni napredak ili ponavljajuće greške. Razinu objašnjenja prilagodi procjeni usvojenosti vještine. VAŽNO: ne daj gotovo rješenje ni ispravljeni kod — vodi studenta smjernicama i pitanjima da sam dođe do rješenja."
 
         return context
 
@@ -283,11 +296,45 @@ Prolaznost: {request.tests_passed}/{request.tests_total}
 
         return summary + "\n\nIzvještaj:\n" + "\n".join(lines)[:1500]
 
+    def _tests_line(self, request: FeedbackRequest) -> str:
+        if request.tests_total == 0:
+            return self.NO_TESTS_NOTE
+        return f"Prolaznost: {request.tests_passed}/{request.tests_total}"
+
+    def _score_from_code(self, request: FeedbackRequest) -> int:
+        if request.compiler_output and "error" in request.compiler_output.lower():
+            return 0
+        if not self.client:
+            return 0
+
+        context = f"Naziv zadatka: {request.task_title}\n"
+        if request.task_text:
+            context += f"Tekst zadatka:\n{request.task_text}\n"
+        context += f"\nKod ({request.language_type}):\n{request.submitted_code}\n"
+        if request.execution_output:
+            context += f"\nIspis programa:\n{request.execution_output}\n"
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.settings.openai_model,
+                messages=[
+                    {"role": "system", "content": self.SCORE_PROMPT},
+                    {"role": "user", "content": context}
+                ],
+                max_tokens=5,
+                temperature=0
+            )
+            match = re.search(r"\d+", response.choices[0].message.content or "")
+            return min(100, max(0, int(match.group()))) if match else 0
+        except Exception as e:
+            logger.error(f"Error scoring code: {e}")
+            return 0
+
     def _calculate_score(self, request: FeedbackRequest) -> int:
         """Izračunava score na temelju rezultata."""
 
         if request.tests_total == 0:
-            return 0
+            return self._score_from_code(request)
 
         test_score = (request.tests_passed / request.tests_total) * 70
         compile_bonus = 15 if not (request.compiler_output and "error" in request.compiler_output.lower()) else 0
@@ -303,7 +350,7 @@ Prolaznost: {request.tests_passed}/{request.tests_total}
             return self._fallback_insight(request)
 
         context = f"""Zadatak: {request.task_title}
-Rezultat testova: {request.tests_passed}/{request.tests_total}
+Rezultat testova: {self._tests_line(request)}
 
 Kod studenta:
 ```{request.language_type.lower()}

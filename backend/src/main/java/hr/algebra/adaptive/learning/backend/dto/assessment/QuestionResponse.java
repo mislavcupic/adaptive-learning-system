@@ -15,6 +15,9 @@ public class QuestionResponse {
     private QuestionType questionType;
     private String options;        // JSON array za MULTIPLE_CHOICE
     private String codeTemplate;   // Za CODE pitanja
+    private String correctAnswer;
+    private String testCases;
+    private Boolean published;
     private Integer points;
     private Integer orderIndex;
     // NE vraćamo correctAnswer studentu!
@@ -28,6 +31,21 @@ public class QuestionResponse {
                 .codeTemplate(entity.getCodeTemplate())
                 .points(entity.getPoints())
                 .orderIndex(entity.getOrderIndex())
+                .build();
+    }
+
+    public static QuestionResponse fromEntityForTeacher(AssessmentQuestion entity) {
+        return QuestionResponse.builder()
+                .id(entity.getId())
+                .questionText(entity.getQuestionText())
+                .questionType(entity.getQuestionType())
+                .options(entity.getOptions())
+                .codeTemplate(entity.getCodeTemplate())
+                .points(entity.getPoints())
+                .orderIndex(entity.getOrderIndex())
+                .correctAnswer(entity.getCorrectAnswer())
+                .testCases(entity.getTestCases())
+                .published(entity.isVisible())
                 .build();
     }
 }

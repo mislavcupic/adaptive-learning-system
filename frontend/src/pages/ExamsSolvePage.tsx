@@ -10,7 +10,7 @@ import { useTheme } from '../context';
 import { examService } from '../services';
 import {
     Card, CardHeader, CardTitle, CardContent,
-    Button, Badge, LoadingScreen, ErrorState
+    Button, Badge, LoadingScreen, ErrorState, FormattedText
 } from '../components/ui';
 import type { Exam, ExamAttempt, ExamAnswerEntry } from '../types';
 
@@ -413,14 +413,16 @@ function TaskPrompt({ taskId, exam }: { taskId: string; exam: Exam }) {
     return (
         <div className="space-y-3">
             {task.instructions && (
-                <p className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed">
-                    {task.instructions}
-                </p>
+                <FormattedText
+                    text={task.instructions}
+                    className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed"
+                />
             )}
             {task.description && (
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 whitespace-pre-wrap">
-                    {task.description}
-                </p>
+                <FormattedText
+                    text={task.description}
+                    className="text-sm text-zinc-500 dark:text-zinc-400"
+                />
             )}
         </div>
     );

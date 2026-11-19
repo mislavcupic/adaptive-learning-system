@@ -132,6 +132,17 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public UserResponse setExcludedFromResearch(UUID id, boolean excluded) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_WITH_ID + id));
+
+        user.setExcludedFromResearch(excluded);
+        User saved = userRepository.save(user);
+        return UserResponse.fromEntity(saved);
+    }
+
+    @Override
+    @Transactional
     public void activate(UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_WITH_ID + id));

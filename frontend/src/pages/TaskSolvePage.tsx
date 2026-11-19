@@ -14,7 +14,8 @@ import {
     Button,
     Badge,
     LoadingScreen,
-    ErrorState
+    ErrorState,
+    FormattedText
 } from '../components/ui';
 import { formatLanguageType, formatSubmissionStatus } from '../utils';
 import type { Task, Submission } from '../types';
@@ -202,14 +203,16 @@ export function TaskSolvePage() {
                         <CardTitle>{t('tasks.instructions')}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="prose prose-zinc dark:prose-invert max-w-none">
-                            <p className="whitespace-pre-wrap">{task.instructions}</p>
-                        </div>
+                        <FormattedText
+                            text={task.instructions}
+                            className="text-zinc-700 dark:text-zinc-300 leading-relaxed"
+                        />
                         {task.description && (
                             <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                                <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                                    {task.description}
-                                </p>
+                                <FormattedText
+                                    text={task.description}
+                                    className="text-sm text-zinc-500 dark:text-zinc-400"
+                                />
                             </div>
                         )}
                     </CardContent>

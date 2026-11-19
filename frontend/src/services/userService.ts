@@ -43,6 +43,10 @@ export const userService = {
         await apiClient.patch<ApiResponse<void>>(ENDPOINTS.USERS.DEACTIVATE(id));
     },
 
+    setResearchExclusion: async (id: string, excluded: boolean): Promise<void> => {
+        await apiClient.patch<ApiResponse<User>>(ENDPOINTS.USERS.RESEARCH_EXCLUSION(id), { excluded });
+    },
+
     delete: async (id: string): Promise<void> => {
         await apiClient.delete<ApiResponse<void>>(ENDPOINTS.USERS.BY_ID(id));
     },

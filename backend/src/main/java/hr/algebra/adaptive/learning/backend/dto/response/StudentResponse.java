@@ -26,6 +26,7 @@ public class StudentResponse {
     private Long submissionsCount;
     private String schoolClassName;
     private ResearchGroup researchGroup;
+    private boolean excludedFromResearch;
 
     public static StudentResponse fromEntity(User user) {
         return StudentResponse.builder()
@@ -38,6 +39,7 @@ public class StudentResponse {
                 .isActive(user.isActive())
                 .schoolClassName(user.getSchoolClass() != null ? user.getSchoolClass().getName() : null)
                 .researchGroup(user.getResearchGroup())
+                .excludedFromResearch(Boolean.TRUE.equals(user.getExcludedFromResearch()))
                 .build();
     }
 
@@ -54,6 +56,7 @@ public class StudentResponse {
                 .submissionsCount(submissions)
                 .schoolClassName(user.getSchoolClass() != null ? user.getSchoolClass().getName() : null)
                 .researchGroup(user.getResearchGroup())
+                .excludedFromResearch(Boolean.TRUE.equals(user.getExcludedFromResearch()))
                 .build();
     }
 }

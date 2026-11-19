@@ -37,6 +37,9 @@ public class AssessmentAttempt extends BaseEntity {
     @Column(name = "max_score")
     private Integer maxScore;
 
+    @Column(name = "question_scores", columnDefinition = "TEXT")
+    private String questionScores;
+
     @Column(name = "is_completed")
     @Builder.Default
     private boolean isCompleted = false;
