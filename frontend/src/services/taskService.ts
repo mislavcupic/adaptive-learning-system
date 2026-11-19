@@ -37,6 +37,10 @@ export const taskService = {
         return response.data;
     },
 
+    reorder: async (outcomeId: string, orderedIds: string[]): Promise<void> => {
+        await apiClient.patch<ApiResponse<void>>(ENDPOINTS.TASKS.REORDER(outcomeId), orderedIds);
+    },
+
     delete: async (id: string): Promise<void> => {
         await apiClient.delete<ApiResponse<void>>(ENDPOINTS.TASKS.BY_ID(id));
     },

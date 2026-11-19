@@ -16,6 +16,7 @@ import {
     EmptyState
 } from '../components/ui';
 import { formatDate, formatLanguageType, truncate } from '../utils';
+import { cn } from '../utils/cn';
 import type { Task } from '../types';
 
 export function TasksPage() {
@@ -30,16 +31,46 @@ export function TasksPage() {
         []
     );
 
-    const outcomeTasks = outcomeId
-        ? tasks?.filter(task => task.outcomeId === outcomeId) ?? []
-        : tasks ?? [];
+    const [dragId, setDragId] = useState<string | null>(null);
+    const [orderOverride, setOrderOverride] = useState<string[] | null>(null);
+    const [reorderError, setReorderError] = useState<string | null>(null);
 
-    const filteredTasks = outcomeTasks.filter(task =>
+    const outcomeTasks = sortByOrder(outcomeId
+        ? tasks?.filter(task => task.outcomeId === outcomeId) ?? []
+        : tasks ?? []);
+
+    const orderedTasks = orderOverride
+        ? [...outcomeTasks].sort((a, b) => orderOverride.indexOf(a.id) - orderOverride.indexOf(b.id))
+        : outcomeTasks;
+
+    const filteredTasks = orderedTasks.filter(task =>
         task.title.toLowerCase().includes(search.toLowerCase()) ||
         task.description?.toLowerCase().includes(search.toLowerCase())
     );
 
     const isTeacherOrAdmin = user?.role === 'TEACHER' || user?.role === 'ADMIN';
+    const canReorder = Boolean(outcomeId) && isTeacherOrAdmin && !search;
+
+    const handleDrop = async (targetId: string) => {
+        const draggedId = dragId;
+        setDragId(null);
+        if (!outcomeId || !draggedId || draggedId === targetId) return;
+
+        const ids = orderedTasks.map(task => task.id);
+        ids.splice(ids.indexOf(draggedId), 1);
+        ids.splice(ids.indexOf(targetId), 0, draggedId);
+
+        setOrderOverride(ids);
+        setReorderError(null);
+        try {
+            await taskService.reorder(outcomeId, ids);
+            await refetch();
+        } catch {
+            setReorderError(t('tasks.reorderFailed'));
+        } finally {
+            setOrderOverride(null);
+        }
+    };
 
     if (loading) return <LoadingScreen />;
     if (error) return <ErrorState description={error} onRetry={refetch} />;
@@ -62,6 +93,14 @@ export function TasksPage() {
                                 {t('tasks.showAll', 'Prikaži sve')}
                             </Link>
                         </p>
+                    )}
+                    {canReorder && (
+                        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                            {t('tasks.dragHint')}
+                        </p>
+                    )}
+                    {reorderError && (
+                        <p className="text-sm text-red-600 dark:text-red-400 mt-1">{reorderError}</p>
                     )}
                 </div>
                 {isTeacherOrAdmin && (
@@ -101,11 +140,35 @@ export function TasksPage() {
             ) : (
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredTasks.map((task) => (
-                        <TaskCard key={task.id} task={task} isStudent={user?.role === 'STUDENT'} />
+                        <div
+                            key={task.id}
+                            draggable={canReorder}
+                            onDragStart={(e) => {
+                                e.dataTransfer.setData('text/plain', task.id);
+                                setDragId(task.id);
+                            }}
+                            onDragOver={canReorder ? (e) => e.preventDefault() : undefined}
+                            onDrop={canReorder ? (e) => { e.preventDefault(); handleDrop(task.id); } : undefined}
+                            onDragEnd={() => setDragId(null)}
+                            className={cn(canReorder && 'cursor-move', dragId === task.id && 'opacity-50')}
+                        >
+                            <TaskCard task={task} isStudent={user?.role === 'STUDENT'} />
+                        </div>
                     ))}
                 </div>
             )}
         </div>
+    );
+}
+
+function sortByOrder(list: Task[]): Task[] {
+    const groups = new Map<string, Task[]>();
+    list.forEach(task => {
+        const key = task.outcomeId ?? '';
+        groups.set(key, [...(groups.get(key) ?? []), task]);
+    });
+    return [...groups.values()].flatMap(group =>
+        [...group].sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0))
     );
 }
 

@@ -60,6 +60,7 @@ export function AssessmentFormPage() {
     const [assessment, setAssessment] = useState<Assessment | null>(null);
     const [questions, setQuestions] = useState<QuestionForm[]>([]);
     const [activeQuestion, setActiveQuestion] = useState<number | null>(null);
+    const [dragIndex, setDragIndex] = useState<number | null>(null);
 
     useEffect(() => {
         loadData();
@@ -176,6 +177,26 @@ export function AssessmentFormPage() {
             setError(err instanceof Error ? err.message : t('errors.generic'));
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleQuestionDrop = async (targetIndex: number) => {
+        const from = dragIndex;
+        setDragIndex(null);
+        if (from === null || from === targetIndex || !assessment) return;
+
+        const reordered = [...questions];
+        const [moved] = reordered.splice(from, 1);
+        reordered.splice(targetIndex, 0, moved);
+        setQuestions(reordered);
+        setActiveQuestion(null);
+
+        const ids = reordered.map(q => q.id).filter((qid): qid is string => Boolean(qid));
+        try {
+            await assessmentService.reorderQuestions(assessment.id, ids);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : t('errors.generic'));
+            await loadData();
         }
     };
 
@@ -413,7 +434,12 @@ export function AssessmentFormPage() {
                 <Card>
                     <CardHeader>
                         <div className="flex items-center justify-between">
-                            <CardTitle>{t('assessments.questionForm.title')} ({questions.length})</CardTitle>
+                            <div>
+                                <CardTitle>{t('assessments.questionForm.title')} ({questions.length})</CardTitle>
+                                {questions.length > 1 && (
+                                    <p className="text-xs text-zinc-500 mt-1">{t('assessments.questionForm.dragHint')}</p>
+                                )}
+                            </div>
                             <Button onClick={handleAddQuestion} className="gap-2">
                                 <Plus className="w-4 h-4" />
                                 {t('assessments.questionForm.addQuestion')}
@@ -437,6 +463,10 @@ export function AssessmentFormPage() {
                                         onToggle={() => setActiveQuestion(activeQuestion === index ? null : index)}
                                         onRemove={() => handleRemoveQuestion(index)}
                                         onTogglePublished={() => handleTogglePublished(index)}
+                                        isDragging={dragIndex === index}
+                                        onDragStart={() => setDragIndex(index)}
+                                        onDragEnd={() => setDragIndex(null)}
+                                        onDrop={() => handleQuestionDrop(index)}
                                         onChange={(field, value) => handleQuestionChange(index, field, value)}
                                         onOptionChange={(optIndex, value) => handleOptionChange(index, optIndex, value)}
                                         onSave={() => handleSaveQuestion(index)}
@@ -460,18 +490,34 @@ interface QuestionItemProps {
     onToggle: () => void;
     onRemove: () => void;
     onTogglePublished: () => void;
+    isDragging: boolean;
+    onDragStart: () => void;
+    onDragEnd: () => void;
+    onDrop: () => void;
     onChange: (field: keyof QuestionForm, value: unknown) => void;
     onOptionChange: (optIndex: number, value: string) => void;
     onSave: () => void;
     t: (key: string) => string;
 }
 
-function QuestionItem({ question, index, isActive, saving, onToggle, onRemove, onTogglePublished, onChange, onOptionChange, onSave, t }: QuestionItemProps) {
+function QuestionItem({ question, index, isActive, saving, onToggle, onRemove, onTogglePublished, isDragging, onDragStart, onDragEnd, onDrop, onChange, onOptionChange, onSave, t }: QuestionItemProps) {
+    const draggable = Boolean(question.id) && !isActive;
+
     return (
-        <div className={`border rounded-lg ${isActive ? 'border-blue-500' : 'border-zinc-200 dark:border-zinc-700'} ${question.published ? '' : 'opacity-60'}`}>
+        <div
+            draggable={draggable}
+            onDragStart={(e) => {
+                e.dataTransfer.setData('text/plain', String(index));
+                onDragStart();
+            }}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => { e.preventDefault(); onDrop(); }}
+            onDragEnd={onDragEnd}
+            className={`border rounded-lg ${isActive ? 'border-blue-500' : 'border-zinc-200 dark:border-zinc-700'} ${question.published ? '' : 'opacity-60'} ${isDragging ? 'opacity-40' : ''}`}
+        >
             <div className="flex items-start justify-between gap-4 p-4 cursor-pointer" onClick={onToggle}>
                 <div className="flex min-w-0 flex-1 items-start gap-3">
-                    <GripVertical className="w-5 h-5 mt-0.5 shrink-0 text-zinc-400" />
+                    <GripVertical className={`w-5 h-5 mt-0.5 shrink-0 text-zinc-400 ${draggable ? 'cursor-grab active:cursor-grabbing' : ''}`} />
                     <div className="flex min-w-0 flex-1 gap-1 font-medium text-zinc-900 dark:text-white">
                         <span>{index + 1}.</span>
                         {question.questionText

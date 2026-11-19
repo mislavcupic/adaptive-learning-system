@@ -46,6 +46,13 @@ export const assessmentService = {
         );
     },
 
+    reorderQuestions: async (id: string, orderedIds: string[]): Promise<Assessment> => {
+        return await apiClient.patch<Assessment>(
+            ENDPOINTS.ASSESSMENTS.REORDER_QUESTIONS(id),
+            orderedIds
+        );
+    },
+
     create: async (data: AssessmentRequest): Promise<Assessment> => {
         return await apiClient.post<Assessment>(
             ENDPOINTS.ASSESSMENTS.BASE,

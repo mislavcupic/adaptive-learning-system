@@ -192,7 +192,9 @@
       "gradingCriteria": "Grading criteria",
       "dueDate": "Due date",
       "createTask": "Create task"
-    }
+    },
+    "dragHint": "Drag the tasks with the mouse to change the order students see them in.",
+    "reorderFailed": "The order was not saved."
   },
   "submissions": {
     "title": "Submissions",
@@ -428,7 +430,8 @@
       "testCasesHelp": "Format: a JSON list of objects with \"input\" and \"expectedOutput\" fields. After saving, scores of tests already submitted are recalculated automatically.",
       "regradeNote": "Changing the correct answer, points or test cases recalculates the scores of all students who have already submitted the test.",
       "hideConfirm": "Students do not see a hidden question, and it is removed from the score and maximum of all submitted tests. Continue?",
-      "deleteConfirm": "Delete the question? Scores of submitted tests will be recalculated. If you only want to stop showing it, hide it instead."
+      "deleteConfirm": "Delete the question? Scores of submitted tests will be recalculated. If you only want to stop showing it, hide it instead.",
+      "dragHint": "Drag a question by the dotted handle to change the order."
     },
     "research": {
       "title": "Research results",

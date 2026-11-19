@@ -192,7 +192,9 @@
       "gradingCriteria": "Kriteriji ocjenjivanja",
       "dueDate": "Rok predaje",
       "createTask": "Kreiraj zadatak"
-    }
+    },
+    "dragHint": "Povucite zadatke mišem da promijenite redoslijed kojim ih učenici vide.",
+    "reorderFailed": "Redoslijed nije spremljen."
   },
   "submissions": {
     "title": "Predaje",
@@ -428,7 +430,8 @@
       "testCasesHelp": "Format: JSON lista objekata s poljima \"input\" i \"expectedOutput\". Nakon spremanja bodovi već predanih testova automatski se preračunavaju.",
       "regradeNote": "Promjena točnog odgovora, bodova ili test primjera preračunava bodove svih učenika koji su već predali test.",
       "hideConfirm": "Skriveno pitanje učenici ne vide, a izbacuje se iz bodova i maksimuma svih već predanih testova. Nastaviti?",
-      "deleteConfirm": "Obrisati pitanje? Bodovi već predanih testova bit će preračunati. Ako ga samo ne želite prikazivati, radije ga sakrijte."
+      "deleteConfirm": "Obrisati pitanje? Bodovi već predanih testova bit će preračunati. Ako ga samo ne želite prikazivati, radije ga sakrijte.",
+      "dragHint": "Povucite pitanje za ikonu s točkicama da promijenite redoslijed."
     },
     "research": {
       "title": "Rezultati istraživanja",

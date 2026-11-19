@@ -41,6 +41,7 @@ export function TaskFormPage() {
     const [selectedCourseId, setSelectedCourseId] = useState('');
     const [outcomeId, setOutcomeId] = useState('');
     const [dueDate, setDueDate] = useState('');
+    const [orderIndex, setOrderIndex] = useState<number | undefined>(undefined);
 
     useEffect(() => {
         loadData();
@@ -83,6 +84,7 @@ export function TaskFormPage() {
                     setSelectedCourseId(task.courseId);
                 }
                 setOutcomeId(task.outcomeId);
+                setOrderIndex(task.orderIndex);
                 if (task.dueDate) {
                     setDueDate(task.dueDate.slice(0, 16));
                 }
@@ -148,7 +150,8 @@ export function TaskFormPage() {
                 timeLimitSeconds,
                 memoryLimitMb,
                 outcomeId,
-                dueDate: dueDate || undefined
+                dueDate: dueDate || undefined,
+                orderIndex
             };
 
             if (isEditing && id) {

@@ -46,6 +46,7 @@ export const ENDPOINTS = {
         BASE: '/tasks',
         BY_ID: (id: string) => `/tasks/${id}`,
         BY_COURSE: (courseId: string) => `/tasks/course/${courseId}`,
+        REORDER: (outcomeId: string) => `/tasks/outcome/${outcomeId}/reorder`,
     },
     SUBMISSIONS: {
         BASE: '/submissions',
@@ -69,6 +70,7 @@ export const ENDPOINTS = {
         QUESTION_PUBLISHED: (questionId: string, value: boolean) =>
             `/assessments/questions/${questionId}/published?value=${value}`,
         MANAGE: (id: string) => `/assessments/${id}/manage`,
+        REORDER_QUESTIONS: (id: string) => `/assessments/${id}/questions/reorder`,
         START: (assessmentId: string) => `/assessments/${assessmentId}/start`,
         SUBMIT: '/assessments/submit',
         MY_ATTEMPTS: '/assessments/attempts/my',
