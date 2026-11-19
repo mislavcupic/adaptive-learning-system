@@ -584,6 +584,158 @@ class SubmissionServiceImplTest {
         return captor.getValue();
     }
 
+    @Nested
+    @DisplayName("Preračun predaja zadatka")
+    class Regrading {
+
+        private Submission previous;
+
+        @BeforeEach
+        void prepare() {
+            codeTask.setTestCases("[{\"input\":\"1\",\"expectedOutput\":\"1\"}]");
+            when(taskRepository.findById(codeTask.getId())).thenReturn(Optional.of(codeTask));
+
+            previous = Submission.builder()
+                    .student(student)
+                    .task(codeTask)
+                    .submittedCode("int main() { return 0; }")
+                    .status(SubmissionStatus.COMPILE_ERROR)
+                    .aiScore(0)
+                    .finalScore(0)
+                    .build();
+            previous.setId(UUID.randomUUID());
+            when(submissionRepository.findByTaskIdOrderByCreatedAtDesc(codeTask.getId()))
+                    .thenReturn(List.of(previous));
+        }
+
+        @Test
+        @DisplayName("prolazni testovi daju pune bodove i status završeno")
+        void passingTestsGiveFullScore() {
+            when(codeExecutorClient.execute(any())).thenReturn(successfulExecution());
+
+            submissionService.regradeTask(codeTask.getId());
+
+            assertThat(previous.getStatus()).isEqualTo(SubmissionStatus.COMPLETED);
+            assertThat(previous.getTestsPassed()).isEqualTo(5);
+            assertThat(previous.getAiScore()).isEqualTo(100);
+            assertThat(previous.getFinalScore()).isEqualTo(100);
+            verify(submissionRepository).save(previous);
+        }
+
+        @Test
+        @DisplayName("djelomično prolazni testovi daju razmjerne bodove")
+        void partialTestsGivePartialScore() {
+            CodeExecutionResponse exec = successfulExecution();
+            exec.setTestsPassed(2);
+            exec.setTestsTotal(4);
+            when(codeExecutorClient.execute(any())).thenReturn(exec);
+
+            submissionService.regradeTask(codeTask.getId());
+
+            assertThat(previous.getAiScore()).isEqualTo(65);
+        }
+
+        @Test
+        @DisplayName("bez prolaznih testova i uz upozorenje s riječju error nema bonusa")
+        void noBonusesWithoutPassedTests() {
+            CodeExecutionResponse exec = successfulExecution();
+            exec.setCompilerOutput("warning: implicit declaration, treated as error");
+            exec.setTestsPassed(0);
+            exec.setTestsTotal(4);
+            when(codeExecutorClient.execute(any())).thenReturn(exec);
+
+            submissionService.regradeTask(codeTask.getId());
+
+            assertThat(previous.getAiScore()).isZero();
+        }
+
+        @Test
+        @DisplayName("bez izvršenih testova bodovi su nula")
+        void noExecutedTestsGiveZero() {
+            CodeExecutionResponse exec = successfulExecution();
+            exec.setTestsPassed(0);
+            exec.setTestsTotal(0);
+            when(codeExecutorClient.execute(any())).thenReturn(exec);
+
+            submissionService.regradeTask(codeTask.getId());
+
+            assertThat(previous.getAiScore()).isZero();
+        }
+
+        @Test
+        @DisplayName("greška kompilacije ostaje greška s nula bodova")
+        void compileErrorStaysZero() {
+            when(codeExecutorClient.execute(any())).thenReturn(failedExecution());
+
+            submissionService.regradeTask(codeTask.getId());
+
+            assertThat(previous.getStatus()).isEqualTo(SubmissionStatus.COMPILE_ERROR);
+            assertThat(previous.getFinalScore()).isZero();
+            assertThat(previous.getExecutionOutput()).isEqualTo("Greška prilikom kompilacije");
+        }
+
+        @Test
+        @DisplayName("nastavnikova ocjena i status pregledano ostaju")
+        void keepsTeacherReview() {
+            previous.setStatus(SubmissionStatus.REVIEWED);
+            previous.setTeacherScore(7);
+            previous.setFinalScore(7);
+            when(codeExecutorClient.execute(any())).thenReturn(successfulExecution());
+
+            submissionService.regradeTask(codeTask.getId());
+
+            assertThat(previous.getStatus()).isEqualTo(SubmissionStatus.REVIEWED);
+            assertThat(previous.getFinalScore()).isEqualTo(7);
+            assertThat(previous.getAiScore()).isEqualTo(100);
+        }
+
+        @Test
+        @DisplayName("nedostupan izvršitelj ne mijenja predaju")
+        void executorFailureLeavesSubmission() {
+            CodeExecutionResponse down = new CodeExecutionResponse();
+            down.setSuccess(false);
+            down.setError("Code Executor nedostupan");
+            CodeExecutionResponse blank = new CodeExecutionResponse();
+            blank.setSuccess(false);
+            blank.setCompilerOutput("  ");
+            when(codeExecutorClient.execute(any())).thenReturn(down, blank);
+
+            submissionService.regradeTask(codeTask.getId());
+            submissionService.regradeTask(codeTask.getId());
+
+            assertThat(previous.getStatus()).isEqualTo(SubmissionStatus.COMPILE_ERROR);
+            verify(submissionRepository, never()).save(previous);
+        }
+
+        @Test
+        @DisplayName("zadatak bez testova, nepostojeći ili neprogramski zadatak se ne preračunava")
+        void skipsTasksThatCannotBeRegraded() {
+            UUID unknown = UUID.randomUUID();
+            when(taskRepository.findById(unknown)).thenReturn(Optional.empty());
+            submissionService.regradeTask(unknown);
+
+            codeTask.setTestCases(null);
+            submissionService.regradeTask(codeTask.getId());
+
+            codeTask.setTestCases("[{\"input\":\"1\",\"expectedOutput\":\"1\"}]");
+            codeTask.setTaskType(TaskType.MULTIPLE_CHOICE);
+            submissionService.regradeTask(codeTask.getId());
+
+            verify(codeExecutorClient, never()).execute(any());
+        }
+
+        @Test
+        @DisplayName("zadatak bez zapisanog tipa preračunava se kao programski")
+        void taskWithoutTypeIsCode() {
+            codeTask.setTaskType(null);
+            when(codeExecutorClient.execute(any())).thenReturn(successfulExecution());
+
+            submissionService.regradeTask(codeTask.getId());
+
+            assertThat(previous.getFinalScore()).isEqualTo(100);
+        }
+    }
+
     private CodeExecutionResponse successfulExecution() {
         CodeExecutionResponse r = new CodeExecutionResponse();
         r.setSuccess(true);

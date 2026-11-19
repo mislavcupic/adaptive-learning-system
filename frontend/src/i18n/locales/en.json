@@ -191,7 +191,8 @@
       "grading": "Grading",
       "gradingCriteria": "Grading criteria",
       "dueDate": "Due date",
-      "createTask": "Create task"
+      "createTask": "Create task",
+      "testCasesRegrade": "After saving changed test cases, scores of all previous submissions of this task are recalculated in the background (this can take a minute or two)."
     },
     "dragHint": "Drag the tasks with the mouse to change the order students see them in.",
     "reorderFailed": "The order was not saved."

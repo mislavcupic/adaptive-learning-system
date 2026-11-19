@@ -28,4 +28,6 @@ public interface SubmissionService {
     long countByTask(UUID taskId);
 
     SubmissionResponse addTeacherFeedback(UUID id, String feedback, Integer score);
+
+    void regradeTask(UUID taskId);
 }

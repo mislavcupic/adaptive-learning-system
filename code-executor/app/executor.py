@@ -42,7 +42,7 @@ class CodeExecutor:
             f.write(request.code)
 
         compile_result = subprocess.run(
-            ["gcc", "-o", executable, source_file, "-Wall", "-Wextra"],
+            ["gcc", "-o", executable, source_file, "-Wall", "-Wextra", "-lm"],
             capture_output=True,
             text=True,
             timeout=30

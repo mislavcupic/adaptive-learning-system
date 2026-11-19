@@ -420,6 +420,11 @@ export function TaskFormPage() {
                                     placeholder='[{"input": "5", "expectedOutput": "25"}]'
                                     className="w-full px-3 py-2 font-mono text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
                                 />
+                                {isEditing && (
+                                    <p className="text-xs text-zinc-500 mt-1">
+                                        {t('tasks.form.testCasesRegrade')}
+                                    </p>
+                                )}
                             </div>
 
                             <div className="grid gap-4 sm:grid-cols-3">

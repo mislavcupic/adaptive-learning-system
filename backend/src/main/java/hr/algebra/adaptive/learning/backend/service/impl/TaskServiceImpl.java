@@ -10,14 +10,18 @@ import hr.algebra.adaptive.learning.backend.exception.ResourceNotFoundException;
 import hr.algebra.adaptive.learning.backend.repository.LearningOutcomeRepository;
 import hr.algebra.adaptive.learning.backend.repository.TaskRepository;
 import hr.algebra.adaptive.learning.backend.repository.UserRepository;
+import hr.algebra.adaptive.learning.backend.service.SubmissionService;
 import hr.algebra.adaptive.learning.backend.service.TaskService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Slf4j
@@ -29,6 +33,7 @@ public class TaskServiceImpl implements TaskService {
     private final TaskRepository taskRepository;
     private final LearningOutcomeRepository outcomeRepository;
     private final UserRepository userRepository;
+    private final SubmissionService submissionService;
 
     @Override
     @Transactional
@@ -127,6 +132,7 @@ public class TaskServiceImpl implements TaskService {
         log.info("Updating task: {}", id);
 
         Task task = findTaskOrThrow(id);
+        boolean testsChanged = !Objects.equals(task.getTestCases(), request.getTestCases());
 
         task.setTitle(request.getTitle());
         task.setDescription(request.getDescription());
@@ -145,7 +151,25 @@ public class TaskServiceImpl implements TaskService {
         task.setOrderIndex(request.getOrderIndex());
 
         Task saved = taskRepository.save(task);
+        if (testsChanged) {
+            scheduleRegrade(saved.getId());
+        }
         return TaskResponse.fromEntity(saved);
+    }
+
+    private void scheduleRegrade(UUID taskId) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            submissionService.regradeTask(taskId);
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        submissionService.regradeTask(taskId);
+                    }
+                });
     }
 
     @Override

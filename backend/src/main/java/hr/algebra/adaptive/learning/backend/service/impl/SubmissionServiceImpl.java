@@ -29,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -191,6 +192,65 @@ public class SubmissionServiceImpl implements SubmissionService {
      * transakcija nije potvrđena - zato prije ovoga nije mogao spremiti
      * ni RAG bilješku ni mastery zapis (foreign key na submissions).
      */
+    @Override
+    @Async
+    @Transactional
+    public void regradeTask(UUID taskId) {
+        Task task = taskRepository.findById(taskId).orElse(null);
+        if (task == null
+                || (task.getTaskType() != null && task.getTaskType() != TaskType.CODE)
+                || buildTestCases(task).isEmpty()) {
+            return;
+        }
+
+        List<Submission> submissions = submissionRepository.findByTaskIdOrderByCreatedAtDesc(taskId);
+        int updated = 0;
+        for (Submission submission : submissions) {
+            if (regradeSubmission(submission, task)) {
+                updated++;
+            }
+        }
+        log.info("Zadatak {}: preracunato {} od {} predaja", taskId, updated, submissions.size());
+    }
+
+    private boolean regradeSubmission(Submission submission, Task task) {
+        CodeExecutionResponse exec = executeCode(submission.getSubmittedCode(), task);
+        boolean executorFailed = !exec.isSuccess()
+                && (exec.getCompilerOutput() == null || exec.getCompilerOutput().isBlank());
+        if (executorFailed) {
+            return false;
+        }
+
+        submission.setCompilerOutput(exec.getCompilerOutput());
+        submission.setTestsPassed(exec.getTestsPassed());
+        submission.setTestsTotal(exec.getTestsTotal());
+        submission.setTestResults(exec.getTestResults());
+        submission.setExecutionOutput(exec.isSuccess() ? exec.getExecutionOutput() : exec.getError());
+        if (submission.getStatus() != SubmissionStatus.REVIEWED) {
+            submission.setStatus(exec.isSuccess() ? SubmissionStatus.COMPLETED : SubmissionStatus.COMPILE_ERROR);
+        }
+
+        int score = scoreFromTests(exec);
+        submission.setAiScore(score);
+        if (submission.getTeacherScore() == null) {
+            submission.setFinalScore(score);
+        }
+        submissionRepository.save(submission);
+        return true;
+    }
+
+    private static int scoreFromTests(CodeExecutionResponse exec) {
+        if (!exec.isSuccess() || exec.getTestsTotal() <= 0) {
+            return 0;
+        }
+        int passed = exec.getTestsPassed();
+        String compiler = exec.getCompilerOutput();
+        int compileBonus = compiler != null && compiler.toLowerCase().contains("error") ? 0 : 15;
+        int structureBonus = passed > 0 ? 15 : 0;
+        int total = (int) (passed * 70.0 / exec.getTestsTotal() + compileBonus + structureBonus);
+        return Math.clamp(total, 0, 100);
+    }
+
     private void scheduleAfterCommit(UUID submissionId) {
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
             postProcessor.process(submissionId);

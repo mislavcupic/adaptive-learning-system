@@ -13,6 +13,7 @@ import hr.algebra.adaptive.learning.backend.exception.ResourceNotFoundException;
 import hr.algebra.adaptive.learning.backend.repository.LearningOutcomeRepository;
 import hr.algebra.adaptive.learning.backend.repository.TaskRepository;
 import hr.algebra.adaptive.learning.backend.repository.UserRepository;
+import hr.algebra.adaptive.learning.backend.service.SubmissionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -41,6 +42,7 @@ class TaskServiceImplTest {
     @Mock private TaskRepository taskRepository;
     @Mock private LearningOutcomeRepository outcomeRepository;
     @Mock private UserRepository userRepository;
+    @Mock private SubmissionService submissionService;
 
     @InjectMocks private TaskServiceImpl taskService;
 
@@ -380,6 +382,33 @@ class TaskServiceImplTest {
 
             assertThatThrownBy(() -> taskService.reorder(outcomeId, ids))
                     .isInstanceOf(ResourceNotFoundException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Preračun predaja nakon izmjene testova")
+    class RegradeOnTestChange {
+
+        @Test
+        @DisplayName("novi test primjeri pokreću preračun predaja")
+        void changedTestsTriggerRegrade() {
+            TaskRequest req = request(TaskType.CODE);
+            req.setTestCases("[{\"input\":\"2\",\"expectedOutput\":\"4\"}]");
+
+            taskService.update(taskId, req);
+
+            verify(submissionService).regradeTask(taskId);
+        }
+
+        @Test
+        @DisplayName("isti test primjeri ne pokreću preračun")
+        void sameTestsSkipRegrade() {
+            TaskRequest req = request(TaskType.CODE);
+            req.setTestCases("[]");
+
+            taskService.update(taskId, req);
+
+            verify(submissionService, never()).regradeTask(any());
         }
     }
 }

@@ -191,7 +191,8 @@
       "grading": "Ocjenjivanje",
       "gradingCriteria": "Kriteriji ocjenjivanja",
       "dueDate": "Rok predaje",
-      "createTask": "Kreiraj zadatak"
+      "createTask": "Kreiraj zadatak",
+      "testCasesRegrade": "Nakon spremanja izmijenjenih test primjera bodovi svih dosadašnjih predaja ovog zadatka preračunavaju se u pozadini (može potrajati minutu-dvije)."
     },
     "dragHint": "Povucite zadatke mišem da promijenite redoslijed kojim ih učenici vide.",
     "reorderFailed": "Redoslijed nije spremljen."
