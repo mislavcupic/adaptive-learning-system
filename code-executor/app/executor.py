@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 import shutil
 import time
@@ -33,6 +34,30 @@ class CodeExecutor:
                 )
         finally:
             shutil.rmtree(work_dir, ignore_errors=True)
+
+    NUMBER = re.compile(r"-?\d+(?:[.,]\d+)?")
+    ONLY_NUMBERS = re.compile(r"^[\s\-\d.,;]*$")
+    TOLERANCE = 0.01
+
+    def _outputs_match(self, actual: str, expected: str) -> bool:
+        if actual == expected:
+            return True
+
+        if not expected:
+            return False
+
+        if not self.ONLY_NUMBERS.match(expected):
+            normalized_actual = " ".join(actual.lower().split())
+            normalized_expected = " ".join(expected.lower().split())
+            return normalized_expected in normalized_actual
+
+        expected_numbers = [float(n.replace(",", ".")) for n in self.NUMBER.findall(expected)]
+        actual_numbers = [float(n.replace(",", ".")) for n in self.NUMBER.findall(actual)]
+        if not expected_numbers or len(actual_numbers) < len(expected_numbers):
+            return False
+
+        tail = actual_numbers[-len(expected_numbers):]
+        return all(abs(a - e) <= self.TOLERANCE for a, e in zip(tail, expected_numbers))
 
     def _execute_c(self, request: ExecutionRequest, work_dir: str) -> ExecutionResponse:
         source_file = os.path.join(work_dir, "main.c")
@@ -77,7 +102,7 @@ class CodeExecutor:
                 actual_output = result.stdout.strip()
                 expected_output = test_case.expectedOutput.strip()
 
-                passed = actual_output == expected_output
+                passed = self._outputs_match(actual_output, expected_output)
                 if passed:
                     tests_passed += 1
 
@@ -175,7 +200,7 @@ class CodeExecutor:
                 actual_output = result.stdout.strip()
                 expected_output = test_case.expectedOutput.strip()
 
-                passed = actual_output == expected_output
+                passed = self._outputs_match(actual_output, expected_output)
                 if passed:
                     tests_passed += 1
 
@@ -259,7 +284,7 @@ class CodeExecutor:
                         execution_output = result.stderr.strip()
                     continue
 
-                passed = actual_output == expected_output
+                passed = self._outputs_match(actual_output, expected_output)
                 if passed:
                     tests_passed += 1
 
@@ -302,4 +327,3 @@ class CodeExecutor:
             return result.stderr
         except Exception as e:
             return f"Valgrind error: {str(e)}"
-    
