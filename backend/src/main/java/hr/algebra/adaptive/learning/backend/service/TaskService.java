@@ -31,4 +31,6 @@ public interface TaskService {
     void delete(UUID id);
 
     TaskResponse duplicate(UUID id, UUID createdById);
+
+    void reorder(UUID outcomeId, List<UUID> orderedIds);
 }

@@ -190,6 +190,22 @@ public class TaskServiceImpl implements TaskService {
         return TaskResponse.fromEntity(saved);
     }
 
+    @Override
+    @Transactional
+    public void reorder(UUID outcomeId, List<UUID> orderedIds) {
+        log.info("Reordering tasks for outcome: {}", outcomeId);
+
+        for (int i = 0; i < orderedIds.size(); i++) {
+            UUID taskId = orderedIds.get(i);
+            Task task = findTaskOrThrow(taskId);
+            if (task.getOutcome() == null || !outcomeId.equals(task.getOutcome().getId())) {
+                throw new ResourceNotFoundException("Task", "id", taskId);
+            }
+            task.setOrderIndex(i);
+            taskRepository.save(task);
+        }
+    }
+
     private Task findTaskOrThrow(UUID id) {
         return taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", "id", id));

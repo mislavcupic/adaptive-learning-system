@@ -188,6 +188,24 @@ public class AssessmentServiceImpl implements AssessmentService {
 
     @Override
     @Transactional
+    public AssessmentResponse reorderQuestions(UUID assessmentId, List<UUID> orderedIds) {
+        Assessment assessment = findAssessmentOrThrow(assessmentId);
+
+        for (int i = 0; i < orderedIds.size(); i++) {
+            UUID questionId = orderedIds.get(i);
+            AssessmentQuestion question = findQuestionOrThrow(questionId);
+            if (!assessment.getId().equals(question.getAssessment().getId())) {
+                throw new ResourceNotFoundException("AssessmentQuestion", "id", questionId);
+            }
+            question.setOrderIndex(i);
+            questionRepository.save(question);
+        }
+
+        return AssessmentResponse.fromEntityForTeacher(assessment);
+    }
+
+    @Override
+    @Transactional
     public AssessmentAttemptResponse startAttempt(UUID assessmentId, UUID studentId) {
         log.info("Student {} starting assessment {}", studentId, assessmentId);
 

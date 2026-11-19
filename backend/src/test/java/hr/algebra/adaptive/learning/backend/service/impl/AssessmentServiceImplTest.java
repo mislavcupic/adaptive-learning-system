@@ -692,6 +692,27 @@ class AssessmentServiceImplTest {
                     .isInstanceOf(ResourceNotFoundException.class);
         }
 
+        @Test
+        @DisplayName("mijenja redoslijed pitanja")
+        void reordersQuestions() {
+            assessmentService.reorderQuestions(assessmentId, List.of(codeQuestion.getId(), choiceQuestion.getId()));
+
+            assertThat(codeQuestion.getOrderIndex()).isZero();
+            assertThat(choiceQuestion.getOrderIndex()).isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("odbija pitanje iz drugog testa")
+        void rejectsQuestionFromOtherAssessment() {
+            Assessment other = Assessment.builder().title("Drugi").course(course).questions(new ArrayList<>()).build();
+            other.setId(UUID.randomUUID());
+            choiceQuestion.setAssessment(other);
+            List<UUID> ids = List.of(choiceQuestion.getId());
+
+            assertThatThrownBy(() -> assessmentService.reorderQuestions(assessmentId, ids))
+                    .isInstanceOf(ResourceNotFoundException.class);
+        }
+
         private QuestionRequest choiceRequest(String correct) {
             QuestionRequest r = new QuestionRequest();
             r.setAssessmentId(assessmentId);

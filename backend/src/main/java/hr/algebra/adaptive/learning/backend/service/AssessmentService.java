@@ -27,6 +27,8 @@ public interface AssessmentService {
 
     AssessmentResponse setQuestionPublished(UUID questionId, boolean published);
 
+    AssessmentResponse reorderQuestions(UUID assessmentId, List<UUID> orderedIds);
+
     AssessmentAttemptResponse startAttempt(UUID assessmentId, UUID studentId);
 
     AssessmentAttemptResponse submitAttempt(AssessmentAttemptRequest request, UUID studentId);

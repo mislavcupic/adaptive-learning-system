@@ -66,6 +66,15 @@ public class AssessmentController {
         return ResponseEntity.ok(assessmentService.update(id, request));
     }
 
+    @PatchMapping("/{id}/questions/reorder")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    public ResponseEntity<AssessmentResponse> reorderQuestions(
+            @PathVariable UUID id,
+            @RequestBody List<UUID> orderedIds) {
+        log.info("Reordering questions for assessment: {}", id);
+        return ResponseEntity.ok(assessmentService.reorderQuestions(id, orderedIds));
+    }
+
     @GetMapping("/{id}/manage")
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public ResponseEntity<AssessmentResponse> getForTeacher(@PathVariable UUID id) {

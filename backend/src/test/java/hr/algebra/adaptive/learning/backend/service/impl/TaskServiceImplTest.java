@@ -343,4 +343,43 @@ class TaskServiceImplTest {
         r.setOrderIndex(1);
         return r;
     }
+
+    @Nested
+    @DisplayName("Redoslijed zadataka u ishodu")
+    class Reordering {
+
+        @Test
+        @DisplayName("postavlja redni broj prema položaju na popisu")
+        void setsOrderByPosition() {
+            Task second = Task.builder().title("Drugi").outcome(outcome).orderIndex(0).build();
+            UUID secondId = UUID.randomUUID();
+            second.setId(secondId);
+            when(taskRepository.findById(secondId)).thenReturn(Optional.of(second));
+
+            taskService.reorder(outcomeId, List.of(secondId, taskId));
+
+            assertThat(second.getOrderIndex()).isZero();
+            assertThat(existingTask.getOrderIndex()).isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("odbija zadatak iz drugog ishoda")
+        void rejectsTaskFromOtherOutcome() {
+            UUID otherOutcome = UUID.randomUUID();
+            List<UUID> ids = List.of(taskId);
+
+            assertThatThrownBy(() -> taskService.reorder(otherOutcome, ids))
+                    .isInstanceOf(ResourceNotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("odbija zadatak bez ishoda")
+        void rejectsTaskWithoutOutcome() {
+            existingTask.setOutcome(null);
+            List<UUID> ids = List.of(taskId);
+
+            assertThatThrownBy(() -> taskService.reorder(outcomeId, ids))
+                    .isInstanceOf(ResourceNotFoundException.class);
+        }
+    }
 }

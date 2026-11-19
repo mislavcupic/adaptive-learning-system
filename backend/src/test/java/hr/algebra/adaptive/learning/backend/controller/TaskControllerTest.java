@@ -381,6 +381,63 @@ class TaskControllerTest {
         }
     }
 
+    @Nested
+    @DisplayName("Redoslijed zadataka")
+    class Reordering {
+
+        @Test
+        @DisplayName("administrator smije promijeniti redoslijed")
+        void adminCanReorder() throws Exception {
+            mockMvc.perform(patch("/api/tasks/outcome/{id}/reorder", outcomeId)
+                            .with(user(admin))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(List.of(taskId))))
+                    .andExpect(status().isOk());
+
+            verify(taskService).reorder(outcomeId, List.of(taskId));
+        }
+
+        @Test
+        @DisplayName("nastavnik smije mijenjati redoslijed u svom kolegiju")
+        void teacherCanReorderOwnTasks() throws Exception {
+            when(taskService.isInOwnCourse(taskId, teacher.getId())).thenReturn(true);
+
+            mockMvc.perform(patch("/api/tasks/outcome/{id}/reorder", outcomeId)
+                            .with(user(teacher))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(List.of(taskId))))
+                    .andExpect(status().isOk());
+
+            verify(taskService).reorder(outcomeId, List.of(taskId));
+        }
+
+        @Test
+        @DisplayName("nastavnik ne smije mijenjati redoslijed tuđih zadataka")
+        void teacherCannotReorderForeignTasks() throws Exception {
+            when(taskService.isInOwnCourse(taskId, teacher.getId())).thenReturn(false);
+
+            mockMvc.perform(patch("/api/tasks/outcome/{id}/reorder", outcomeId)
+                            .with(user(teacher))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(List.of(taskId))))
+                    .andExpect(status().isNotFound());
+
+            verify(taskService, never()).reorder(any(), any());
+        }
+
+        @Test
+        @DisplayName("student ne smije mijenjati redoslijed")
+        void studentCannotReorder() throws Exception {
+            mockMvc.perform(patch("/api/tasks/outcome/{id}/reorder", outcomeId)
+                            .with(user(studentUser))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(List.of(taskId))))
+                    .andExpect(status().isForbidden());
+
+            verify(taskService, never()).reorder(any(), any());
+        }
+    }
+
     private TaskRequest request() {
         TaskRequest r = new TaskRequest();
         r.setTitle("Zbroj niza");

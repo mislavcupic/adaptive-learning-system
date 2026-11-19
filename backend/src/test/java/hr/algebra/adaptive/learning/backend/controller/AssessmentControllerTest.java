@@ -150,6 +150,33 @@ class AssessmentControllerTest {
         }
 
         @Test
+        @DisplayName("nastavnik smije promijeniti redoslijed pitanja")
+        void teacherCanReorderQuestions() throws Exception {
+            UUID questionId = UUID.randomUUID();
+            when(assessmentService.reorderQuestions(eq(assessmentId), any())).thenReturn(assessment());
+
+            mockMvc.perform(patch("/api/assessments/{id}/questions/reorder", assessmentId)
+                            .with(user(teacher))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(List.of(questionId))))
+                    .andExpect(status().isOk());
+
+            verify(assessmentService).reorderQuestions(assessmentId, List.of(questionId));
+        }
+
+        @Test
+        @DisplayName("student ne smije mijenjati redoslijed pitanja")
+        void studentCannotReorderQuestions() throws Exception {
+            mockMvc.perform(patch("/api/assessments/{id}/questions/reorder", assessmentId)
+                            .with(user(studentUser))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(List.of(UUID.randomUUID()))))
+                    .andExpect(status().isForbidden());
+
+            verify(assessmentService, never()).reorderQuestions(any(), any());
+        }
+
+        @Test
         @DisplayName("nastavnik dohvaća test s točnim odgovorima")
         void teacherCanGetManageView() throws Exception {
             when(assessmentService.getByIdForTeacher(assessmentId)).thenReturn(assessment());

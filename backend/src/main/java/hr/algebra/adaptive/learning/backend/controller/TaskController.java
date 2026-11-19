@@ -131,6 +131,18 @@ public class TaskController {
                 .body(ApiResponse.success("task.duplicated", response));
     }
 
+    @PatchMapping("/outcome/{outcomeId}/reorder")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    public ResponseEntity<ApiResponse<Void>> reorder(
+            @PathVariable UUID outcomeId,
+            @RequestBody List<UUID> orderedIds,
+            @AuthenticationPrincipal User user) {
+        log.info("Reordering tasks for outcome: {}", outcomeId);
+        orderedIds.forEach(taskId -> checkTeacherAccess(taskId, user));
+        taskService.reorder(outcomeId, orderedIds);
+        return ResponseEntity.ok(ApiResponse.success("tasks.reordered", null));
+    }
+
     private boolean isTeacher(User user) {
         return user != null && user.getRole() == UserRole.TEACHER;
     }
