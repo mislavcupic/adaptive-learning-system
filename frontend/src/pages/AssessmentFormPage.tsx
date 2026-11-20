@@ -528,7 +528,8 @@ function QuestionItem({ question, index, isActive, saving, onToggle, onRemove, o
                 <div className="flex shrink-0 items-center gap-2">
                     <Badge variant="default">
                         {question.questionType === 'MULTIPLE_CHOICE' ? t('assessments.questionForm.multipleChoice') :
-                            question.questionType === 'TRUE_FALSE' ? t('assessments.questionForm.trueFalse') : t('assessments.questionForm.code')}
+                            question.questionType === 'TRUE_FALSE' ? t('assessments.questionForm.trueFalse') :
+                                question.questionType === 'SHORT_ANSWER' ? t('assessments.questionForm.shortAnswer') : t('assessments.questionForm.code')}
                     </Badge>
                     <Badge variant="info">{question.points} {t('assessments.point')}</Badge>
                     {question.id && (

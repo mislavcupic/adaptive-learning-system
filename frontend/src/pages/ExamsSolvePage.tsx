@@ -10,7 +10,7 @@ import { useTheme } from '../context';
 import { examService } from '../services';
 import {
     Card, CardHeader, CardTitle, CardContent,
-    Button, Badge, LoadingScreen, ErrorState, FormattedText
+    Button, Badge, LoadingScreen, ErrorState, FormattedText, ConsolePanel
 } from '../components/ui';
 import type { Exam, ExamAttempt, ExamAnswerEntry } from '../types';
 
@@ -267,6 +267,16 @@ export function ExamSolvePage() {
                             theme={theme}
                         />
                     </Card>
+
+                    {isOpen && current.taskType === 'CODE' && examId && (
+                        <ConsolePanel
+                            key={current.taskId}
+                            taskId={current.taskId}
+                            examId={examId}
+                            getCode={() => draft}
+                            note={t('console.notSubmissionExam')}
+                        />
+                    )}
 
                     {/* Rezultat izvrsavanja. Blok se prikazuje i kad zadatak
                         nema testnih primjera, kako student ne bi ostao bez

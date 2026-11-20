@@ -576,5 +576,25 @@
       "multipleChoice": "Multiple choice",
       "checklist": "Checklist"
     }
+  },
+  "console": {
+    "title": "Console",
+    "run": "Run",
+    "stop": "Stop",
+    "clear": "Clear",
+    "eof": "End of input",
+    "inputPlaceholder": "Type input and press Enter",
+    "idle": "Run the program to see its output. If it asks for input, type it in the line below.",
+    "compiling": "Compiling…",
+    "running": "Program is running",
+    "notSubmission": "This is not a submission. When you are done, click Submit.",
+    "notSubmissionExam": "Running in the console does not save your answer. Save it with the Save button.",
+    "compileError": "The program cannot be compiled.",
+    "exitFinished": "The program finished (exit code {{code}}).",
+    "exitTimeout": "Time limit reached, the program was stopped.",
+    "exitStopped": "The program was stopped.",
+    "exitOutputLimit": "The output is too long, the program was stopped.",
+    "disconnected": "The connection to the console was lost.",
+    "noCode": "There is no code to run."
   }
 }

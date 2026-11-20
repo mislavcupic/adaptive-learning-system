@@ -6,6 +6,7 @@ export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 export { Modal, ModalFooter } from './Modal';
 export { Badge } from './Badge';
 export { FormattedText } from './FormattedText';
+export { ConsolePanel } from './ConsolePanel';
 export { Spinner, LoadingScreen, LoadingOverlay } from './Spinner';
 export { Avatar } from './Avatar';
 export { EmptyState, ErrorState } from './EmptyState';

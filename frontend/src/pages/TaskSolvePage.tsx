@@ -15,7 +15,8 @@ import {
     Badge,
     LoadingScreen,
     ErrorState,
-    FormattedText
+    FormattedText,
+    ConsolePanel
 } from '../components/ui';
 import { formatLanguageType, formatSubmissionStatus } from '../utils';
 import type { Task, Submission } from '../types';
@@ -316,6 +317,10 @@ export function TaskSolvePage() {
                 </Card>
                 )}
             </div>
+
+            {taskType === 'CODE' && id && (
+                <ConsolePanel taskId={id} getCode={() => code} note={t('console.notSubmission')} />
+            )}
 
             {/* Submission Result */}
             {submitting && (

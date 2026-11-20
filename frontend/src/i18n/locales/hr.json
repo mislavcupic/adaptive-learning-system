@@ -576,5 +576,25 @@
       "multipleChoice": "Višestruki izbor",
       "checklist": "Ček-lista"
     }
+  },
+  "console": {
+    "title": "Konzola",
+    "run": "Pokreni",
+    "stop": "Zaustavi",
+    "clear": "Očisti",
+    "eof": "Kraj unosa",
+    "inputPlaceholder": "Upiši ulaz i pritisni Enter",
+    "idle": "Pokreni program da vidiš ispis. Ako program traži unos, upiši ga u redak ispod.",
+    "compiling": "Prevođenje…",
+    "running": "Program radi",
+    "notSubmission": "Ovo nije predaja. Kad završiš, klikni Predaj.",
+    "notSubmissionExam": "Pokretanje u konzoli ne sprema odgovor. Odgovor spremi gumbom Spremi.",
+    "compileError": "Program se ne može prevesti.",
+    "exitFinished": "Program je završio (izlazni kod {{code}}).",
+    "exitTimeout": "Isteklo je vrijeme za pokretanje, program je zaustavljen.",
+    "exitStopped": "Program je zaustavljen.",
+    "exitOutputLimit": "Ispis je predugačak, program je zaustavljen.",
+    "disconnected": "Veza s konzolom je prekinuta.",
+    "noCode": "Nema koda za pokretanje."
   }
 }

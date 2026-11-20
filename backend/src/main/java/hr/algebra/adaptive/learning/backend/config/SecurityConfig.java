@@ -40,7 +40,8 @@ public class SecurityConfig {
             "/api/auth/register",
             "/api/auth/refresh-token",
             "/api/auth/verify",
-            "/api/auth/resend-verification"
+            "/api/auth/resend-verification",
+            "/api/ws/**"
     };
 
     // OAuth2 tijek - Google preusmjerava natrag na ove rute

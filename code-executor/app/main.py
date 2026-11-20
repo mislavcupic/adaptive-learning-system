@@ -1,8 +1,9 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
 from .schemas import ExecutionRequest, ExecutionResponse
 from .executor import CodeExecutor
+from .interactive import InteractiveSession
 
 app = FastAPI(
     title="Code Executor Service",
@@ -34,6 +35,12 @@ async def execute_code(request: ExecutionRequest):
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.websocket("/ws/run")
+async def run_interactive(websocket: WebSocket):
+    await websocket.accept()
+    await InteractiveSession(websocket).run()
 
 
 @app.get("/")

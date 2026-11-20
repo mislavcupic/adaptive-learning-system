@@ -12,3 +12,4 @@ export * from './auditService';
 export { submissionOverviewService } from './submissionOverviewService';
 export * from './examService';
 export * from './masteryService'
+export * from './consoleService'
