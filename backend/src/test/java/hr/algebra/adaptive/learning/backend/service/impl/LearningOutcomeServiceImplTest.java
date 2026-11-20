@@ -8,6 +8,7 @@ import hr.algebra.adaptive.learning.backend.dto.response.LearningOutcomeResponse
 import hr.algebra.adaptive.learning.backend.exception.ResourceNotFoundException;
 import hr.algebra.adaptive.learning.backend.repository.CourseRepository;
 import hr.algebra.adaptive.learning.backend.repository.LearningOutcomeRepository;
+import hr.algebra.adaptive.learning.backend.repository.SkillMasteryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -35,6 +36,7 @@ class LearningOutcomeServiceImplTest {
 
     @Mock private LearningOutcomeRepository outcomeRepository;
     @Mock private CourseRepository courseRepository;
+    @Mock private SkillMasteryRepository skillMasteryRepository;
 
     @InjectMocks private LearningOutcomeServiceImpl outcomeService;
 
@@ -161,6 +163,29 @@ class LearningOutcomeServiceImplTest {
 
             assertThat(result.getName()).isEqualTo("Napredne petlje");
             assertThat(result.getDescription()).isEqualTo("Ugniježđene petlje");
+        }
+
+        @Test
+        @DisplayName("pri promjeni naziva preimenuje BKT vještinu")
+        void renamesSkillMasteryWhenNameChanges() {
+            LearningOutcomeRequest req = request();
+            req.setName("Petlje u C-u");
+
+            outcomeService.update(outcomeId, req);
+
+            verify(skillMasteryRepository).renameSkillForOutcome(outcomeId, "Petlje", "Petlje u C-u");
+        }
+
+        @Test
+        @DisplayName("bez promjene naziva ne dira BKT vještinu")
+        void keepsSkillMasteryWhenNameUnchanged() {
+            LearningOutcomeRequest req = request();
+            req.setName("Petlje");
+            req.setDescription("Novi opis");
+
+            outcomeService.update(outcomeId, req);
+
+            verify(skillMasteryRepository, never()).renameSkillForOutcome(any(), any(), any());
         }
 
         @Test

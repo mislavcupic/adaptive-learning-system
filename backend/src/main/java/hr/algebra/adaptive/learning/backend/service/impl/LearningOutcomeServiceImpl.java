@@ -7,6 +7,7 @@ import hr.algebra.adaptive.learning.backend.dto.response.LearningOutcomeResponse
 import hr.algebra.adaptive.learning.backend.exception.ResourceNotFoundException;
 import hr.algebra.adaptive.learning.backend.repository.CourseRepository;
 import hr.algebra.adaptive.learning.backend.repository.LearningOutcomeRepository;
+import hr.algebra.adaptive.learning.backend.repository.SkillMasteryRepository;
 import hr.algebra.adaptive.learning.backend.service.LearningOutcomeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +25,7 @@ public class LearningOutcomeServiceImpl implements LearningOutcomeService {
 
     private final LearningOutcomeRepository outcomeRepository;
     private final CourseRepository courseRepository;
+    private final SkillMasteryRepository skillMasteryRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -72,12 +74,19 @@ public class LearningOutcomeServiceImpl implements LearningOutcomeService {
         log.info("Updating learning outcome: {}", id);
 
         LearningOutcome outcome = findOutcomeOrThrow(id);
+        String oldName = outcome.getName();
 
         outcome.setName(request.getName());
         outcome.setDescription(request.getDescription());
         outcome.setOrderIndex(request.getOrderIndex());
 
         LearningOutcome saved = outcomeRepository.save(outcome);
+
+        if (oldName != null && !oldName.equals(saved.getName())) {
+            int renamed = skillMasteryRepository.renameSkillForOutcome(saved.getId(), oldName, saved.getName());
+            log.info("BKT vjestina preimenovana '{}' -> '{}' za {} zapisa", oldName, saved.getName(), renamed);
+        }
+
         return LearningOutcomeResponse.fromEntity(saved);
     }
 

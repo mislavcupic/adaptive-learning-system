@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Plus, Trash2, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, ChevronRight, Pencil } from 'lucide-react';
 import { useFetch } from '../hooks';
 import { courseService, outcomeService } from '../services';
 import {
@@ -20,6 +20,9 @@ export function CourseDetailPage() {
     const [savingOutcome, setSavingOutcome] = useState(false);
     const [deleteOutcomeModal, setDeleteOutcomeModal] = useState<LearningOutcome | null>(null);
     const [deletingOutcome, setDeletingOutcome] = useState(false);
+    const [renameOutcome, setRenameOutcome] = useState<LearningOutcome | null>(null);
+    const [renameValue, setRenameValue] = useState('');
+    const [renaming, setRenaming] = useState(false);
 
     const { data: course, loading, error, refetch } = useFetch<Course>(
         () => courseService.getById(id!),
@@ -60,6 +63,23 @@ export function CourseDetailPage() {
             refetchOutcomes();
         } finally {
             setDeletingOutcome(false);
+        }
+    };
+
+    const handleRenameOutcome = async () => {
+        if (!renameOutcome || !id || !renameValue.trim()) return;
+        setRenaming(true);
+        try {
+            await outcomeService.update(renameOutcome.id, {
+                name: renameValue.trim(),
+                description: renameOutcome.description ?? undefined,
+                orderIndex: renameOutcome.orderIndex,
+                courseId: id,
+            });
+            setRenameOutcome(null);
+            refetchOutcomes();
+        } finally {
+            setRenaming(false);
         }
     };
 
@@ -141,6 +161,13 @@ export function CourseDetailPage() {
                                             </Button>
                                         </Link>
                                         <button
+                                            onClick={() => { setRenameOutcome(outcome); setRenameValue(outcome.name); }}
+                                            aria-label={t('courses.renameOutcome')}
+                                            className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
+                                        >
+                                            <Pencil className="w-4 h-4" />
+                                        </button>
+                                        <button
                                             onClick={() => setDeleteOutcomeModal(outcome)}
                                             className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-zinc-400 hover:text-red-600 transition-colors"
                                         >
@@ -194,6 +221,25 @@ export function CourseDetailPage() {
                 <ModalFooter>
                     <Button variant="ghost" onClick={() => setOutcomeModal(false)}>{t('common.cancel')}</Button>
                     <Button onClick={handleCreateOutcome} isLoading={savingOutcome}>{t('common.create')}</Button>
+                </ModalFooter>
+            </Modal>
+
+            <Modal
+                isOpen={!!renameOutcome}
+                onClose={() => setRenameOutcome(null)}
+                title={t('courses.renameOutcome')}
+            >
+                <div className="space-y-3">
+                    <Input
+                        label={`${t('courses.outcomeName')} *`}
+                        value={renameValue}
+                        onChange={e => setRenameValue(e.target.value)}
+                    />
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">{t('courses.renameOutcomeHint')}</p>
+                </div>
+                <ModalFooter>
+                    <Button variant="ghost" onClick={() => setRenameOutcome(null)}>{t('common.cancel')}</Button>
+                    <Button onClick={handleRenameOutcome} isLoading={renaming} disabled={!renameValue.trim()}>{t('common.save')}</Button>
                 </ModalFooter>
             </Modal>
 

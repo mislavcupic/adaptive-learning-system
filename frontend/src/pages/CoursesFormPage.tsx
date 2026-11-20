@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Save } from 'lucide-react';
 import { courseService } from '../services';
@@ -8,6 +8,8 @@ import { Card, CardHeader, CardTitle, CardContent, Button, Input } from '../comp
 export function CoursesFormPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const { id } = useParams<{ id: string }>();
+    const isEdit = Boolean(id);
 
     const [form, setForm] = useState({
         name: '',
@@ -16,6 +18,19 @@ export function CoursesFormPage() {
     });
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState(isEdit);
+
+    useEffect(() => {
+        if (!id) return;
+        courseService.getById(id)
+            .then(course => setForm({
+                name: course.name,
+                description: course.description ?? '',
+                languageType: course.languageType,
+            }))
+            .catch(() => setError(t('errors.generic')))
+            .finally(() => setLoading(false));
+    }, [id, t]);
 
     const set = (field: string, value: any) =>
         setForm(f => ({ ...f, [field]: value }));
@@ -25,7 +40,9 @@ export function CoursesFormPage() {
         setSubmitting(true);
         setError(null);
         try {
-            const course = await courseService.create(form);
+            const course = id
+                ? await courseService.update(id, form)
+                : await courseService.create(form);
             navigate(`/courses/${course.id}`);
         } catch {
             setError(t('errors.generic'));
@@ -43,13 +60,13 @@ export function CoursesFormPage() {
                     </button>
                     <div>
                         <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">
-                            {t('courses.createCourse')}
+                            {isEdit ? t('courses.editCourse') : t('courses.createCourse')}
                         </h1>
                     </div>
                 </div>
                 <div className="flex gap-3">
                     <Button variant="ghost" onClick={() => navigate(-1)}>{t('common.cancel')}</Button>
-                    <Button onClick={handleSubmit} isLoading={submitting} className="gap-2">
+                    <Button onClick={handleSubmit} isLoading={submitting} disabled={loading} className="gap-2">
                         <Save className="w-4 h-4" />
                         {t('common.save')}
                     </Button>
@@ -63,7 +80,7 @@ export function CoursesFormPage() {
             )}
 
             <Card>
-                <CardHeader><CardTitle>{t('courses.createCourse')}</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{isEdit ? t('courses.editCourse') : t('courses.createCourse')}</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                     <Input
                         label={`${t('courses.courseName')} *`}
@@ -79,7 +96,8 @@ export function CoursesFormPage() {
                             value={form.description}
                             onChange={e => set('description', e.target.value)}
                             rows={3}
-                            className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500 resize-none"
+                            disabled={isEdit}
+                            className="disabled:opacity-60 disabled:cursor-not-allowed w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500 resize-none"
                         />
                     </div>
                     <div>
@@ -89,13 +107,17 @@ export function CoursesFormPage() {
                         <select
                             value={form.languageType}
                             onChange={e => set('languageType', e.target.value)}
-                            className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500"
+                            disabled={isEdit}
+                            className="disabled:opacity-60 disabled:cursor-not-allowed w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500"
                         >
                             <option value="C">C</option>
                             <option value="CSHARP">C#</option>
                             <option value="PYTHON">Python</option>
                         </select>
                     </div>
+                    {isEdit && (
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">{t('courses.editHint')}</p>
+                    )}
                 </CardContent>
             </Card>
         </div>

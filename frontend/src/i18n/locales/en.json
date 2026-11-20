@@ -110,7 +110,11 @@
     "deleteConfirm": "Are you sure you want to delete this course?",
     "createSuccess": "Course created successfully",
     "updateSuccess": "Course updated successfully",
-    "deleteSuccess": "Course deleted successfully"
+    "deleteSuccess": "Course deleted successfully",
+    "outcomeName": "Outcome name",
+    "renameOutcome": "Rename outcome",
+    "renameOutcomeHint": "Only the name changes. Tasks and student progress (BKT) stay linked to this outcome.",
+    "editHint": "Only the course name can be changed. The description and programming language stay the same, so existing submissions keep running the same way."
   },
   "tasks": {
     "title": "Tasks",

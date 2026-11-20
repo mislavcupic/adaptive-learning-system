@@ -110,7 +110,11 @@
     "deleteConfirm": "Jeste li sigurni da želite obrisati ovaj kolegij?",
     "createSuccess": "Kolegij uspješno kreiran",
     "updateSuccess": "Kolegij uspješno ažuriran",
-    "deleteSuccess": "Kolegij uspješno obrisan"
+    "deleteSuccess": "Kolegij uspješno obrisan",
+    "outcomeName": "Naziv ishoda",
+    "renameOutcome": "Promijeni naziv ishoda",
+    "renameOutcomeHint": "Mijenja se samo naziv. Zadaci i napredak učenika (BKT) ostaju vezani uz ovaj ishod.",
+    "editHint": "Moguće je promijeniti samo naziv kolegija. Opis i programski jezik ostaju isti, kako se ne bi promijenilo izvršavanje postojećih predaja."
   },
   "tasks": {
     "title": "Zadaci",
