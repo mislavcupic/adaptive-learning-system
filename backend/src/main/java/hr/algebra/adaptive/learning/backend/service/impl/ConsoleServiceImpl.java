@@ -244,7 +244,7 @@ public class ConsoleServiceImpl implements ConsoleService {
         try {
             JsonNode node = objectMapper.readTree(payload);
             return node != null && node.isObject() ? node : null;
-        } catch (JsonProcessingException e) {
+        } catch (JsonProcessingException _) {
             return null;
         }
     }
@@ -268,7 +268,7 @@ public class ConsoleServiceImpl implements ConsoleService {
         }
         try {
             return UUID.fromString(value);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException _) {
             return null;
         }
     }

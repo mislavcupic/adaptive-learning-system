@@ -329,16 +329,14 @@ public class AssessmentServiceImpl implements AssessmentService {
 
             String key = question.getId().toString();
             String studentAnswer = answers.get(key);
-            if (studentAnswer == null) {
-                continue;
+            if (studentAnswer != null) {
+                Integer points = cached.get(key);
+                if (points == null || question.getId().equals(changedQuestionId)) {
+                    points = gradeQuestion(question, studentAnswer);
+                }
+                scores.put(key, points);
+                total += points;
             }
-
-            Integer points = cached.get(key);
-            if (points == null || question.getId().equals(changedQuestionId)) {
-                points = gradeQuestion(question, studentAnswer);
-            }
-            scores.put(key, points);
-            total += points;
         }
 
         attempt.setScore(total);
