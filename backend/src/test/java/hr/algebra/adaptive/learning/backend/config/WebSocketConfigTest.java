@@ -3,6 +3,7 @@ package hr.algebra.adaptive.learning.backend.config;
 import hr.algebra.adaptive.learning.backend.websocket.ConsoleWebSocketHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistration;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 
@@ -19,9 +20,11 @@ class WebSocketConfigTest {
         ConsoleWebSocketHandler handler = mock(ConsoleWebSocketHandler.class);
         WebSocketHandlerRegistry registry = mock(WebSocketHandlerRegistry.class);
         WebSocketHandlerRegistration registration = mock(WebSocketHandlerRegistration.class);
-        when(registry.addHandler(handler, WebSocketConfig.CONSOLE_PATH)).thenReturn(registration);
+        when(registry.addHandler(handler, "/api/ws/run")).thenReturn(registration);
 
-        new WebSocketConfig(handler).registerWebSocketHandlers(registry);
+        WebSocketConfig config = new WebSocketConfig(handler);
+        ReflectionTestUtils.setField(config, "consolePath", "/api/ws/run");
+        config.registerWebSocketHandlers(registry);
 
         verify(registry).addHandler(handler, "/api/ws/run");
         verify(registration).setAllowedOriginPatterns("*");
