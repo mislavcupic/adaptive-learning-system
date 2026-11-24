@@ -9,6 +9,7 @@ import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -27,6 +28,7 @@ public class StudentResponse {
     private String schoolClassName;
     private ResearchGroup researchGroup;
     private boolean excludedFromResearch;
+    private LocalDateTime createdAt;
 
     public static StudentResponse fromEntity(User user) {
         return StudentResponse.builder()
@@ -40,6 +42,7 @@ public class StudentResponse {
                 .schoolClassName(user.getSchoolClass() != null ? user.getSchoolClass().getName() : null)
                 .researchGroup(user.getResearchGroup())
                 .excludedFromResearch(Boolean.TRUE.equals(user.getExcludedFromResearch()))
+                .createdAt(user.getCreatedAt())
                 .build();
     }
 
