@@ -1,5 +1,6 @@
 package hr.algebra.adaptive.learning.backend.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import hr.algebra.adaptive.learning.backend.domain.entity.Course;
 import hr.algebra.adaptive.learning.backend.domain.enums.LanguageType;
 import lombok.Builder;
@@ -16,7 +17,9 @@ public class CourseResponse {
     private String description;
     private LanguageType languageType;
     private String createdByName;
+    @JsonProperty("outcomeCount")
     private int outcomesCount;
+    @JsonProperty("isActive")
     private boolean isActive;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
