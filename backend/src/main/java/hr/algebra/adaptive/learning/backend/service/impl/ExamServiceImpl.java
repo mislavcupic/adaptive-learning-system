@@ -8,6 +8,7 @@ import hr.algebra.adaptive.learning.backend.dto.response.ExamAttemptResponse;
 import hr.algebra.adaptive.learning.backend.dto.request.ExamRequest;
 import hr.algebra.adaptive.learning.backend.dto.response.ExamResponse;
 import hr.algebra.adaptive.learning.backend.dto.request.SubmissionRequest;
+import hr.algebra.adaptive.learning.backend.service.AssessmentService;
 import hr.algebra.adaptive.learning.backend.exception.BadRequestException;
 import hr.algebra.adaptive.learning.backend.exception.ResourceNotFoundException;
 import hr.algebra.adaptive.learning.backend.repository.*;
@@ -39,6 +40,7 @@ public class ExamServiceImpl implements ExamService {
     private final UserRepository userRepository;
     private final SubmissionRepository submissionRepository;
     private final SubmissionService submissionService;
+    private final AssessmentService assessmentService;
 
 
     // NASTAVNIK
@@ -405,6 +407,8 @@ public class ExamServiceImpl implements ExamService {
             throw new BadRequestException("Ispit je već predan.");
         }
 
+        runPendingCode(attempt, studentId);
+
         attempt.setStatus(ExamAttemptStatus.SUBMITTED);
         attempt.setSubmittedAt(LocalDateTime.now());
 
@@ -438,6 +442,55 @@ public class ExamServiceImpl implements ExamService {
             tasks.add(task);
         }
         return tasks;
+    }
+
+    /**
+     * Pri predaji ispita pokrece kod svakog programskog zadatka cija konacna
+     * verzija jos nije izvrsena. Tako se zadatak boduje prema predanom kodu,
+     * a predaja se vidi i u popisu predaja.
+     */
+    private void runPendingCode(ExamAttempt attempt, UUID studentId) {
+        for (ExamAnswer answer : attempt.getAnswers()) {
+            if (needsRun(answer, studentId)) {
+                runAnswerCode(answer, studentId);
+            }
+        }
+    }
+
+    // Bez pretesta predaja baca iznimku koja bi oznacila transakciju
+    // za ponistavanje, pa se takav zadatak preskace.
+    private boolean needsRun(ExamAnswer answer, UUID studentId) {
+        Task task = answer.getTask();
+        String code = answer.getAnswerContent();
+
+        if (task.getTaskType() != TaskType.CODE || code == null || code.isBlank()) {
+            return false;
+        }
+        if (answer.getSubmission() != null && code.equals(answer.getSubmission().getSubmittedCode())) {
+            return false;
+        }
+
+        UUID courseId = task.getOutcome().getCourse().getId();
+        boolean hasPretest = assessmentService.hasCompletedPretest(studentId, courseId);
+        if (!hasPretest) {
+            log.warn("Student {} nema pretest za kolegij {} - kod zadatka {} se ne pokrece",
+                    studentId, courseId, task.getId());
+        }
+        return hasPretest;
+    }
+
+    private void runAnswerCode(ExamAnswer answer, UUID studentId) {
+        try {
+            var submissionRequest = new SubmissionRequest();
+            submissionRequest.setTaskId(answer.getTask().getId());
+            submissionRequest.setCode(answer.getAnswerContent());
+
+            var result = submissionService.submit(submissionRequest, studentId);
+            submissionRepository.findById(result.getId())
+                    .ifPresent(answer::setSubmission);
+        } catch (Exception e) {
+            log.error("Izvršavanje koda pri predaji ispita nije uspjelo: {}", e.getMessage());
+        }
     }
 
     /**
