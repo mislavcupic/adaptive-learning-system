@@ -415,7 +415,7 @@ public class SubmissionServiceImpl implements SubmissionService {
 
     @Override
     public List<SubmissionResponse> getAll() {
-        return submissionRepository.findAll().stream()
+        return submissionRepository.findAllOrderByCreatedAtDesc().stream()
                 .map(SubmissionResponse::fromEntity)
                 .toList();
     }
