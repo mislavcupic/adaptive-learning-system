@@ -10,6 +10,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Data
@@ -49,11 +50,21 @@ public class ExamAttemptResponse {
     }
 
     public static ExamAttemptResponse fromEntityWithAnswers(ExamAttempt attempt) {
+        // Redoslijed zadataka kako je zadan u ispitu (exam_tasks.order_index).
+        // Uz isti redoslijed odlucuje ID zadatka, pa je poredak uvijek isti.
+        List<UUID> examOrder = attempt.getExam().getTasks().stream()
+                .filter(Objects::nonNull)
+                .map(t -> t.getId())
+                .toList();
+
         return base(attempt)
                 .answers(attempt.getAnswers().stream()
-                        .sorted(Comparator.comparing(
-                                a -> a.getTask().getOrderIndex() != null
-                                        ? a.getTask().getOrderIndex() : 0))
+                        .sorted(Comparator
+                                .comparingInt((ExamAnswer a) -> {
+                                    int i = examOrder.indexOf(a.getTask().getId());
+                                    return i >= 0 ? i : Integer.MAX_VALUE;
+                                })
+                                .thenComparing(a -> a.getTask().getId()))
                         .map(AnswerEntry::fromEntity)
                         .toList())
                 .build();
