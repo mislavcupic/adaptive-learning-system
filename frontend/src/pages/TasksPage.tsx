@@ -50,9 +50,11 @@ export function TasksPage() {
         ? [...outcomeTasks].sort((a, b) => orderOverride.indexOf(a.id) - orderOverride.indexOf(b.id))
         : outcomeTasks;
 
+    const query = search.toLowerCase();
     const filteredTasks = orderedTasks.filter(task =>
-        task.title.toLowerCase().includes(search.toLowerCase()) ||
-        task.description?.toLowerCase().includes(search.toLowerCase())
+        task.title.toLowerCase().includes(query) ||
+        task.description?.toLowerCase().includes(query) ||
+        task.outcomeName?.toLowerCase().includes(query)
     );
 
     const outcomeOrder = new Map((outcomes ?? []).map(o => [o.id, o.orderIndex ?? 0]));
@@ -148,17 +150,21 @@ export function TasksPage() {
                     }
                 />
             ) : (
-                <div className="space-y-8">
+                <div className="space-y-6">
                     {taskGroups.map((group) => (
-                        <section key={group.outcomeId} className="space-y-3">
-                            <div className="flex items-center gap-2 flex-wrap border-b border-zinc-200 dark:border-zinc-800 pb-2">
+                        <section
+                            key={group.outcomeId}
+                            className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-4 sm:p-5 space-y-4"
+                        >
+                            <div className="flex items-center gap-3 flex-wrap">
+                                <span className="w-1 h-6 rounded-full bg-teal-600 dark:bg-teal-400" aria-hidden="true" />
                                 <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">
                                     {group.outcomeName}
                                 </h2>
                                 {group.courseName && (
                                     <Badge variant="info">{group.courseName}</Badge>
                                 )}
-                                <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                                <span className="ml-auto rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-2.5 py-0.5 text-xs font-medium text-zinc-600 dark:text-zinc-300">
                                     {group.tasks.length} {t('exams.tasks')}
                                 </span>
                             </div>
