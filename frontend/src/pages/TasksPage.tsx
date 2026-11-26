@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Plus, Search, Play, Clock, Award, Pencil } from 'lucide-react';
 import { useAuth } from '../context';
 import { useFetch } from '../hooks';
-import { taskService } from '../services';
+import { outcomeService, taskService } from '../services';
 import {
     Card,
     CardContent,
@@ -17,7 +17,7 @@ import {
 } from '../components/ui';
 import { formatDate, formatLanguageType, truncate } from '../utils';
 import { cn } from '../utils/cn';
-import type { Task } from '../types';
+import type { LearningOutcome, Task } from '../types';
 
 export function TasksPage() {
     const { t } = useTranslation();
@@ -28,6 +28,13 @@ export function TasksPage() {
 
     const { data: tasks, loading, error, refetch } = useFetch<Task[]>(
         () => taskService.getAll(),
+        []
+    );
+
+    // Redoslijed ishoda unutar kolegija; ako dohvat ne uspije, grupe se
+    // slazu po nazivu ishoda.
+    const { data: outcomes } = useFetch<LearningOutcome[]>(
+        () => outcomeService.getAll().catch(() => []),
         []
     );
 
@@ -47,6 +54,9 @@ export function TasksPage() {
         task.title.toLowerCase().includes(search.toLowerCase()) ||
         task.description?.toLowerCase().includes(search.toLowerCase())
     );
+
+    const outcomeOrder = new Map((outcomes ?? []).map(o => [o.id, o.orderIndex ?? 0]));
+    const taskGroups = groupByOutcome(filteredTasks, outcomeOrder);
 
     const isTeacherOrAdmin = user?.role === 'TEACHER' || user?.role === 'ADMIN';
     const canReorder = Boolean(outcomeId) && isTeacherOrAdmin && !search;
@@ -138,22 +148,39 @@ export function TasksPage() {
                     }
                 />
             ) : (
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredTasks.map((task) => (
-                        <div
-                            key={task.id}
-                            draggable={canReorder}
-                            onDragStart={(e) => {
-                                e.dataTransfer.setData('text/plain', task.id);
-                                setDragId(task.id);
-                            }}
-                            onDragOver={canReorder ? (e) => e.preventDefault() : undefined}
-                            onDrop={canReorder ? (e) => { e.preventDefault(); handleDrop(task.id); } : undefined}
-                            onDragEnd={() => setDragId(null)}
-                            className={cn(canReorder && 'cursor-move', dragId === task.id && 'opacity-50')}
-                        >
-                            <TaskCard task={task} isStudent={user?.role === 'STUDENT'} />
-                        </div>
+                <div className="space-y-8">
+                    {taskGroups.map((group) => (
+                        <section key={group.outcomeId} className="space-y-3">
+                            <div className="flex items-center gap-2 flex-wrap border-b border-zinc-200 dark:border-zinc-800 pb-2">
+                                <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">
+                                    {group.outcomeName}
+                                </h2>
+                                {group.courseName && (
+                                    <Badge variant="info">{group.courseName}</Badge>
+                                )}
+                                <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                                    {group.tasks.length} {t('exams.tasks')}
+                                </span>
+                            </div>
+                            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {group.tasks.map((task) => (
+                                    <div
+                                        key={task.id}
+                                        draggable={canReorder}
+                                        onDragStart={(e) => {
+                                            e.dataTransfer.setData('text/plain', task.id);
+                                            setDragId(task.id);
+                                        }}
+                                        onDragOver={canReorder ? (e) => e.preventDefault() : undefined}
+                                        onDrop={canReorder ? (e) => { e.preventDefault(); handleDrop(task.id); } : undefined}
+                                        onDragEnd={() => setDragId(null)}
+                                        className={cn(canReorder && 'cursor-move', dragId === task.id && 'opacity-50')}
+                                    >
+                                        <TaskCard task={task} isStudent={user?.role === 'STUDENT'} />
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
                     ))}
                 </div>
             )}
@@ -169,6 +196,38 @@ function sortByOrder(list: Task[]): Task[] {
     });
     return [...groups.values()].flatMap(group =>
         [...group].sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0))
+    );
+}
+
+interface TaskGroup {
+    outcomeId: string;
+    outcomeName: string;
+    courseName?: string;
+    tasks: Task[];
+}
+
+// Grupe idu po kolegiju, pa po redoslijedu ishoda u kolegiju; zadaci u
+// grupi zadrzavaju redoslijed iz sortByOrder.
+function groupByOutcome(list: Task[], outcomeOrder: Map<string, number>): TaskGroup[] {
+    const groups = new Map<string, TaskGroup>();
+    list.forEach(task => {
+        const key = task.outcomeId ?? '';
+        const group = groups.get(key) ?? {
+            outcomeId: key,
+            outcomeName: task.outcomeName ?? '',
+            courseName: task.courseName,
+            tasks: []
+        };
+        group.tasks.push(task);
+        groups.set(key, group);
+    });
+
+    const position = (group: TaskGroup) => outcomeOrder.get(group.outcomeId) ?? Number.MAX_SAFE_INTEGER;
+
+    return [...groups.values()].sort((a, b) =>
+        (a.courseName ?? '').localeCompare(b.courseName ?? '', 'hr')
+        || position(a) - position(b)
+        || a.outcomeName.localeCompare(b.outcomeName, 'hr', { numeric: true })
     );
 }
 
